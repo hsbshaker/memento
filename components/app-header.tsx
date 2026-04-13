@@ -27,6 +27,7 @@ export function AppHeader() {
   const navRef = useRef<HTMLElement | null>(null);
 
   const showNav = !pathname.startsWith("/onboarding/success");
+  const shouldHideHeader = pathname === "/";
 
   const activeTab = useMemo<TabId | null>(() => {
     if (pathname.startsWith("/home")) return "home";
@@ -95,6 +96,10 @@ export function AppHeader() {
     if (event && event.key !== "Enter" && event.key !== " ") return;
     setComingSoonTab(tab.id);
   };
+
+  if (shouldHideHeader) {
+    return null;
+  }
 
   return (
     <header className="relative z-40 bg-transparent">
