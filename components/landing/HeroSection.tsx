@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 
-const cardPills = ["Amex Platinum", "Gold Card", "Chase Sapphire", "Venture X", "+ more"];
+const cardPills = ["American Express", "Chase", "Citi", "Capital One", "+ more"];
 
 const benefits = [
   { name: "Uber Cash", cadence: "Annual", value: "$200" },
@@ -46,15 +46,16 @@ export function HeroSection() {
               </span>
             </h1>
             <p className="max-w-[400px] text-base leading-[1.7] text-white/45 md:text-[17px]">
-              Most cardholders miss half their benefits. Memento makes sure yours don’t.
+              The Platinum Card comes with over $1,500 in annual value. Most of it goes unused. Memento tracks every
+              credit, reset, and perk so you actually capture what you’re paying for.
             </p>
           </div>
 
-          <div className="flex flex-col gap-4 pt-8 lg:pt-12">
+          <div className="flex flex-col gap-4 pt-6 lg:pt-9">
             <Link href="/login" className="group w-fit">
               <Button
                 size="lg"
-                className="inline-flex h-auto items-center gap-2.5 rounded-xl bg-[#4A9EFF] px-7 py-3.5 text-[15px] font-semibold text-white shadow-[0_0_40px_rgba(74,158,255,0.35)] transition-all duration-200 hover:-translate-y-px hover:bg-[#5FABFF] hover:shadow-[0_0_56px_rgba(74,158,255,0.5)]"
+                className="inline-flex h-auto items-center gap-2.5 rounded-xl bg-[#C8A94B] px-7 py-3.5 text-[15px] font-semibold text-[#17130A] transition-all duration-200 hover:-translate-y-px hover:bg-[#D6B75D] hover:shadow-[0_0_56px_rgba(200,169,75,0.42)]"
               >
                 Build Your Lineup
                 <svg
@@ -73,7 +74,7 @@ export function HeroSection() {
               </Button>
             </Link>
 
-            <div className="mt-5 flex flex-wrap gap-1.5 lg:mt-8">
+            <div className="mt-4 flex flex-wrap gap-1.5 lg:mt-6">
               {cardPills.map((pill) => (
                 <div
                   key={pill}
@@ -120,7 +121,12 @@ export function HeroSection() {
                 <div className="flex gap-3">
                   <div className="flex-1 rounded-xl border border-white/[0.06] bg-white/[0.03] p-4">
                     <p className="mb-1.5 text-[9px] font-semibold uppercase tracking-widest text-white/35">Value Remaining</p>
-                    <p className="text-2xl font-bold tracking-tight text-white">$2,419</p>
+                    <p
+                      className="text-2xl font-bold tracking-tight text-white"
+                      style={{ fontFamily: "var(--font-inter), sans-serif" }}
+                    >
+                      $2,419
+                    </p>
                     <div className="mt-2.5 h-1 overflow-hidden rounded-full bg-white/[0.07]">
                       <div className="h-full w-[88%] rounded-full bg-gradient-to-r from-[#4A9EFF] to-[#C8A94B]" />
                     </div>
