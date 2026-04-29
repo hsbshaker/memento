@@ -1,60 +1,62 @@
 "use client";
 
-import { Surface } from "@/components/ui/Surface";
-
 type ConfirmBenefitsSummaryProps = {
   cardCount: number;
-  benefitCount: number;
-  selectedCount: number;
-  onSelectAll: () => void;
-  onClearAll: () => void;
-  onSelectRecommended: () => void;
-  showZeroSelectedHint: boolean;
+  totalPotentialValueCents: number | null;
+  totalPotentialValueIsPartial: boolean;
 };
 
-function SummaryMetric({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.045] px-3.5 py-2">
-      <span className="text-sm font-semibold text-white">{value}</span>
-      <span className="text-sm text-white/56">{label}</span>
-    </div>
-  );
+const CURRENCY_FORMATTER = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+  maximumFractionDigits: 0,
+});
+
+function buildSummaryStatement({
+  cardCount,
+  totalPotentialValueCents,
+  totalPotentialValueIsPartial,
+}: ConfirmBenefitsSummaryProps) {
+  const cardLabel = cardCount === 1 ? "your card" : `your ${cardCount} cards`;
+
+  if (typeof totalPotentialValueCents === "number" && totalPotentialValueCents > 0) {
+    const amount = CURRENCY_FORMATTER.format(totalPotentialValueCents / 100);
+    return {
+      amount: `${amount}${totalPotentialValueIsPartial ? "+" : ""}`,
+      suffix: `in value across ${cardLabel}.`,
+    };
+  }
+
+  return {
+    amount: null,
+    suffix: `Benefits found across ${cardLabel}.`,
+  };
 }
 
 export function ConfirmBenefitsSummary({
   cardCount,
-  benefitCount,
-  selectedCount,
-  onSelectAll,
-  onClearAll,
-  onSelectRecommended,
-  showZeroSelectedHint,
+  totalPotentialValueCents,
+  totalPotentialValueIsPartial,
 }: ConfirmBenefitsSummaryProps) {
+  const statement = buildSummaryStatement({
+    cardCount,
+    totalPotentialValueCents,
+    totalPotentialValueIsPartial,
+  });
+
   return (
-    <Surface className="rounded-[1.75rem] border-white/10 bg-white/5 p-4">
-      <div className="flex flex-col gap-3">
-        <div className="flex flex-wrap items-center gap-2.5">
-          <SummaryMetric label={cardCount === 1 ? "card selected" : "cards selected"} value={String(cardCount)} />
-          <SummaryMetric label={benefitCount === 1 ? "benefit found" : "benefits found"} value={String(benefitCount)} />
-          <SummaryMetric label="selected" value={String(selectedCount)} />
-        </div>
-
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-          <button type="button" onClick={onSelectAll} className="text-sm font-medium text-white/62 transition hover:text-white/88">
-            Select all
-          </button>
-          <button type="button" onClick={onClearAll} className="text-sm font-medium text-white/62 transition hover:text-white/88">
-            Clear all
-          </button>
-          <button type="button" onClick={onSelectRecommended} className="text-sm font-medium text-[#F7D774]/88 transition hover:text-[#F7D774]">
-            Recommended
-          </button>
-        </div>
-
-        {showZeroSelectedHint ? (
-          <p className="text-sm text-white/46">Select at least one benefit to continue.</p>
-        ) : null}
-      </div>
-    </Surface>
+    <div className="px-2 py-0.5 sm:py-1">
+      <p className="mx-auto max-w-3xl text-center text-xl font-semibold tracking-tight text-white/90 sm:text-2xl">
+        {statement.amount ? (
+          <>
+            <span>Up to </span>
+            <span className="text-[#F7D774]">{statement.amount}</span>{" "}
+            <span>{statement.suffix}</span>
+          </>
+        ) : (
+          <span className="text-white/72">{statement.suffix}</span>
+        )}
+      </p>
+    </div>
   );
 }

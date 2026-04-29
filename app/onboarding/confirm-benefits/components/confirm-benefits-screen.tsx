@@ -7,10 +7,7 @@ import { ConfirmBenefitsShell } from "./confirm-benefits-shell";
 export function ConfirmBenefitsScreen({ data }: { data: ConfirmBenefitsPageData }) {
   return (
     <ConfirmBenefitsShell
-      eyebrow="Onboarding"
-      title="Confirm your reminders"
-      description="We found the benefits tied to your selected cards. Keep the ones you want Memento to track and remind you about."
-      supportingNote="You can change these anytime."
+      title="Personalize your reminders."
     >
       {data.totalCards === 0 ? (
         <div className="mx-auto max-w-xl">
@@ -30,16 +27,7 @@ export function ConfirmBenefitsScreen({ data }: { data: ConfirmBenefitsPageData 
           </Surface>
         </div>
       ) : (
-        <div className="space-y-5">
-          <div>
-            <Link
-              href="/onboarding/build-your-lineup"
-              className="inline-flex items-center rounded-lg px-2 py-1 text-sm text-white/60 transition hover:text-white/85 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F7C948]/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B1220]"
-            >
-              Back to wallet
-            </Link>
-          </div>
-
+        <div>
           <ConfirmBenefitsClient data={data} />
         </div>
       )}

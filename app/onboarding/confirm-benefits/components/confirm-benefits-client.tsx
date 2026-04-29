@@ -1,8 +1,10 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
+import { Surface } from "@/components/ui/Surface";
 import type { ConfirmBenefitCardGroup, ConfirmBenefitsPageData } from "./confirm-benefits-data";
 import { ConfirmBenefitsCardGroup as ConfirmBenefitsCardGroupSection } from "./confirm-benefits-card-group";
 import { ConfirmBenefitsSummary } from "./confirm-benefits-summary";
@@ -34,31 +36,6 @@ function getGroupSelectedCount(group: ConfirmBenefitCardGroup, selectedKeys: Set
   );
 }
 
-function getAllBenefitKeys(cardGroups: ConfirmBenefitCardGroup[]) {
-  return cardGroups.flatMap((group) =>
-    group.benefits.map((benefit) => makeBenefitKey(group.userCardId, benefit.benefitId)),
-  );
-}
-
-function getInitialExpandedGroups(cardGroups: ConfirmBenefitCardGroup[]) {
-  const totalBenefitCount = cardGroups.reduce((count, group) => count + group.totalCount, 0);
-  const expanded = new Set<string>();
-
-  if (totalBenefitCount <= 12) {
-    for (const group of cardGroups) {
-      expanded.add(group.userCardId);
-    }
-    return expanded;
-  }
-
-  const firstGroup = cardGroups[0];
-  if (firstGroup) {
-    expanded.add(firstGroup.userCardId);
-  }
-
-  return expanded;
-}
-
 function getFooterCopy(selectedCount: number, cardCount: number) {
   return {
     desktop: `${selectedCount} benefit${selectedCount === 1 ? "" : "s"} selected across ${cardCount} card${cardCount === 1 ? "" : "s"}`,
@@ -72,12 +49,11 @@ function hasAnniversaryDateValue(value: string | null | undefined) {
 
 export function ConfirmBenefitsClient({ data }: { data: ConfirmBenefitsPageData }) {
   const router = useRouter();
-  const allBenefitKeys = useMemo(() => getAllBenefitKeys(data.cardGroups), [data.cardGroups]);
   const [selectedKeys, setSelectedKeys] = useState<Set<SelectedBenefitKey>>(() =>
     getInitialSelectedKeys(data.cardGroups),
   );
-  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(() =>
-    getInitialExpandedGroups(data.cardGroups),
+  const [activeCardUserCardId, setActiveCardUserCardId] = useState<string>(
+    () => data.cardGroups[0]?.userCardId ?? "",
   );
   const [anniversaryDatesByGroup, setAnniversaryDatesByGroup] = useState<Record<string, string>>(() =>
     Object.fromEntries(data.cardGroups.map((group) => [group.userCardId, group.anniversaryDate ?? ""])),
@@ -111,6 +87,9 @@ export function ConfirmBenefitsClient({ data }: { data: ConfirmBenefitsPageData 
   );
   const hasMissingRequiredAnniversaryDate = groupsMissingRequiredAnniversaryDate.size > 0;
   const isFooterActionDisabled = totalSelected === 0 || hasMissingRequiredAnniversaryDate;
+  const hasMultipleCards = data.cardGroups.length > 1;
+  const activeCardGroup =
+    data.cardGroups.find((group) => group.userCardId === activeCardUserCardId) ?? data.cardGroups[0] ?? null;
 
   const handleSave = async () => {
     if (isFooterActionDisabled || isSaving) return;
@@ -171,19 +150,6 @@ export function ConfirmBenefitsClient({ data }: { data: ConfirmBenefitsPageData 
     }));
   };
 
-  const selectAll = () => {
-    setSelectedKeys(new Set(allBenefitKeys));
-  };
-
-  const clearAll = () => {
-    setSelectedKeys(new Set());
-  };
-
-  const selectRecommended = () => {
-    // TODO: Refine "recommended" once we have a more specific recommendation signal.
-    setSelectedKeys(new Set(allBenefitKeys));
-  };
-
   const selectGroup = (group: ConfirmBenefitCardGroup) => {
     setSelectedKeys((current) => {
       const next = new Set(current);
@@ -204,52 +170,106 @@ export function ConfirmBenefitsClient({ data }: { data: ConfirmBenefitsPageData 
     });
   };
 
-  const toggleExpandedGroup = (userCardId: string) => {
-    setExpandedGroups((current) => {
-      const next = new Set(current);
-      if (next.has(userCardId)) {
-        next.delete(userCardId);
-      } else {
-        next.add(userCardId);
-      }
-      return next;
-    });
-  };
-
   return (
     <div className="space-y-4 pb-32 sm:space-y-5 md:pb-40">
       <ConfirmBenefitsSummary
         cardCount={data.totalCards}
-        benefitCount={data.totalBenefits}
-        selectedCount={totalSelected}
-        onSelectAll={selectAll}
-        onClearAll={clearAll}
-        onSelectRecommended={selectRecommended}
-        showZeroSelectedHint={false}
+        totalPotentialValueCents={data.totalPotentialValueCents}
+        totalPotentialValueIsPartial={data.totalPotentialValueIsPartial}
       />
 
-      <div className="space-y-4">
-        {data.cardGroups.map((cardGroup) => {
-          const selectedCount = getGroupSelectedCount(cardGroup, selectedKeys);
+      <div className="pt-1">
+        <Link
+          href="/onboarding/build-your-lineup"
+          className="inline-flex items-center gap-2 text-sm font-medium text-white/54 transition hover:text-white/82 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F7C948]/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B1220]"
+        >
+          <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" className="h-4 w-4 shrink-0">
+            <path
+              d="m11.5 5.5-4 4 4 4"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+          <span>Back to wallet</span>
+        </Link>
+      </div>
 
-          return (
+      {activeCardGroup ? (
+        hasMultipleCards ? (
+          <Surface className="overflow-hidden rounded-[1.75rem] border-white/8 bg-white/[0.05] p-0">
+            <div className="px-4 pt-4 sm:px-5 sm:pt-5">
+              <div className="-mx-4 overflow-x-auto px-4 pb-2 sm:-mx-5 sm:px-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                <div role="tablist" aria-label="Selected cards" className="flex min-w-full gap-2 snap-x snap-mandatory">
+                  {data.cardGroups.map((cardGroup) => {
+                    const isActive = cardGroup.userCardId === activeCardGroup.userCardId;
+
+                    return (
+                      <button
+                        key={cardGroup.userCardId}
+                        type="button"
+                        onClick={() => setActiveCardUserCardId(cardGroup.userCardId)}
+                        role="tab"
+                        aria-selected={isActive}
+                        aria-controls={`card-panel-${cardGroup.userCardId}`}
+                        id={`card-tab-${cardGroup.userCardId}`}
+                        className={`shrink-0 snap-start rounded-full border px-3 py-2 text-left text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F7C948]/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B1220] ${
+                          isActive
+                            ? "border-white/12 bg-white/[0.06] text-white"
+                            : "border-transparent bg-transparent text-white/58 hover:bg-white/[0.03] hover:text-white/82"
+                        }`}
+                        tabIndex={isActive ? 0 : -1}
+                      >
+                        <span className="block truncate font-medium leading-5">
+                          {cardGroup.cardName} ({cardGroup.totalCount})
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            <div className="border-t border-white/[0.06]">
+              <div
+                role="tabpanel"
+                id={`card-panel-${activeCardGroup.userCardId}`}
+                aria-labelledby={`card-tab-${activeCardGroup.userCardId}`}
+              >
+                <ConfirmBenefitsCardGroupSection
+                  key={activeCardGroup.userCardId}
+                  cardGroup={activeCardGroup}
+                  selectedKeys={selectedKeys}
+                  selectedCount={getGroupSelectedCount(activeCardGroup, selectedKeys)}
+                  anniversaryDate={anniversaryDatesByGroup[activeCardGroup.userCardId] ?? ""}
+                  needsAnniversaryDate={groupsMissingRequiredAnniversaryDate.has(activeCardGroup.userCardId)}
+                  embedded
+                  onToggleBenefit={toggleBenefit}
+                  onAnniversaryDateChange={updateAnniversaryDate}
+                  onSelectAll={() => selectGroup(activeCardGroup)}
+                  onClearAll={() => clearGroup(activeCardGroup)}
+                />
+              </div>
+            </div>
+          </Surface>
+        ) : (
+          <div>
             <ConfirmBenefitsCardGroupSection
-              key={cardGroup.userCardId}
-              cardGroup={cardGroup}
+              key={activeCardGroup.userCardId}
+              cardGroup={activeCardGroup}
               selectedKeys={selectedKeys}
-              selectedCount={selectedCount}
-              anniversaryDate={anniversaryDatesByGroup[cardGroup.userCardId] ?? ""}
-              needsAnniversaryDate={groupsMissingRequiredAnniversaryDate.has(cardGroup.userCardId)}
-              isExpanded={expandedGroups.has(cardGroup.userCardId)}
-              onToggleExpanded={() => toggleExpandedGroup(cardGroup.userCardId)}
+              selectedCount={getGroupSelectedCount(activeCardGroup, selectedKeys)}
+              anniversaryDate={anniversaryDatesByGroup[activeCardGroup.userCardId] ?? ""}
+              needsAnniversaryDate={groupsMissingRequiredAnniversaryDate.has(activeCardGroup.userCardId)}
               onToggleBenefit={toggleBenefit}
               onAnniversaryDateChange={updateAnniversaryDate}
-              onSelectAll={() => selectGroup(cardGroup)}
-              onClearAll={() => clearGroup(cardGroup)}
+              onSelectAll={() => selectGroup(activeCardGroup)}
+              onClearAll={() => clearGroup(activeCardGroup)}
             />
-          );
-        })}
-      </div>
+          </div>
+        )
+      ) : null}
 
       {saveError ? (
         <p role="alert" aria-live="polite" className="text-sm text-rose-100/88">

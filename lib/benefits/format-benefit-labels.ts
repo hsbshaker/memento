@@ -16,6 +16,7 @@ type ConfigurationStatusInput = ConfigurationInput & {
   conditionalValue?: string | null;
 };
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function normalizeCardArtUrl(sourceUrl: string | null | undefined) {
   return null;
 }
@@ -105,6 +106,42 @@ export function getConfigurationStatus(input: ConfigurationStatusInput): Configu
   }
 
   return input.conditionalValue?.trim() ? "configured" : "needs_configuration";
+}
+
+export function formatBenefitDescriptionDisplay({
+  displayDescription,
+  notes,
+  benefitName,
+}: {
+  displayDescription: string | null | undefined;
+  notes: string | null | undefined;
+  benefitName: string;
+}): string | null {
+  const trimmed = displayDescription?.trim();
+  if (trimmed) return trimmed;
+
+  const trimmedNotes = notes?.trim();
+  if (trimmedNotes && trimmedNotes.length <= 140) {
+    const lower = trimmedNotes.toLowerCase();
+    // Skip notes that look like raw metadata or source URLs
+    if (!lower.startsWith("http") && !/^(annual|monthly|quarterly|semiannual|calendar year)/i.test(trimmedNotes)) {
+      return trimmedNotes;
+    }
+  }
+
+  const name = benefitName.toLowerCase();
+  if (name.includes("airline")) return "Statement credits for eligible airline incidental fees.";
+  if (name.includes("wireless")) return "Statement credits for eligible wireless purchases.";
+  if (name.includes("global entry") || name.includes("tsa precheck") || name.includes("tsa pre✓")) {
+    return "Credit for eligible application fees.";
+  }
+  if (name.includes("clear")) return "Credit toward an eligible CLEAR Plus membership.";
+  if (name.includes("hotel")) return "Statement credits for eligible hotel bookings.";
+  if (name.includes("dell")) return "Statement credits for eligible Dell purchases.";
+  if (name.includes("adobe")) return "Statement credits for eligible Adobe purchases.";
+  if (name.includes("indeed")) return "Statement credits for eligible Indeed purchases.";
+  if (name.includes("hilton")) return "Statement credits for eligible Hilton purchases.";
+  return "Track this benefit so Memento can remind you before it resets.";
 }
 
 export function getBenefitPeriodLabel({

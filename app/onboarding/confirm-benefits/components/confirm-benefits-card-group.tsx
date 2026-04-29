@@ -1,7 +1,7 @@
 "use client";
 
-import type { CheckedState } from "@radix-ui/react-checkbox";
-import { Checkbox } from "@/components/ui/checkbox";
+import { useRef, useState } from "react";
+import { cn } from "@/lib/cn";
 import { Surface } from "@/components/ui/Surface";
 import type { ConfirmBenefitCardGroup } from "./confirm-benefits-data";
 import { ConfirmBenefitRowItem } from "./confirm-benefit-row";
@@ -29,8 +29,7 @@ export function ConfirmBenefitsCardGroup({
   selectedCount,
   anniversaryDate,
   needsAnniversaryDate,
-  isExpanded,
-  onToggleExpanded,
+  embedded = false,
   onToggleBenefit,
   onAnniversaryDateChange,
   onSelectAll,
@@ -41,100 +40,70 @@ export function ConfirmBenefitsCardGroup({
   selectedCount: number;
   anniversaryDate: string;
   needsAnniversaryDate: boolean;
-  isExpanded: boolean;
-  onToggleExpanded: () => void;
+  embedded?: boolean;
   onToggleBenefit: (userCardId: string, benefitId: string) => void;
   onAnniversaryDateChange: (userCardId: string, value: string) => void;
   onSelectAll: () => void;
   onClearAll: () => void;
 }) {
   const hasBenefits = cardGroup.totalCount > 0;
-  const allSelected = hasBenefits && selectedCount === cardGroup.totalCount;
-  const noneSelected = selectedCount === 0;
-  const parentCheckedState: CheckedState = allSelected ? true : noneSelected ? false : "indeterminate";
   const hasSelectedAnniversaryBenefit = cardGroup.benefits.some(
     (benefit) =>
       benefit.requiresAnniversaryDate &&
       selectedKeys.has(makeBenefitKey(cardGroup.userCardId, benefit.benefitId)),
   );
+  const shouldConstrainBenefitList = cardGroup.totalCount > 5;
+  const Container = embedded ? "div" : Surface;
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+  const [showBottomFade, setShowBottomFade] = useState(shouldConstrainBenefitList);
 
   return (
-    <Surface className="rounded-[1.75rem] border-white/10 bg-white/6 p-4 sm:p-5">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <button
-          type="button"
-          onClick={onToggleExpanded}
-          className="min-w-0 flex-1 text-left outline-none transition hover:text-white focus-visible:ring-2 focus-visible:ring-[#F7C948]/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B1220]"
-          aria-expanded={isExpanded}
-          aria-controls={`benefit-group-${cardGroup.userCardId}`}
-        >
-          <div className="flex items-start gap-3">
-            <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-white/60">
-              <svg
-                viewBox="0 0 20 20"
-                fill="none"
-                aria-hidden="true"
-                className={`h-4 w-4 transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`}
-              >
-                <path d="m6 8 4 4 4-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </div>
-            <div className="min-w-0">
-              <h2 className="text-base font-semibold tracking-tight text-white sm:text-lg">{cardGroup.cardName}</h2>
-              <CardMeta issuer={cardGroup.issuer} />
-            </div>
-          </div>
-        </button>
-
-        <div className="flex flex-wrap items-center justify-end gap-x-4 gap-y-2 sm:text-right">
-          <div>
-            <p className="text-sm font-medium text-white/80">
+    <Container
+      className={cn(
+        "p-4 sm:p-5",
+        embedded ? "rounded-none border-0 bg-transparent shadow-none backdrop-blur-none" : "rounded-[1.75rem] border-white/8 bg-white/[0.05]",
+      )}
+    >
+      <div className="flex flex-col gap-4">
+        <div className="min-w-0">
+          <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between sm:gap-4">
+            <h2 className="text-base font-semibold tracking-tight text-white sm:text-lg">{cardGroup.cardName}</h2>
+            <p className="text-sm text-white/66">
               {selectedCount} of {cardGroup.totalCount} selected
             </p>
-            {hasBenefits ? (
-              <div className="mt-1 flex flex-wrap items-center justify-end gap-x-3 gap-y-1 text-sm text-white/52">
-                <button type="button" onClick={onSelectAll} className="transition hover:text-white/82">
-                  Select all
-                </button>
-                <span aria-hidden className="text-white/20">
-                  ·
-                </span>
-                <button type="button" onClick={onClearAll} className="transition hover:text-white/82">
-                  Clear
-                </button>
-              </div>
-            ) : null}
           </div>
+          <CardMeta issuer={cardGroup.issuer} />
+        </div>
 
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-white/50">
           {hasBenefits ? (
-            <Checkbox
-              checked={parentCheckedState}
-              onCheckedChange={(checked) => {
-                if (checked === true || checked === "indeterminate") {
-                  onSelectAll();
-                } else {
-                  onClearAll();
-                }
-              }}
-              aria-label={`Toggle all benefits for ${cardGroup.cardName}`}
-              className="mt-0.5 data-[state=indeterminate]:border-[#F7C948]/65 data-[state=indeterminate]:bg-[#F7C948]/18"
-            />
+            <>
+              <button type="button" onClick={onSelectAll} className="transition hover:text-white/78">
+                Select all
+              </button>
+              <span aria-hidden className="text-white/18">
+                ·
+              </span>
+              <button type="button" onClick={onClearAll} className="transition hover:text-white/78">
+                Clear
+              </button>
+            </>
           ) : null}
 
           {needsAnniversaryDate ? (
-            <div className="inline-flex w-fit shrink-0 items-center rounded-full border border-amber-300/22 bg-amber-300/8 px-2.5 py-1 text-[10px] font-medium tracking-[0.12em] text-amber-100/88 uppercase">
+            <div className="inline-flex w-fit shrink-0 items-center rounded-full border border-amber-300/18 bg-amber-300/6 px-2.5 py-1 text-[10px] font-medium tracking-[0.12em] text-amber-100/82 uppercase">
               Anniversary date needed
             </div>
           ) : null}
         </div>
       </div>
 
-      <div id={`benefit-group-${cardGroup.userCardId}`} className="mt-4">
+      <div className="mt-4">
         {cardGroup.totalCount === 0 ? (
           <div className="rounded-[1.25rem] border border-dashed border-white/10 bg-white/[0.03] px-4 py-4 text-sm text-white/55">
             No trackable benefits found for this card yet.
           </div>
-        ) : isExpanded ? (
+        ) : (
           <div className="space-y-3">
             {hasSelectedAnniversaryBenefit ? (
               <div
@@ -170,27 +139,54 @@ export function ConfirmBenefitsCardGroup({
               </div>
             ) : null}
 
-            <div className="border-t border-white/8 px-1 sm:px-2">
-              {cardGroup.benefits.map((benefit, index) => {
-                const checked = selectedKeys.has(makeBenefitKey(cardGroup.userCardId, benefit.benefitId));
+            <div className="relative overflow-hidden rounded-[1.15rem]">
+              <div
+                ref={scrollContainerRef}
+                tabIndex={shouldConstrainBenefitList ? 0 : undefined}
+                aria-label={shouldConstrainBenefitList ? `${cardGroup.cardName} benefits` : undefined}
+                onScroll={
+                  shouldConstrainBenefitList
+                    ? (event) => {
+                        const node = event.currentTarget;
+                        const remainingScroll = node.scrollHeight - node.scrollTop - node.clientHeight;
+                        setShowBottomFade(remainingScroll > 4);
+                      }
+                    : undefined
+                }
+                className={cn(
+                  "px-1 sm:px-2",
+                  shouldConstrainBenefitList &&
+                    "max-h-[17.75rem] overflow-y-auto pr-2 [scrollbar-color:rgba(255,255,255,0.18)_transparent] [scrollbar-width:thin] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-white/14 [&::-webkit-scrollbar-track]:bg-transparent sm:max-h-[18.5rem]",
+                )}
+              >
+                {cardGroup.benefits.map((benefit, index) => {
+                  const checked = selectedKeys.has(makeBenefitKey(cardGroup.userCardId, benefit.benefitId));
 
-                return (
-                  <div
-                    key={`${benefit.userCardId}-${benefit.benefitId}`}
-                    className={index > 0 ? "border-t border-white/8" : undefined}
-                  >
-                    <ConfirmBenefitRowItem
-                      benefit={benefit}
-                      checked={checked}
-                      onToggle={() => onToggleBenefit(cardGroup.userCardId, benefit.benefitId)}
-                    />
-                  </div>
-                );
-              })}
+                  return (
+                    <div
+                      key={`${benefit.userCardId}-${benefit.benefitId}`}
+                      className={index > 0 ? "mt-2 border-t border-white/[0.04] pt-2" : undefined}
+                    >
+                      <ConfirmBenefitRowItem
+                        benefit={benefit}
+                        checked={checked}
+                        onToggle={() => onToggleBenefit(cardGroup.userCardId, benefit.benefitId)}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+
+              {shouldConstrainBenefitList && showBottomFade ? (
+                <div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-x-0 bottom-0 h-7 rounded-b-[1.15rem] bg-gradient-to-t from-[#171b23] via-[#171b23]/78 to-transparent"
+                />
+              ) : null}
             </div>
           </div>
-        ) : null}
+        )}
       </div>
-    </Surface>
+    </Container>
   );
 }

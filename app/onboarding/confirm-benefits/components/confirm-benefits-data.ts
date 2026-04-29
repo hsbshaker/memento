@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { formatBenefitValue, getBenefitPeriodLabel } from "@/lib/benefits/format-benefit-labels";
+import { formatBenefitDescriptionDisplay, formatBenefitValue, getBenefitPeriodLabel } from "@/lib/benefits/format-benefit-labels";
 import { getIssuerDisplayName } from "@/lib/format-card";
 import { benefitRequiresAnniversaryDate } from "@/lib/onboarding/confirm-benefits";
 
@@ -44,6 +44,7 @@ type CanonicalBenefitRow = {
   track_in_memento: "yes" | "later" | "no" | null;
   source_url: string | null;
   notes: string | null;
+  display_description: string | null;
 };
 
 type UserBenefitPreferenceRow = {
@@ -67,6 +68,7 @@ export type ConfirmBenefitRow = {
   sourceUrl: string | null;
   requiresAnniversaryDate: boolean;
   selected: boolean;
+  descriptionDisplay: string | null;
 };
 
 export type ConfirmBenefitCardGroup = {
@@ -87,6 +89,8 @@ export type ConfirmBenefitsPageData = {
   totalCards: number;
   totalBenefits: number;
   totalSelected: number;
+  totalPotentialValueCents: number | null;
+  totalPotentialValueIsPartial: boolean;
 };
 
 function takeFirst<T>(value: T | T[] | null | undefined): T | null {
@@ -226,6 +230,35 @@ function buildResetDisplay(benefit: Pick<CanonicalBenefitRow, "cadence" | "reset
   return /^\d{4}$/.test(resetTiming) ? null : resetTiming;
 }
 
+function getAnnualizedBenefitValueCents(
+  benefit: Pick<CanonicalBenefitRow, "benefit_value" | "value_cents" | "cadence">,
+) {
+  const fallbackParsedValue = formatBenefitValue({
+    benefitValue: benefit.benefit_value,
+    valueCents: benefit.value_cents,
+  }).sortValue;
+  const baseValueCents = benefit.value_cents && benefit.value_cents > 0 ? benefit.value_cents : fallbackParsedValue;
+
+  if (baseValueCents == null || baseValueCents <= 0) {
+    return null;
+  }
+
+  switch ((benefit.cadence ?? "").trim()) {
+    case "monthly":
+      return baseValueCents * 12;
+    case "quarterly":
+      return baseValueCents * 4;
+    case "semiannual":
+    case "semi_annual":
+      return baseValueCents * 2;
+    case "annual":
+    case "":
+      return baseValueCents;
+    default:
+      return null;
+  }
+}
+
 export async function loadConfirmBenefitsData({
   supabase,
   userId,
@@ -254,6 +287,8 @@ export async function loadConfirmBenefitsData({
       totalCards: 0,
       totalBenefits: 0,
       totalSelected: 0,
+      totalPotentialValueCents: null,
+      totalPotentialValueIsPartial: false,
     };
   }
 
@@ -261,7 +296,7 @@ export async function loadConfirmBenefitsData({
   const { data: benefitRows, error: benefitError } = await supabase
     .from("benefits")
     .select(
-      "id, card_id, benefit_name, benefit_value, value_cents, cadence, reset_timing, enrollment_required, requires_setup, track_in_memento, source_url, notes",
+      "id, card_id, benefit_name, benefit_value, value_cents, cadence, reset_timing, enrollment_required, requires_setup, track_in_memento, source_url, notes, display_description",
     )
     .in("card_id", cardIds)
     .eq("track_in_memento", "yes");
@@ -329,6 +364,11 @@ export async function loadConfirmBenefitsData({
         sourceUrl: benefit.source_url,
         requiresAnniversaryDate,
         selected,
+        descriptionDisplay: formatBenefitDescriptionDisplay({
+          displayDescription: benefit.display_description,
+          notes: benefit.notes,
+          benefitName: benefit.benefit_name?.trim() || "Unnamed benefit",
+        }),
       } satisfies ConfirmBenefitRow;
     });
 
@@ -348,10 +388,29 @@ export async function loadConfirmBenefitsData({
     } satisfies ConfirmBenefitCardGroup;
   });
 
+  let totalPotentialValueCents = 0;
+  let hasIncludedPotentialValue = false;
+  let excludedValuableBenefitsCount = 0;
+
+  for (const benefit of typedBenefitRows) {
+    const annualizedValue = getAnnualizedBenefitValueCents(benefit);
+    if (annualizedValue != null) {
+      totalPotentialValueCents += annualizedValue;
+      hasIncludedPotentialValue = true;
+      continue;
+    }
+
+    if ((benefit.value_cents ?? 0) > 0) {
+      excludedValuableBenefitsCount += 1;
+    }
+  }
+
   return {
     cardGroups,
     totalCards: cardGroups.length,
     totalBenefits: cardGroups.reduce((sum, group) => sum + group.totalCount, 0),
     totalSelected: cardGroups.reduce((sum, group) => sum + group.selectedCount, 0),
+    totalPotentialValueCents: hasIncludedPotentialValue ? totalPotentialValueCents : null,
+    totalPotentialValueIsPartial: excludedValuableBenefitsCount > 0,
   };
 }
