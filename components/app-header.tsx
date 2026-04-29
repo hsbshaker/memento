@@ -27,7 +27,7 @@ export function AppHeader() {
   const navRef = useRef<HTMLElement | null>(null);
 
   const showNav = !pathname.startsWith("/onboarding/success");
-  const shouldHideHeader = pathname === "/" || pathname.startsWith("/onboarding/build-your-lineup");
+  const shouldHideHeader = pathname === "/" || pathname.startsWith("/onboarding");
 
   const activeTab = useMemo<TabId | null>(() => {
     if (pathname.startsWith("/home")) return "home";
