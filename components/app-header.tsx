@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { KeyboardEvent, useEffect, useMemo, useRef, useState } from "react";
 import { cn } from "@/lib/cn";
 
-type TabId = "wallet" | "dashboard" | "reminders";
+type TabId = "wallet" | "home" | "settings";
 
 type Tab = {
   id: TabId;
@@ -15,9 +15,9 @@ type Tab = {
 };
 
 const tabs: Tab[] = [
-  { id: "dashboard", label: "Dashboard", href: "/dashboard", comingSoon: false },
-  { id: "wallet", label: "Wallet Builder", href: "/onboarding/build-your-lineup", comingSoon: false },
-  { id: "reminders", label: "Personalize Reminders", href: "/onboarding/benefits", comingSoon: false },
+  { id: "home", label: "Home", href: "/home", comingSoon: false },
+  { id: "wallet", label: "Wallet", href: "/wallet", comingSoon: false },
+  { id: "settings", label: "Settings", href: "/settings", comingSoon: false },
 ];
 
 export function AppHeader() {
@@ -27,18 +27,19 @@ export function AppHeader() {
   const navRef = useRef<HTMLElement | null>(null);
 
   const showNav = !pathname.startsWith("/onboarding/success");
+  const shouldHideHeader = pathname === "/" || pathname.startsWith("/onboarding/build-your-lineup");
 
   const activeTab = useMemo<TabId | null>(() => {
-    if (pathname.startsWith("/dashboard")) return "dashboard";
-    if (pathname.startsWith("/onboarding/build-your-lineup") || pathname.startsWith("/wallet")) return "wallet";
-    if (pathname.startsWith("/onboarding/benefits") || pathname.startsWith("/benefits")) return "reminders";
+    if (pathname.startsWith("/home")) return "home";
+    if (pathname.startsWith("/wallet")) return "wallet";
+    if (pathname.startsWith("/settings")) return "settings";
     return null;
   }, [pathname]);
 
   const mobilePageTitle = useMemo(() => {
-    if (activeTab === "wallet") return "Wallet Builder";
-    if (activeTab === "reminders") return "Personalize Reminders";
-    if (activeTab === "dashboard") return "Dashboard";
+    if (activeTab === "wallet") return "Wallet";
+    if (activeTab === "settings") return "Settings";
+    if (activeTab === "home") return "Home";
     return "Memento";
   }, [activeTab]);
 
@@ -95,6 +96,10 @@ export function AppHeader() {
     if (event && event.key !== "Enter" && event.key !== " ") return;
     setComingSoonTab(tab.id);
   };
+
+  if (shouldHideHeader) {
+    return null;
+  }
 
   return (
     <header className="relative z-40 bg-transparent">
