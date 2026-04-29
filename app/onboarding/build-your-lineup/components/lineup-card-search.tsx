@@ -312,7 +312,7 @@ export function LineupCardSearch() {
       } = await supabase.auth.getUser();
 
       if (authError || !user) {
-        router.push("/auth/login");
+        window.location.assign("/auth/login");
         return;
       }
 
