@@ -52,7 +52,7 @@ export function HeroSection() {
           </div>
 
           <div className="flex flex-col gap-4 pt-6 lg:pt-9">
-            <Link href="/login" className="group w-fit">
+            <Link href="/auth/login" className="group w-fit">
               <Button
                 size="lg"
                 className="inline-flex h-auto items-center gap-2.5 rounded-xl bg-[#C8A94B] px-7 py-3.5 text-[15px] font-semibold text-[#17130A] transition-all duration-200 hover:-translate-y-px hover:bg-[#D6B75D] hover:shadow-[0_0_56px_rgba(200,169,75,0.42)]"

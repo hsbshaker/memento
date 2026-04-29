@@ -42,7 +42,7 @@ export async function GET(request: Request) {
   if (q.length > 0) {
     const escapedQuery = escapeIlikeValue(q);
     query = query.or(
-      `card_name.ilike.%${escapedQuery}%,display_name.ilike.%${escapedQuery}%,issuer.ilike.%${escapedQuery}%,network.ilike.%${escapedQuery}%`,
+      `card_name.ilike.%${escapedQuery}%,display_name.ilike.%${escapedQuery}%`,
     );
   }
 

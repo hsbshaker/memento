@@ -21,7 +21,7 @@ export function FinalCtaSection() {
             <p className="mx-auto mb-10 max-w-md text-[13.5px] leading-relaxed text-white/35">
               Two minutes to set up. No bank login. No card numbers.
             </p>
-            <Link href="/login" className="group inline-flex">
+            <Link href="/auth/login" className="group inline-flex">
               <Button
                 size="lg"
                 className="inline-flex h-auto items-center gap-2.5 rounded-xl bg-[#C8A94B] px-8 py-3.5 text-[15px] font-semibold text-[#17130A] shadow-[0_0_40px_rgba(200,169,75,0.3)] transition-all duration-200 hover:-translate-y-px hover:bg-[#D6B75D] hover:shadow-[0_0_56px_rgba(200,169,75,0.42)]"

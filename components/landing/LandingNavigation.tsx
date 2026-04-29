@@ -23,7 +23,7 @@ export function LandingNavigation() {
           >
             Dashboard
           </Link>
-          <Link href="/login">
+          <Link href="/auth/login">
             <Button
               variant="secondary"
               size="sm"
