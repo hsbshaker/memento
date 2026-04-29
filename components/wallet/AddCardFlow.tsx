@@ -82,14 +82,14 @@ export function AddCardFlow() {
 
         if (!mounted) return;
         if (!user) {
-          router.replace("/login");
+          window.location.replace("/auth/login");
           return;
         }
 
         setAuthResolved(true);
       } catch {
         if (!mounted) return;
-        router.replace("/login");
+        window.location.replace("/auth/login");
       }
     };
 

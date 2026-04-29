@@ -1,5 +1,5 @@
-import { BenefitsOnboarding } from "./components/benefits-onboarding";
+import { redirect } from "next/navigation";
 
 export default function BenefitsOnboardingPage() {
-  return <BenefitsOnboarding />;
+  redirect("/home");
 }

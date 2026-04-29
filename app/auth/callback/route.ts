@@ -1,8 +1,10 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { isNewAuthUser } from "@/lib/auth/is-new-auth-user";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 const ERROR_REDIRECT = "/auth/error?reason=oauth_callback_failed&detail=exchange_failed";
-const SUCCESS_REDIRECT = "/onboarding/benefits";
+const NEW_USER_REDIRECT = "/onboarding/build-your-lineup";
+const RETURNING_USER_REDIRECT = "/home";
 
 export async function GET(request: NextRequest) {
   const code = request.nextUrl.searchParams.get("code");
@@ -36,7 +38,23 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(new URL(ERROR_REDIRECT, origin));
     }
 
-    return NextResponse.redirect(new URL(SUCCESS_REDIRECT, origin));
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+
+    if (userError || !user) {
+      console.error("Auth callback could not load user after exchange", {
+        origin,
+        pathname,
+        hasCode: true,
+        message: userError?.message ?? "Missing user after exchange",
+      });
+      return NextResponse.redirect(new URL(ERROR_REDIRECT, origin));
+    }
+
+    const successRedirect = isNewAuthUser(user) ? NEW_USER_REDIRECT : RETURNING_USER_REDIRECT;
+    return NextResponse.redirect(new URL(successRedirect, origin));
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown callback exchange error";
     console.error("Auth callback threw", {
