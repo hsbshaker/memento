@@ -41,6 +41,12 @@ export function ConfirmBenefitsShell({
       </div>
 
       <div className="relative z-10 min-h-[100dvh] px-6 py-6">
+        <nav className="mx-auto flex w-full max-w-2xl items-center justify-center px-6 py-6">
+          <div className="flex items-center gap-2 text-xl font-bold tracking-tight text-white">
+            <div className="h-6 w-6 rounded-full bg-gradient-to-tr from-[#4A9EFF] to-[#C8A94B]/80" />
+            Memento
+          </div>
+        </nav>
         <div className="mx-auto max-w-4xl">
           <header className="mb-6 text-center sm:mb-7">
             {eyebrow ? (

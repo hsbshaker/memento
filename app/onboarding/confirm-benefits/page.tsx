@@ -13,7 +13,11 @@ export default async function ConfirmBenefitsPage() {
     redirect("/auth/login");
   }
 
+  const MIN_MS = 6100;
+  const t0 = Date.now();
   const data = await loadConfirmBenefitsData({ supabase, userId: user.id });
+  const remaining = MIN_MS - (Date.now() - t0);
+  if (remaining > 0) await new Promise((r) => setTimeout(r, remaining));
 
   return <ConfirmBenefitsScreen data={data} />;
 }

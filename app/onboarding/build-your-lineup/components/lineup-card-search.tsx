@@ -354,7 +354,7 @@ export function LineupCardSearch() {
           });
 
           if (bootstrapError) {
-            throw new Error("Could not prepare your benefits.");
+            console.error(`Failed to bootstrap user benefits for card ${cardId}`, bootstrapError);
           }
         }
       }

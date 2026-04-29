@@ -812,7 +812,7 @@ export function WalletBuilder() {
             </div>
           </Surface>
 
-        <Surface as="section" className="w-full min-w-0 border-white/18 bg-white/10 p-5 sm:p-6">
+        <Surface as="section" className="w-full min-w-0 border-white/8 bg-white/[0.05] p-4 sm:p-5">
           <div className="mb-4 flex items-start justify-between gap-3">
             <div>
               <p className="text-xs font-medium uppercase tracking-wide text-white/60">
@@ -832,12 +832,12 @@ export function WalletBuilder() {
                 className="max-h-[45vh] overflow-y-auto pr-1 sm:max-h-[360px] [scrollbar-width:thin] [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-white/25 [&::-webkit-scrollbar-track]:bg-transparent"
                 onScroll={updateWalletScrollCue}
               >
-                <ul className="divide-y divide-white/10">
+                <ul className="divide-y divide-white/[0.04]">
                   {savedCards.map((card) => (
                     <li
                       key={card.cardId}
                       className={cn(
-                        "flex items-center justify-between gap-3 px-4 py-4 transition-opacity transition-colors duration-200 hover:bg-white/[0.025] sm:py-3",
+                        "flex items-center justify-between gap-3 py-4 transition-opacity transition-colors duration-200 hover:bg-white/[0.025] first:pt-0 last:pb-0 sm:py-4",
                         enteringCardIds.has(card.cardId) ? "opacity-0" : "opacity-100",
                       )}
                     >
