@@ -10,9 +10,10 @@ import {
 import { sortHomeFeedItems } from "@/lib/benefits/rank-benefits";
 import { buildBenefitPeriodStatusMap } from "@/lib/benefits/usage-state";
 import { getIssuerDisplayName, getIssuerShortLabel } from "@/lib/format-card";
-import { buildHomeState } from "@/lib/home/build-home-state";
+import { buildHomeFeedModel } from "@/lib/home/home-feed-model";
+import { DEFAULT_HOME_TIMEFRAME, getHomeTimeframeOption } from "@/lib/home/home-timeframes";
 import { getServiceRoleSupabaseClient } from "@/lib/supabase/service-role";
-import type { HomeFeedItem, HomeFeedResult, HomeMetric } from "@/lib/types/server-data";
+import type { HomeFeedItem, HomeFeedResult, HomeMetric, HomeTimeframeKey } from "@/lib/types/server-data";
 
 type HomeCandidateRow = {
   id: string;
@@ -104,7 +105,6 @@ type PeriodStatusRow = {
 };
 
 const RESETTING_SOON_WINDOW_DAYS = 14;
-const NEXT_BENEFITS_LIMIT = 6;
 const CURRENCY_FORMATTER = new Intl.NumberFormat("en-US", {
   style: "currency",
   currency: "USD",
@@ -265,7 +265,10 @@ function mapHomeFeedItem(
   };
 }
 
-export async function buildHomeFeed(userId: string): Promise<HomeFeedResult> {
+export async function buildHomeFeed(
+  userId: string,
+  timeframe: HomeTimeframeKey = DEFAULT_HOME_TIMEFRAME,
+): Promise<HomeFeedResult> {
   const supabase = getServiceRoleSupabaseClient();
   const now = new Date();
 
@@ -283,26 +286,30 @@ export async function buildHomeFeed(userId: string): Promise<HomeFeedResult> {
   const trackedCardIds = (trackedCardRows ?? []).map((row) => (row as { id: string }).id);
 
   if (trackedCards === 0) {
+    const timeframeOption = getHomeTimeframeOption(timeframe);
+
     return {
+      timeframe: timeframeOption,
       metrics: {
         availableNow: buildMetric(0, "Unused value available in the current period."),
-        resettingSoon: buildMetric(0, "Unused value resetting within the next 14 days."),
+        resettingSoon: buildMetric(0, "Unused value expiring in view."),
         capturedThisPeriod: buildMetric(0, "Value you’ve already captured this period."),
       },
-      urgentBenefits: [],
-      urgentBenefitCount: 0,
-      nextBenefits: [],
-      nextBenefitCount: 0,
+      expiringBenefits: [],
+      expiringBenefitCount: 0,
+      usedExpiringBenefits: [],
+      usedExpiringBenefitCount: 0,
       walletSummary: {
         trackedBenefits: 0,
         trackedCards: 0,
       },
-      state: buildHomeState({
-        trackedCards: 0,
-        trackedBenefits: 0,
-        urgentBenefitCount: 0,
-        nextBenefitCount: 0,
-      }),
+      state: {
+        isEmpty: true,
+        isAllCaughtUp: false,
+        headline: "Add your first card to get started.",
+        supportingText: "Track benefits here so Memento can tell you what to use next.",
+      },
+      
     };
   }
 
@@ -374,52 +381,11 @@ export async function buildHomeFeed(userId: string): Promise<HomeFeedResult> {
       .filter((row): row is HomeFeedItem => row !== null),
   );
 
-  const unusedBenefits = allTrackedBenefits.filter((item) => !item.isUsedThisPeriod);
-  const actionableBenefits = unusedBenefits.filter((item) => {
-    if (item.snoozedUntil && new Date(item.snoozedUntil) > now) {
-      return false;
-    }
-
-    return true;
+  return buildHomeFeedModel({
+    allTrackedBenefits,
+    trackedBenefits: trackedBenefitsCount ?? 0,
+    trackedCards,
+    now,
+    timeframe,
   });
-
-  const urgentBenefits = actionableBenefits.filter((item) => item.daysRemaining <= RESETTING_SOON_WINDOW_DAYS);
-  const nextBenefitsAll = actionableBenefits.filter((item) => item.daysRemaining > RESETTING_SOON_WINDOW_DAYS);
-  const nextBenefits = nextBenefitsAll.slice(0, NEXT_BENEFITS_LIMIT);
-
-  const availableNowValueCents = unusedBenefits.reduce((sum, item) => sum + item.currentPeriodValueCents, 0);
-  const resettingSoonValueCents = unusedBenefits
-    .filter((item) => item.daysRemaining <= RESETTING_SOON_WINDOW_DAYS)
-    .reduce((sum, item) => sum + item.currentPeriodValueCents, 0);
-  const capturedThisPeriodValueCents = allTrackedBenefits
-    .filter((item) => item.isUsedThisPeriod)
-    .reduce((sum, item) => sum + item.currentPeriodValueCents, 0);
-
-  return {
-    metrics: {
-      availableNow: buildMetric(availableNowValueCents, "Unused value available in the current period."),
-      resettingSoon: buildMetric(
-        resettingSoonValueCents,
-        "Unused value resetting within the next 14 days.",
-      ),
-      capturedThisPeriod: buildMetric(
-        capturedThisPeriodValueCents,
-        "Value you’ve already captured this period.",
-      ),
-    },
-    urgentBenefits,
-    urgentBenefitCount: urgentBenefits.length,
-    nextBenefits,
-    nextBenefitCount: nextBenefitsAll.length,
-    walletSummary: {
-      trackedBenefits: trackedBenefitsCount ?? 0,
-      trackedCards,
-    },
-    state: buildHomeState({
-      trackedCards,
-      trackedBenefits: trackedBenefitsCount ?? 0,
-      urgentBenefitCount: urgentBenefits.length,
-      nextBenefitCount: nextBenefitsAll.length,
-    }),
-  };
 }

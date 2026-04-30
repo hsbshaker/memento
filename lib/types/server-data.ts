@@ -4,6 +4,7 @@ export type SupportedBenefitCadence = "monthly" | "quarterly" | "semiannual" | "
 export type ConfigurationType = "selection" | "setup" | null;
 export type ConfigurationStatus = "not_required" | "configured" | "needs_configuration";
 export type HomeUrgencyTier = "high" | "soon" | "upcoming";
+export type HomeTimeframeKey = "next_14_days" | "next_30_days" | "next_90_days" | "next_6_months" | "this_year";
 
 export interface BenefitPeriodResult {
   periodStartDate: string;
@@ -137,6 +138,12 @@ export interface HomeMetric {
   helperText: string;
 }
 
+export interface HomeTimeframeOption {
+  key: HomeTimeframeKey;
+  label: string;
+  shortLabel: string;
+}
+
 export interface HomeDashboardState {
   isEmpty: boolean;
   isAllCaughtUp: boolean;
@@ -145,15 +152,16 @@ export interface HomeDashboardState {
 }
 
 export interface HomeFeedResult {
+  timeframe: HomeTimeframeOption;
   metrics: {
     availableNow: HomeMetric;
     resettingSoon: HomeMetric;
     capturedThisPeriod: HomeMetric;
   };
-  urgentBenefits: HomeFeedItem[];
-  urgentBenefitCount: number;
-  nextBenefits: HomeFeedItem[];
-  nextBenefitCount: number;
+  expiringBenefits: HomeFeedItem[];
+  expiringBenefitCount: number;
+  usedExpiringBenefits: HomeFeedItem[];
+  usedExpiringBenefitCount: number;
   walletSummary: {
     trackedBenefits: number;
     trackedCards: number;

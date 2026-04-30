@@ -1,17 +1,15 @@
 "use client";
 
 import { startTransition, useState } from "react";
-import type { HomeFeedItem, HomeFeedResult, HomeMetric } from "@/lib/types/server-data";
-import { buildHomeState } from "@/lib/home/build-home-state";
+import { ChevronDown } from "lucide-react";
+import type { HomeFeedItem, HomeFeedResult } from "@/lib/types/server-data";
+import { HOME_TIMEFRAME_OPTIONS } from "@/lib/home/home-timeframes";
+import { applyUrgentBenefitUsageMutation } from "@/lib/home/optimistic-home-feed";
 import { AppShell } from "@/components/ui/AppShell";
 import { MobilePageContainer } from "@/components/ui/MobilePageContainer";
 import { Surface } from "@/components/ui/Surface";
-import { HomeHeader } from "@/components/home/HomeHeader";
-import { UseSoonList } from "@/components/home/UseSoonList";
-import { ComingUpSection } from "@/components/home/ComingUpSection";
-import { WalletSummaryRow } from "@/components/home/WalletSummaryRow";
-import { BenefitActionOverlay } from "@/components/home/BenefitActionOverlay";
-import { AllClearState } from "@/components/home/AllClearState";
+import { HomeMetricStrip } from "@/components/home/HomeMetricStrip";
+import { HomeBenefitRows } from "@/components/home/HomeBenefitRows";
 import { EmptyHomeState } from "@/components/home/EmptyHomeState";
 
 type HomeScreenProps = {
@@ -21,80 +19,21 @@ type HomeScreenProps = {
 type FeedResponse = HomeFeedResult & {
   error?: string;
 };
-
-const CURRENCY_FORMATTER = new Intl.NumberFormat("en-US", {
-  style: "currency",
-  currency: "USD",
-  maximumFractionDigits: 0,
-});
-
-function rebuildState(feed: HomeFeedResult, urgentBenefitCount: number, nextBenefitCount: number) {
-  return buildHomeState({
-    trackedCards: feed.walletSummary.trackedCards,
-    trackedBenefits: feed.walletSummary.trackedBenefits,
-    urgentBenefitCount,
-    nextBenefitCount,
-  });
-}
-
-function rebuildMetric(metric: HomeMetric, nextValueCents: number): HomeMetric {
-  return {
-    ...metric,
-    valueCents: nextValueCents,
-    valueLabel: CURRENCY_FORMATTER.format(nextValueCents / 100),
-  };
-}
-
-function removeItemFromFeed(feed: HomeFeedResult, item: HomeFeedItem, action: "mark-used" | "snooze"): HomeFeedResult {
-  const wasUrgent = feed.urgentBenefits.some((candidate) => candidate.userBenefitId === item.userBenefitId);
-  const wasNext = feed.nextBenefits.some((candidate) => candidate.userBenefitId === item.userBenefitId);
-  const nextUrgentBenefits = feed.urgentBenefits.filter((candidate) => candidate.userBenefitId !== item.userBenefitId);
-  const nextBenefits = feed.nextBenefits.filter((candidate) => candidate.userBenefitId !== item.userBenefitId);
-  const nextUrgentCount = Math.max(0, feed.urgentBenefitCount - (wasUrgent ? 1 : 0));
-  const nextBenefitCount = Math.max(0, feed.nextBenefitCount - (wasNext ? 1 : 0));
-  const nextAvailableNow =
-    action === "mark-used"
-      ? Math.max(0, feed.metrics.availableNow.valueCents - item.currentPeriodValueCents)
-      : feed.metrics.availableNow.valueCents;
-  const nextResettingSoon =
-    action === "mark-used" && item.daysRemaining <= 14
-      ? Math.max(0, feed.metrics.resettingSoon.valueCents - item.currentPeriodValueCents)
-      : feed.metrics.resettingSoon.valueCents;
-  const nextCapturedThisPeriod =
-    action === "mark-used"
-      ? feed.metrics.capturedThisPeriod.valueCents + item.currentPeriodValueCents
-      : feed.metrics.capturedThisPeriod.valueCents;
-
-  return {
-    ...feed,
-    metrics: {
-      availableNow: rebuildMetric(feed.metrics.availableNow, nextAvailableNow),
-      resettingSoon: rebuildMetric(feed.metrics.resettingSoon, nextResettingSoon),
-      capturedThisPeriod: rebuildMetric(feed.metrics.capturedThisPeriod, nextCapturedThisPeriod),
-    },
-    urgentBenefits: nextUrgentBenefits,
-    urgentBenefitCount: nextUrgentCount,
-    nextBenefits,
-    nextBenefitCount,
-    state: rebuildState(feed, nextUrgentCount, nextBenefitCount),
-  };
-}
+type UrgentTab = "unused" | "used";
 
 export function HomeScreen({ initialFeed }: HomeScreenProps) {
   const [feed, setFeed] = useState(initialFeed);
-  const [overlayItem, setOverlayItem] = useState<HomeFeedItem | null>(null);
-  const [pendingById, setPendingById] = useState<Record<string, "mark-used" | "snooze" | null>>({});
-  const [refreshing, setRefreshing] = useState(false);
+  const [pendingById, setPendingById] = useState<Record<string, "mark-used" | "mark-not-used" | null>>({});
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [activeUrgentTab, setActiveUrgentTab] = useState<UrgentTab>("unused");
+  const [selectedTimeframe, setSelectedTimeframe] = useState(initialFeed.timeframe.key);
+  const [isRefreshingTimeframe, setIsRefreshingTimeframe] = useState(false);
 
-  const showAllClear = !feed.state.isEmpty && feed.urgentBenefitCount === 0;
-
-  const refreshFeed = async () => {
-    setRefreshing(true);
+  const refreshFeed = async (timeframe = selectedTimeframe) => {
     setErrorMessage(null);
 
     try {
-      const response = await fetch("/api/home/feed", {
+      const response = await fetch(`/api/home/feed?timeframe=${timeframe}`, {
         method: "GET",
         credentials: "include",
       });
@@ -109,20 +48,18 @@ export function HomeScreen({ initialFeed }: HomeScreenProps) {
       });
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Couldn’t refresh. Showing last known state.");
-    } finally {
-      setRefreshing(false);
     }
   };
 
-  const runMutation = async (item: HomeFeedItem, route: "/api/home/mark-used" | "/api/home/snooze", action: "mark-used" | "snooze") => {
+  const runUsageMutation = async (item: HomeFeedItem, nextUsed: boolean) => {
     const previousFeed = feed;
+    const action = nextUsed ? "mark-used" : "mark-not-used";
     setPendingById((current) => ({ ...current, [item.userBenefitId]: action }));
     setErrorMessage(null);
-    setFeed(removeItemFromFeed(feed, item, action));
-    setOverlayItem((current) => (current?.userBenefitId === item.userBenefitId ? null : current));
+    setFeed(applyUrgentBenefitUsageMutation(feed, item, nextUsed));
 
     try {
-      const response = await fetch(route, {
+      const response = await fetch("/api/home/mark-used", {
         method: "POST",
         credentials: "include",
         headers: {
@@ -130,6 +67,7 @@ export function HomeScreen({ initialFeed }: HomeScreenProps) {
         },
         body: JSON.stringify({
           userBenefitId: item.userBenefitId,
+          isUsedThisPeriod: nextUsed,
         }),
       });
       const payload = (await response.json()) as { error?: string };
@@ -138,19 +76,47 @@ export function HomeScreen({ initialFeed }: HomeScreenProps) {
         throw new Error(payload.error ?? "Failed to save.");
       }
 
-      void refreshFeed();
+      void refreshFeed(selectedTimeframe);
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Couldn’t refresh. Showing last known state.");
       setFeed(previousFeed);
-      void refreshFeed();
+      void refreshFeed(selectedTimeframe);
     } finally {
       setPendingById((current) => ({ ...current, [item.userBenefitId]: null }));
     }
   };
 
+  const changeTimeframe = async (nextTimeframe: string) => {
+    const previousTimeframe = selectedTimeframe;
+    setSelectedTimeframe(nextTimeframe as typeof selectedTimeframe);
+    setIsRefreshingTimeframe(true);
+    setErrorMessage(null);
+
+    try {
+      const response = await fetch(`/api/home/feed?timeframe=${nextTimeframe}`, {
+        method: "GET",
+        credentials: "include",
+      });
+      const payload = (await response.json()) as FeedResponse;
+
+      if (!response.ok) {
+        throw new Error(payload.error ?? "Failed to refresh.");
+      }
+
+      startTransition(() => {
+        setFeed(payload);
+      });
+    } catch (error) {
+      setSelectedTimeframe(previousTimeframe);
+      setErrorMessage(error instanceof Error ? error.message : "Couldn’t refresh. Showing last known state.");
+    } finally {
+      setIsRefreshingTimeframe(false);
+    }
+  };
+
   if (feed.state.isEmpty) {
     return (
-      <AppShell containerClassName="max-w-4xl px-0 md:px-6">
+      <AppShell containerClassName="max-w-5xl px-0 md:px-6">
         <MobilePageContainer className="pb-20">
           <EmptyHomeState />
         </MobilePageContainer>
@@ -158,49 +124,91 @@ export function HomeScreen({ initialFeed }: HomeScreenProps) {
     );
   }
 
-  return (
-    <AppShell containerClassName="max-w-4xl px-0 md:px-6">
-      <MobilePageContainer className="pb-20">
-        <div className="space-y-6 pt-6">
-          <HomeHeader headline={feed.state.headline} refreshing={refreshing} onRefresh={() => void refreshFeed()} />
+  const timeframeShortLabel = feed.timeframe.shortLabel;
+  const urgentTabs = [
+    { id: "unused" as const, label: `Unused (${feed.expiringBenefitCount})` },
+    { id: "used" as const, label: `Used (${feed.usedExpiringBenefitCount})` },
+  ];
+  const activeUrgentItems = activeUrgentTab === "unused" ? feed.expiringBenefits : feed.usedExpiringBenefits;
 
+  return (
+    <AppShell containerClassName="max-w-5xl px-0 md:px-6">
+      <MobilePageContainer className="pb-20">
+        <div className="space-y-6 pt-5">
           {errorMessage ? (
-            <Surface className="rounded-2xl border-amber-300/20 bg-amber-300/10 p-4 text-sm text-amber-100">
+            <Surface className="rounded-2xl border-amber-300/20 bg-amber-300/10 p-4 text-sm text-amber-100 shadow-none backdrop-blur-0">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <p>Couldn’t refresh. Showing last known state.</p>
-                <button type="button" onClick={() => void refreshFeed()} className="text-left font-semibold underline decoration-amber-100/40 underline-offset-4">
+                <button
+                  type="button"
+                  onClick={() => void refreshFeed()}
+                  className="text-left font-semibold underline decoration-amber-100/40 underline-offset-4"
+                >
                   Retry
                 </button>
               </div>
             </Surface>
           ) : null}
 
-          {showAllClear ? <AllClearState headline={feed.state.headline} /> : null}
+          <HomeMetricStrip metrics={feed.metrics} />
 
-          <UseSoonList
-            items={feed.urgentBenefits}
-            hiddenCount={0}
+          <HomeBenefitRows
+            title="Expiring Benefits"
+            items={activeUrgentItems}
+            variant={activeUrgentTab === "unused" ? "urgent" : "used"}
             pendingById={pendingById}
-            onOpenItem={setOverlayItem}
-            onMarkUsed={(item) => void runMutation(item, "/api/home/mark-used", "mark-used")}
-            onSnooze={(item) => void runMutation(item, "/api/home/snooze", "snooze")}
-          />
+            onAction={(item) => void runUsageMutation(item, activeUrgentTab === "unused")}
+            actionLabel={activeUrgentTab === "unused" ? "Mark Used" : "Mark Not Used"}
+            headerAccessory={
+              <div className="flex w-full flex-col gap-2.5 sm:w-auto sm:flex-row sm:items-center sm:justify-end sm:gap-3">
+                <div className="relative w-full sm:w-auto">
+                  <select
+                    value={selectedTimeframe}
+                    onChange={(event) => void changeTimeframe(event.target.value)}
+                    disabled={isRefreshingTimeframe}
+                    aria-label="Choose expiration timeframe"
+                    className="w-full appearance-none rounded-full border border-white/[0.06] bg-white/[0.02] px-3.5 py-1.5 pr-9 text-[13px] font-medium text-white/84 outline-none transition-[border-color,background-color] duration-200 hover:border-white/[0.12] hover:bg-white/[0.028] focus:border-white/[0.14] sm:min-w-[10.5rem]"
+                  >
+                    {HOME_TIMEFRAME_OPTIONS.map((option) => (
+                      <option key={option.key} value={option.key} className="bg-[#0B1220] text-white">
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-white/36" />
+                </div>
 
-          <ComingUpSection items={feed.nextBenefits} count={feed.nextBenefitCount} onOpenItem={setOverlayItem} />
-
-          <WalletSummaryRow
-            trackedBenefits={feed.walletSummary.trackedBenefits}
-            trackedCards={feed.walletSummary.trackedCards}
+                <div className="inline-flex w-full rounded-full border border-white/[0.05] bg-white/[0.015] p-0.5 sm:w-auto">
+                  {urgentTabs.map((tab) => (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => setActiveUrgentTab(tab.id)}
+                      className={
+                        tab.id === activeUrgentTab
+                          ? "rounded-full bg-white/[0.07] px-2.5 py-1 text-[13px] font-medium text-white transition-colors"
+                          : "rounded-full px-2.5 py-1 text-[13px] font-medium text-white/42 transition-colors hover:text-white/68"
+                      }
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            }
+            emptyState={
+              activeUrgentTab === "unused"
+                ? {
+                    title: "You’re all caught up.",
+                    description: `No unused benefits expire in ${timeframeShortLabel}.`,
+                  }
+                : {
+                    title: "Nothing marked used yet.",
+                    description: "Benefits you mark used will appear here until their current period resets.",
+                  }
+            }
           />
         </div>
-
-        <BenefitActionOverlay
-          item={overlayItem}
-          open={overlayItem !== null}
-          loading={overlayItem ? pendingById[overlayItem.userBenefitId] === "mark-used" : false}
-          onClose={() => setOverlayItem(null)}
-          onMarkUsed={(item) => void runMutation(item, "/api/home/mark-used", "mark-used")}
-        />
       </MobilePageContainer>
     </AppShell>
   );

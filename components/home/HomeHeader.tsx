@@ -1,24 +1,17 @@
-"use client";
-
-import { Button } from "@/components/ui/Button";
-
 type HomeHeaderProps = {
-  headline: string;
-  refreshing: boolean;
-  onRefresh: () => void;
+  status: string;
 };
 
-export function HomeHeader({ headline, refreshing, onRefresh }: HomeHeaderProps) {
+export function HomeHeader({ status }: HomeHeaderProps) {
   return (
-    <div className="space-y-3">
-      <div className="flex items-start justify-between gap-4">
-        <h1 className="max-w-2xl text-3xl leading-tight font-semibold tracking-tight text-white sm:text-4xl">
-          {headline}
-        </h1>
-        <Button variant="secondary" size="sm" onClick={onRefresh} disabled={refreshing} className="shrink-0">
-          {refreshing ? "Refreshing..." : "Refresh"}
-        </Button>
+    <header className="space-y-2.5">
+      <div className="space-y-1.5">
+        <h1 className="text-[2rem] leading-tight font-semibold tracking-tight text-white sm:text-[2.35rem]">Home</h1>
+        <p className="max-w-3xl text-[15px] leading-7 text-white/74 sm:text-[17px]">
+          What should you use next so you don’t lose value?
+        </p>
       </div>
-    </div>
+      <p className="max-w-3xl text-sm leading-6 text-white/56">{status}</p>
+    </header>
   );
 }

@@ -5,6 +5,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 type MarkUsedRequestBody = {
   userBenefitId?: string;
+  isUsedThisPeriod?: boolean;
 };
 
 export async function POST(request: Request) {
@@ -19,13 +20,14 @@ export async function POST(request: Request) {
 
   const body = (await request.json()) as MarkUsedRequestBody;
   const userBenefitId = body.userBenefitId?.trim();
+  const isUsedThisPeriod = body.isUsedThisPeriod ?? true;
 
   if (!userBenefitId) {
     return NextResponse.json({ error: "Missing user benefit id." }, { status: 400 });
   }
 
   try {
-    const result = await markBenefitUsed(user.id, userBenefitId);
+    const result = await markBenefitUsed(user.id, userBenefitId, isUsedThisPeriod);
 
     if (!result) {
       return NextResponse.json({ error: "Benefit not found." }, { status: 404 });
