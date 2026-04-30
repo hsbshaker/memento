@@ -8,6 +8,7 @@ import { applyUrgentBenefitUsageMutation } from "@/lib/home/optimistic-home-feed
 import { AppShell } from "@/components/ui/AppShell";
 import { MobilePageContainer } from "@/components/ui/MobilePageContainer";
 import { Surface } from "@/components/ui/Surface";
+import { HomeBenefitActionDialog } from "@/components/home/HomeBenefitActionDialog";
 import { HomeMetricStrip } from "@/components/home/HomeMetricStrip";
 import { HomeBenefitRows } from "@/components/home/HomeBenefitRows";
 import { EmptyHomeState } from "@/components/home/EmptyHomeState";
@@ -20,6 +21,10 @@ type FeedResponse = HomeFeedResult & {
   error?: string;
 };
 type UrgentTab = "unused" | "used";
+type PendingAction = {
+  item: HomeFeedItem;
+  action: "mark-used" | "mark-not-used";
+} | null;
 
 export function HomeScreen({ initialFeed }: HomeScreenProps) {
   const [feed, setFeed] = useState(initialFeed);
@@ -28,6 +33,8 @@ export function HomeScreen({ initialFeed }: HomeScreenProps) {
   const [activeUrgentTab, setActiveUrgentTab] = useState<UrgentTab>("unused");
   const [selectedTimeframe, setSelectedTimeframe] = useState(initialFeed.timeframe.key);
   const [isRefreshingTimeframe, setIsRefreshingTimeframe] = useState(false);
+  const [pendingAction, setPendingAction] = useState<PendingAction>(null);
+  const [dialogErrorMessage, setDialogErrorMessage] = useState<string | null>(null);
 
   const refreshFeed = async (timeframe = selectedTimeframe) => {
     setErrorMessage(null);
@@ -76,9 +83,13 @@ export function HomeScreen({ initialFeed }: HomeScreenProps) {
         throw new Error(payload.error ?? "Failed to save.");
       }
 
+      setPendingAction(null);
+      setDialogErrorMessage(null);
       void refreshFeed(selectedTimeframe);
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Couldn’t refresh. Showing last known state.");
+      const message = error instanceof Error ? error.message : "Couldn’t refresh. Showing last known state.";
+      setErrorMessage(message);
+      setDialogErrorMessage(message);
       setFeed(previousFeed);
       void refreshFeed(selectedTimeframe);
     } finally {
@@ -130,6 +141,15 @@ export function HomeScreen({ initialFeed }: HomeScreenProps) {
     { id: "used" as const, label: `Used (${feed.usedExpiringBenefitCount})` },
   ];
   const activeUrgentItems = activeUrgentTab === "unused" ? feed.expiringBenefits : feed.usedExpiringBenefits;
+  const isDialogPending = pendingAction ? pendingById[pendingAction.item.userBenefitId] === pendingAction.action : false;
+
+  const openActionDialog = (item: HomeFeedItem) => {
+    setDialogErrorMessage(null);
+    setPendingAction({
+      item,
+      action: activeUrgentTab === "unused" ? "mark-used" : "mark-not-used",
+    });
+  };
 
   return (
     <AppShell containerClassName="max-w-5xl px-0 md:px-6">
@@ -157,7 +177,7 @@ export function HomeScreen({ initialFeed }: HomeScreenProps) {
             items={activeUrgentItems}
             variant={activeUrgentTab === "unused" ? "urgent" : "used"}
             pendingById={pendingById}
-            onAction={(item) => void runUsageMutation(item, activeUrgentTab === "unused")}
+            onAction={openActionDialog}
             actionLabel={activeUrgentTab === "unused" ? "Mark Used" : "Mark Not Used"}
             headerAccessory={
               <div className="flex w-full flex-col gap-2.5 sm:w-auto sm:flex-row sm:items-center sm:justify-end sm:gap-3">
@@ -209,6 +229,22 @@ export function HomeScreen({ initialFeed }: HomeScreenProps) {
             }
           />
         </div>
+
+        <HomeBenefitActionDialog
+          item={pendingAction?.item ?? null}
+          action={pendingAction?.action ?? null}
+          pending={Boolean(isDialogPending)}
+          errorMessage={dialogErrorMessage}
+          onCancel={() => {
+            if (isDialogPending) return;
+            setPendingAction(null);
+            setDialogErrorMessage(null);
+          }}
+          onConfirm={() => {
+            if (!pendingAction || isDialogPending) return;
+            void runUsageMutation(pendingAction.item, pendingAction.action === "mark-used");
+          }}
+        />
       </MobilePageContainer>
     </AppShell>
   );

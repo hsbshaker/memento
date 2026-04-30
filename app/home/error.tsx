@@ -16,8 +16,7 @@ export default function HomeError({ reset }: HomeErrorProps) {
       <MobilePageContainer className="pb-20">
         <div className="mx-auto max-w-xl pt-8">
           <Surface className="rounded-3xl border-rose-300/20 bg-rose-300/10 p-6 sm:p-7">
-            <p className="text-sm font-medium tracking-[0.22em] text-rose-100/80 uppercase">Home</p>
-            <h1 className="mt-3 text-2xl font-semibold tracking-tight text-white">We couldn’t load your benefits right now.</h1>
+            <h1 className="text-2xl font-semibold tracking-tight text-white">We couldn’t load Home right now.</h1>
             <p className="mt-3 text-sm leading-6 text-rose-100/75">Try again in a moment.</p>
             <div className="mt-6">
               <Button onClick={reset}>Retry</Button>

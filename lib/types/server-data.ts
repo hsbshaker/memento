@@ -169,13 +169,6 @@ export interface HomeFeedResult {
   state: HomeDashboardState;
 }
 
-export interface HomeHeaderInput {
-  trackedCards: number;
-  trackedBenefits: number;
-  useSoonCount: number;
-  comingUpCount: number;
-}
-
 export interface ConfirmAddCardSelectionInput {
   benefitId: string;
   enabled: boolean;

@@ -34,7 +34,7 @@ export function HomeSkeleton() {
               {Array.from({ length: 6 }).map((_, index) => (
                 <div key={index} className={index > 0 ? "border-t border-white/[0.045]" : ""}>
                   <div className="animate-pulse px-3.5 py-3 sm:px-4">
-                    <div className="grid gap-3 md:grid-cols-[minmax(0,2.55fr)_minmax(0,1.35fr)_auto] md:items-center md:gap-4">
+                    <div className="grid gap-3 lg:grid-cols-[minmax(0,2.55fr)_minmax(0,1.35fr)_auto] lg:items-center lg:gap-4">
                       <div className="flex items-start gap-3">
                         <div className="mt-0.5 h-10 w-1 rounded-full bg-white/12" />
                         <div className="min-w-0 flex-1">
@@ -49,7 +49,7 @@ export function HomeSkeleton() {
                         <div className="h-8 rounded-full bg-white/8" />
                       </div>
 
-                      <div className="h-8 w-full rounded-lg bg-white/10 md:w-24" />
+                      <div className="h-8 w-full rounded-lg bg-white/10 sm:w-24 lg:w-24" />
                     </div>
                   </div>
                 </div>

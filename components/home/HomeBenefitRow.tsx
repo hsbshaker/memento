@@ -74,7 +74,7 @@ export function HomeBenefitRow({
 
   return (
     <div className={cn("px-3.5 py-3 sm:px-4", isUrgent ? "text-white" : "text-white/78")}>
-      <div className="grid gap-3 md:grid-cols-[minmax(0,2.55fr)_minmax(0,1.35fr)_auto] md:items-center md:gap-4">
+      <div className="grid gap-3 lg:grid-cols-[minmax(0,2.55fr)_minmax(0,1.35fr)_auto] lg:items-center lg:gap-4">
         <div className="min-w-0">
           <div className="flex items-start gap-3">
             <span className={cn("mt-0.5 h-10 w-1 shrink-0 rounded-full", marker.accentClassName)} aria-hidden="true" />
@@ -108,7 +108,7 @@ export function HomeBenefitRow({
           </div>
         </div>
 
-        <div className="md:justify-self-end">
+        <div className="lg:justify-self-end">
           {onAction && actionLabel ? (
             <Button
               size="sm"
@@ -116,7 +116,7 @@ export function HomeBenefitRow({
               onClick={() => onAction(item)}
               disabled={pending}
               className={cn(
-                "w-full rounded-lg border-white/[0.1] px-3 py-1.25 text-[11px] font-semibold transition-[border-color,background-color,color] duration-200 md:w-auto",
+                "w-full rounded-lg border-white/[0.1] px-3 py-1.25 text-[11px] font-semibold transition-[border-color,background-color,color] duration-200 sm:w-auto lg:w-auto",
                 isUsed
                   ? "bg-white/[0.018] text-white/72 hover:border-white/[0.16] hover:bg-white/[0.045] hover:text-white/82"
                   : "bg-white/[0.03] text-white/84 hover:border-white/[0.16] hover:bg-white/[0.06] hover:text-white/92",
