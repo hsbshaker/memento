@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { BenefitUsageMutationError } from "@/lib/benefits/benefit-usage-mutation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { setBenefitUsed } from "@/lib/wallet/mark-benefit-used";
 
@@ -33,6 +34,17 @@ export async function POST(request: Request) {
 
     return NextResponse.json(result);
   } catch (error) {
+    if (error instanceof BenefitUsageMutationError) {
+      return NextResponse.json(
+        {
+          success: false,
+          code: error.code,
+          error: error.message,
+        },
+        { status: error.status },
+      );
+    }
+
     const message = error instanceof Error ? error.message : "Failed to update used status.";
     return NextResponse.json({ error: message }, { status: 500 });
   }
