@@ -1,6 +1,6 @@
 import type { ReminderStyle } from "@/lib/constants/memento-schema";
 
-export type SupportedBenefitCadence = "monthly" | "quarterly" | "semiannual" | "annual";
+export type SupportedBenefitCadence = "monthly" | "quarterly" | "semiannual" | "annual" | "anniversary";
 export type ConfigurationType = "selection" | "setup" | null;
 export type ConfigurationStatus = "not_required" | "configured" | "needs_configuration";
 export type HomeUrgencyTier = "high" | "soon" | "upcoming";
@@ -10,6 +10,9 @@ export interface BenefitPeriodResult {
   periodEndDate: string;
   daysRemaining: number;
   periodLabel: string;
+  periodKey: string;
+  resolvedCadence: SupportedBenefitCadence;
+  isAnniversaryPeriod: boolean;
 }
 
 export interface CardSearchResult {
@@ -95,37 +98,67 @@ export interface CardDetailResult {
 
 export interface HomeFeedItem {
   userBenefitId: string;
-  userCardId: string;
   cardId: string;
   benefitId: string;
   benefitName: string;
   cardName: string;
-  cardArtUrl: string | null;
-  value: string | null;
-  valueDescriptor: string | null;
+  issuer: string;
+  cardMarker: {
+    label: string;
+    cardCode: string | null;
+    issuer: string;
+  };
+  cadence: SupportedBenefitCadence;
+  currentPeriodValueCents: number;
+  currentPeriodValueLabel: string | null;
+  periodStart: string;
+  periodEnd: string;
+  resetDate: string;
+  timingLabel: string;
   periodLabel: string;
-  periodEndDate: string;
   daysRemaining: number;
   urgencyTier: HomeUrgencyTier;
+  isUsedThisPeriod: boolean;
+  lastUsedAt: string | null;
+  enrollmentRequired: boolean;
   requiresConfiguration: boolean;
   configurationType: ConfigurationType;
   configurationStatus: ConfigurationStatus;
   reminderOverride: ReminderStyle | null;
   snoozedUntil: string | null;
+  cardArtUrl: string | null;
+  value: string | null;
+  valueDescriptor: string | null;
+}
+
+export interface HomeMetric {
+  valueCents: number;
+  valueLabel: string;
+  helperText: string;
+}
+
+export interface HomeDashboardState {
+  isEmpty: boolean;
+  isAllCaughtUp: boolean;
+  headline: string;
+  supportingText: string | null;
 }
 
 export interface HomeFeedResult {
-  header: string;
-  useSoon: HomeFeedItem[];
-  useSoonHiddenCount: number;
-  comingUp: HomeFeedItem[];
-  comingUpCount: number;
+  metrics: {
+    availableNow: HomeMetric;
+    resettingSoon: HomeMetric;
+    capturedThisPeriod: HomeMetric;
+  };
+  urgentBenefits: HomeFeedItem[];
+  urgentBenefitCount: number;
+  nextBenefits: HomeFeedItem[];
+  nextBenefitCount: number;
   walletSummary: {
     trackedBenefits: number;
     trackedCards: number;
   };
-  isAllClear: boolean;
-  isEmpty: boolean;
+  state: HomeDashboardState;
 }
 
 export interface HomeHeaderInput {

@@ -101,7 +101,7 @@ export function BenefitActionOverlay({
                 </div>
 
                 <div className="space-y-3 text-sm text-white/68">
-                  <p>Resets {formatDate(item.periodEndDate)}</p>
+                  <p>Resets {formatDate(item.resetDate)}</p>
                   <p>{getStatusText(item)}</p>
                   <p>
                     Reminder style: <span className="text-white/88">{item.reminderOverride ?? "Balanced default"}</span>

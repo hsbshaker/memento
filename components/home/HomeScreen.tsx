@@ -1,8 +1,8 @@
 "use client";
 
-import { startTransition, useMemo, useState } from "react";
-import type { HomeFeedItem, HomeFeedResult } from "@/lib/types/server-data";
-import { buildHomeHeader } from "@/lib/home/build-home-header";
+import { startTransition, useState } from "react";
+import type { HomeFeedItem, HomeFeedResult, HomeMetric } from "@/lib/types/server-data";
+import { buildHomeState } from "@/lib/home/build-home-state";
 import { AppShell } from "@/components/ui/AppShell";
 import { MobilePageContainer } from "@/components/ui/MobilePageContainer";
 import { Surface } from "@/components/ui/Surface";
@@ -22,31 +22,61 @@ type FeedResponse = HomeFeedResult & {
   error?: string;
 };
 
-function rebuildHeader(feed: HomeFeedResult, useSoonCount: number, comingUpCount: number) {
-  return buildHomeHeader({
+const CURRENCY_FORMATTER = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+  maximumFractionDigits: 0,
+});
+
+function rebuildState(feed: HomeFeedResult, urgentBenefitCount: number, nextBenefitCount: number) {
+  return buildHomeState({
     trackedCards: feed.walletSummary.trackedCards,
     trackedBenefits: feed.walletSummary.trackedBenefits,
-    useSoonCount,
-    comingUpCount,
+    urgentBenefitCount,
+    nextBenefitCount,
   });
 }
 
-function removeItemFromFeed(feed: HomeFeedResult, item: HomeFeedItem): HomeFeedResult {
-  const wasUseSoon = feed.useSoon.some((candidate) => candidate.userBenefitId === item.userBenefitId);
-  const wasComingUp = feed.comingUp.some((candidate) => candidate.userBenefitId === item.userBenefitId);
-  const nextUseSoon = feed.useSoon.filter((candidate) => candidate.userBenefitId !== item.userBenefitId);
-  const nextComingUp = feed.comingUp.filter((candidate) => candidate.userBenefitId !== item.userBenefitId);
-  const nextUseSoonCount = Math.max(0, nextUseSoon.length + feed.useSoonHiddenCount - (wasUseSoon ? 1 : 0));
-  const nextComingUpCount = Math.max(0, feed.comingUpCount - (wasComingUp ? 1 : 0));
+function rebuildMetric(metric: HomeMetric, nextValueCents: number): HomeMetric {
+  return {
+    ...metric,
+    valueCents: nextValueCents,
+    valueLabel: CURRENCY_FORMATTER.format(nextValueCents / 100),
+  };
+}
+
+function removeItemFromFeed(feed: HomeFeedResult, item: HomeFeedItem, action: "mark-used" | "snooze"): HomeFeedResult {
+  const wasUrgent = feed.urgentBenefits.some((candidate) => candidate.userBenefitId === item.userBenefitId);
+  const wasNext = feed.nextBenefits.some((candidate) => candidate.userBenefitId === item.userBenefitId);
+  const nextUrgentBenefits = feed.urgentBenefits.filter((candidate) => candidate.userBenefitId !== item.userBenefitId);
+  const nextBenefits = feed.nextBenefits.filter((candidate) => candidate.userBenefitId !== item.userBenefitId);
+  const nextUrgentCount = Math.max(0, feed.urgentBenefitCount - (wasUrgent ? 1 : 0));
+  const nextBenefitCount = Math.max(0, feed.nextBenefitCount - (wasNext ? 1 : 0));
+  const nextAvailableNow =
+    action === "mark-used"
+      ? Math.max(0, feed.metrics.availableNow.valueCents - item.currentPeriodValueCents)
+      : feed.metrics.availableNow.valueCents;
+  const nextResettingSoon =
+    action === "mark-used" && item.daysRemaining <= 14
+      ? Math.max(0, feed.metrics.resettingSoon.valueCents - item.currentPeriodValueCents)
+      : feed.metrics.resettingSoon.valueCents;
+  const nextCapturedThisPeriod =
+    action === "mark-used"
+      ? feed.metrics.capturedThisPeriod.valueCents + item.currentPeriodValueCents
+      : feed.metrics.capturedThisPeriod.valueCents;
 
   return {
     ...feed,
-    header: rebuildHeader(feed, nextUseSoonCount, nextComingUpCount),
-    useSoon: nextUseSoon,
-    useSoonHiddenCount: Math.max(0, nextUseSoonCount - nextUseSoon.length),
-    comingUp: nextComingUp,
-    comingUpCount: nextComingUpCount,
-    isAllClear: feed.walletSummary.trackedCards > 0 && nextUseSoonCount === 0 && nextComingUpCount === 0,
+    metrics: {
+      availableNow: rebuildMetric(feed.metrics.availableNow, nextAvailableNow),
+      resettingSoon: rebuildMetric(feed.metrics.resettingSoon, nextResettingSoon),
+      capturedThisPeriod: rebuildMetric(feed.metrics.capturedThisPeriod, nextCapturedThisPeriod),
+    },
+    urgentBenefits: nextUrgentBenefits,
+    urgentBenefitCount: nextUrgentCount,
+    nextBenefits,
+    nextBenefitCount,
+    state: rebuildState(feed, nextUrgentCount, nextBenefitCount),
   };
 }
 
@@ -57,24 +87,7 @@ export function HomeScreen({ initialFeed }: HomeScreenProps) {
   const [refreshing, setRefreshing] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const noUseSoon = feed.useSoon.length === 0 && feed.useSoonHiddenCount === 0;
-  const showAllClear = !feed.isEmpty && noUseSoon;
-
-  const visibleHeadline = useMemo(() => {
-    if (feed.isEmpty) {
-      return "Add your first card to get started.";
-    }
-
-    if (showAllClear && feed.comingUpCount > 0) {
-      return "You’re on track for now.";
-    }
-
-    if (showAllClear) {
-      return "All caught up.";
-    }
-
-    return feed.header;
-  }, [feed.header, feed.isEmpty, feed.comingUpCount, showAllClear]);
+  const showAllClear = !feed.state.isEmpty && feed.urgentBenefitCount === 0;
 
   const refreshFeed = async () => {
     setRefreshing(true);
@@ -105,7 +118,7 @@ export function HomeScreen({ initialFeed }: HomeScreenProps) {
     const previousFeed = feed;
     setPendingById((current) => ({ ...current, [item.userBenefitId]: action }));
     setErrorMessage(null);
-    setFeed(removeItemFromFeed(feed, item));
+    setFeed(removeItemFromFeed(feed, item, action));
     setOverlayItem((current) => (current?.userBenefitId === item.userBenefitId ? null : current));
 
     try {
@@ -135,7 +148,7 @@ export function HomeScreen({ initialFeed }: HomeScreenProps) {
     }
   };
 
-  if (feed.isEmpty) {
+  if (feed.state.isEmpty) {
     return (
       <AppShell containerClassName="max-w-4xl px-0 md:px-6">
         <MobilePageContainer className="pb-20">
@@ -149,7 +162,7 @@ export function HomeScreen({ initialFeed }: HomeScreenProps) {
     <AppShell containerClassName="max-w-4xl px-0 md:px-6">
       <MobilePageContainer className="pb-20">
         <div className="space-y-6 pt-6">
-          <HomeHeader headline={visibleHeadline} refreshing={refreshing} onRefresh={() => void refreshFeed()} />
+          <HomeHeader headline={feed.state.headline} refreshing={refreshing} onRefresh={() => void refreshFeed()} />
 
           {errorMessage ? (
             <Surface className="rounded-2xl border-amber-300/20 bg-amber-300/10 p-4 text-sm text-amber-100">
@@ -162,18 +175,18 @@ export function HomeScreen({ initialFeed }: HomeScreenProps) {
             </Surface>
           ) : null}
 
-          {showAllClear ? <AllClearState headline={visibleHeadline} /> : null}
+          {showAllClear ? <AllClearState headline={feed.state.headline} /> : null}
 
           <UseSoonList
-            items={feed.useSoon}
-            hiddenCount={feed.useSoonHiddenCount}
+            items={feed.urgentBenefits}
+            hiddenCount={0}
             pendingById={pendingById}
             onOpenItem={setOverlayItem}
             onMarkUsed={(item) => void runMutation(item, "/api/home/mark-used", "mark-used")}
             onSnooze={(item) => void runMutation(item, "/api/home/snooze", "snooze")}
           />
 
-          <ComingUpSection items={feed.comingUp} count={feed.comingUpCount} onOpenItem={setOverlayItem} />
+          <ComingUpSection items={feed.nextBenefits} count={feed.nextBenefitCount} onOpenItem={setOverlayItem} />
 
           <WalletSummaryRow
             trackedBenefits={feed.walletSummary.trackedBenefits}
