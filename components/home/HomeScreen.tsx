@@ -127,7 +127,7 @@ export function HomeScreen({ initialFeed }: HomeScreenProps) {
 
   if (feed.state.isEmpty) {
     return (
-      <AppShell containerClassName="max-w-5xl px-0 md:px-6">
+      <AppShell containerClassName="max-w-6xl px-0 md:px-6">
         <MobilePageContainer className="pb-20">
           <EmptyHomeState />
         </MobilePageContainer>
@@ -152,7 +152,7 @@ export function HomeScreen({ initialFeed }: HomeScreenProps) {
   };
 
   return (
-    <AppShell containerClassName="max-w-5xl px-0 md:px-6">
+    <AppShell containerClassName="max-w-6xl px-0 md:px-6">
       <MobilePageContainer className="pb-20">
         <div className="space-y-6 pt-5">
           {errorMessage ? (

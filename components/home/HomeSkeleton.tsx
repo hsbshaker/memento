@@ -3,7 +3,7 @@ import { MobilePageContainer } from "@/components/ui/MobilePageContainer";
 
 export function HomeSkeleton() {
   return (
-    <AppShell containerClassName="max-w-5xl px-0 md:px-6">
+    <AppShell containerClassName="max-w-6xl px-0 md:px-6">
       <MobilePageContainer className="pb-20">
         <div className="space-y-7 pt-5">
           <div className="grid gap-4 px-1 sm:grid-cols-3 sm:gap-0">
