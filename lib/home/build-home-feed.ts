@@ -1,6 +1,6 @@
 import "server-only";
 
-import { computeBenefitPeriod } from "@/lib/benefits/compute-benefit-period";
+import { computeBenefitPeriod, resolveSupportedBenefitCadence } from "@/lib/benefits/compute-benefit-period";
 import {
   formatBenefitValue,
   getConfigurationStatus,
@@ -8,14 +8,20 @@ import {
   normalizeCardArtUrl,
 } from "@/lib/benefits/format-benefit-labels";
 import { sortHomeFeedItems } from "@/lib/benefits/rank-benefits";
+import { buildBenefitPeriodStatusMap } from "@/lib/benefits/usage-state";
+import { getIssuerDisplayName, getIssuerShortLabel } from "@/lib/format-card";
+import { buildHomeFeedModel } from "@/lib/home/home-feed-model";
+import { DEFAULT_HOME_TIMEFRAME, getHomeTimeframeOption } from "@/lib/home/home-timeframes";
 import { getServiceRoleSupabaseClient } from "@/lib/supabase/service-role";
-import type { HomeFeedItem, HomeFeedResult } from "@/lib/types/server-data";
-import { buildHomeHeader } from "@/lib/home/build-home-header";
+import type { HomeFeedItem, HomeFeedResult, HomeMetric, HomeTimeframeKey } from "@/lib/types/server-data";
 
 type HomeCandidateRow = {
   id: string;
   user_card_id: string;
   benefit_id: string;
+  is_active: boolean;
+  is_used_this_period: boolean;
+  last_used_at: string | null;
   reminder_override: "balanced" | "earlier" | "minimal" | null;
   conditional_value: string | null;
   snoozed_until: string | null;
@@ -26,14 +32,18 @@ type HomeCandidateRow = {
     status: "active" | "removed";
     cards: {
       id: string;
+      card_code: string | null;
       card_name: string;
       display_name: string | null;
+      issuer: string | null;
       source_url: string | null;
       card_status: "active" | "no_trackable_benefits" | null;
     } | {
       id: string;
+      card_code: string | null;
       card_name: string;
       display_name: string | null;
+      issuer: string | null;
       source_url: string | null;
       card_status: "active" | "no_trackable_benefits" | null;
     }[] | null;
@@ -44,14 +54,18 @@ type HomeCandidateRow = {
     status: "active" | "removed";
     cards: {
       id: string;
+      card_code: string | null;
       card_name: string;
       display_name: string | null;
+      issuer: string | null;
       source_url: string | null;
       card_status: "active" | "no_trackable_benefits" | null;
     } | {
       id: string;
+      card_code: string | null;
       card_name: string;
       display_name: string | null;
+      issuer: string | null;
       source_url: string | null;
       card_status: "active" | "no_trackable_benefits" | null;
     }[] | null;
@@ -63,6 +77,7 @@ type HomeCandidateRow = {
     value_cents: number | null;
     cadence: string | null;
     reset_timing: string | null;
+    enrollment_required: boolean | null;
     requires_setup: boolean | null;
     requires_selection: boolean | null;
     selection_type: string | null;
@@ -74,6 +89,7 @@ type HomeCandidateRow = {
     value_cents: number | null;
     cadence: string | null;
     reset_timing: string | null;
+    enrollment_required: boolean | null;
     requires_setup: boolean | null;
     requires_selection: boolean | null;
     selection_type: string | null;
@@ -81,7 +97,19 @@ type HomeCandidateRow = {
   }[] | null;
 };
 
-const USE_SOON_LIMIT = 6;
+type PeriodStatusRow = {
+  benefit_id: string;
+  period_key: string;
+  is_used: boolean;
+  used_at?: string | null;
+};
+
+const RESETTING_SOON_WINDOW_DAYS = 14;
+const CURRENCY_FORMATTER = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+  maximumFractionDigits: 0,
+});
 
 function takeFirst<T>(value: T | T[] | null | undefined): T | null {
   if (Array.isArray(value)) {
@@ -92,18 +120,60 @@ function takeFirst<T>(value: T | T[] | null | undefined): T | null {
 }
 
 function buildUrgencyTier(daysRemaining: number) {
-  if (daysRemaining <= 7) {
+  if (daysRemaining <= 3) {
     return "high" as const;
   }
 
-  if (daysRemaining <= 30) {
+  if (daysRemaining <= RESETTING_SOON_WINDOW_DAYS) {
     return "soon" as const;
   }
 
   return "upcoming" as const;
 }
 
-function mapHomeFeedItem(row: HomeCandidateRow, now: Date): HomeFeedItem | null {
+function formatMetricValue(valueCents: number) {
+  return CURRENCY_FORMATTER.format(valueCents / 100);
+}
+
+function buildMetric(valueCents: number, helperText: string): HomeMetric {
+  return {
+    valueCents,
+    valueLabel: formatMetricValue(valueCents),
+    helperText,
+  };
+}
+
+function buildTimingLabel(daysRemaining: number) {
+  if (daysRemaining <= 0) {
+    return "Resets today";
+  }
+
+  if (daysRemaining === 1) {
+    return "Resets tomorrow";
+  }
+
+  return `Resets in ${daysRemaining} days`;
+}
+
+function getPeriodAwareUsedStatus({
+  benefitId,
+  periodKey,
+  periodStatusMap,
+  fallbackUsed,
+}: {
+  benefitId: string;
+  periodKey: string;
+  periodStatusMap: Map<string, PeriodStatusRow>;
+  fallbackUsed: boolean;
+}) {
+  return periodStatusMap.get(`${benefitId}:${periodKey}`)?.is_used ?? fallbackUsed;
+}
+
+function mapHomeFeedItem(
+  row: HomeCandidateRow,
+  now: Date,
+  periodStatusMap: Map<string, PeriodStatusRow>,
+): HomeFeedItem | null {
   const ownedUserCard = takeFirst(row.user_cards);
   const canonicalCard = takeFirst(ownedUserCard?.cards);
   const canonicalBenefit = takeFirst(row.benefits);
@@ -119,18 +189,21 @@ function mapHomeFeedItem(row: HomeCandidateRow, now: Date): HomeFeedItem | null 
     return null;
   }
 
-  if (row.snoozed_until && new Date(row.snoozed_until) > now) {
+  const resolvedCadence = resolveSupportedBenefitCadence({
+    cadence: canonicalBenefit.cadence,
+    resetTiming: canonicalBenefit.reset_timing,
+  });
+  if (!resolvedCadence) {
     return null;
   }
 
   const period = computeBenefitPeriod({
-    cadence: canonicalBenefit.cadence,
+    cadence: resolvedCadence,
     resetTiming: canonicalBenefit.reset_timing,
     cardAnniversaryDate: ownedUserCard.card_anniversary_date,
     now,
   });
-
-  if (!period || period.daysRemaining > 90) {
+  if (!period) {
     return null;
   }
 
@@ -143,20 +216,38 @@ function mapHomeFeedItem(row: HomeCandidateRow, now: Date): HomeFeedItem | null 
     selectionType: canonicalBenefit.selection_type,
     requiresSetup: canonicalBenefit.requires_setup,
   });
+  const issuer = getIssuerDisplayName(canonicalCard.issuer ?? "");
+  const isUsedThisPeriod = getPeriodAwareUsedStatus({
+    benefitId: row.benefit_id,
+    periodKey: period.periodKey,
+    periodStatusMap,
+    fallbackUsed: row.is_used_this_period,
+  });
 
   return {
     userBenefitId: row.id,
-    userCardId: row.user_card_id,
     cardId: ownedUserCard.card_id,
     benefitId: row.benefit_id,
     benefitName: canonicalBenefit.benefit_name?.trim() || "Unnamed benefit",
     cardName: canonicalCard.display_name ?? canonicalCard.card_name,
-    cardArtUrl: normalizeCardArtUrl(canonicalCard.source_url),
-    value: value.value,
-    valueDescriptor: value.valueDescriptor,
-    periodLabel: period.periodLabel,
-    periodEndDate: period.periodEndDate,
+    issuer,
+    cardMarker: {
+      label: getIssuerShortLabel(canonicalCard.issuer ?? issuer),
+      cardCode: canonicalCard.card_code,
+      issuer,
+    },
+    cadence: period.resolvedCadence,
+    currentPeriodValueCents: value.sortValue,
+    currentPeriodValueLabel: value.value,
+    periodStart: period.periodStartDate,
+    periodEnd: period.periodEndDate,
+    resetDate: period.periodEndDate,
     daysRemaining: period.daysRemaining,
+    timingLabel: buildTimingLabel(period.daysRemaining),
+    periodLabel: period.periodLabel,
+    isUsedThisPeriod,
+    lastUsedAt: row.last_used_at,
+    enrollmentRequired: canonicalBenefit.enrollment_required === true,
     urgencyTier: buildUrgencyTier(period.daysRemaining),
     requiresConfiguration: configurationType !== null,
     configurationType,
@@ -168,10 +259,16 @@ function mapHomeFeedItem(row: HomeCandidateRow, now: Date): HomeFeedItem | null 
     }),
     reminderOverride: row.reminder_override,
     snoozedUntil: row.snoozed_until,
+    cardArtUrl: normalizeCardArtUrl(canonicalCard.source_url),
+    value: value.value,
+    valueDescriptor: value.valueDescriptor,
   };
 }
 
-export async function buildHomeFeed(userId: string): Promise<HomeFeedResult> {
+export async function buildHomeFeed(
+  userId: string,
+  timeframe: HomeTimeframeKey = DEFAULT_HOME_TIMEFRAME,
+): Promise<HomeFeedResult> {
   const supabase = getServiceRoleSupabaseClient();
   const now = new Date();
 
@@ -186,35 +283,40 @@ export async function buildHomeFeed(userId: string): Promise<HomeFeedResult> {
   }
 
   const trackedCards = (trackedCardRows ?? []).length;
+  const trackedCardIds = (trackedCardRows ?? []).map((row) => (row as { id: string }).id);
 
   if (trackedCards === 0) {
+    const timeframeOption = getHomeTimeframeOption(timeframe);
+
     return {
-      header: buildHomeHeader({
-        trackedCards: 0,
-        trackedBenefits: 0,
-        useSoonCount: 0,
-        comingUpCount: 0,
-      }),
-      useSoon: [],
-      useSoonHiddenCount: 0,
-      comingUp: [],
-      comingUpCount: 0,
+      timeframe: timeframeOption,
+      metrics: {
+        availableNow: buildMetric(0, "Unused value available in the current period."),
+        resettingSoon: buildMetric(0, "Unused value expiring in view."),
+        capturedThisPeriod: buildMetric(0, "Value you’ve already captured this period."),
+      },
+      expiringBenefits: [],
+      expiringBenefitCount: 0,
+      usedExpiringBenefits: [],
+      usedExpiringBenefitCount: 0,
       walletSummary: {
         trackedBenefits: 0,
         trackedCards: 0,
       },
-      isAllClear: false,
-      isEmpty: true,
+      state: {
+        isEmpty: true,
+        isAllCaughtUp: false,
+        headline: "Add your first card to get started.",
+        supportingText: "Track benefits here so Memento can tell you what to use next.",
+      },
+      
     };
   }
 
   const { count: trackedBenefitsCount, error: trackedBenefitsError } = await supabase
     .from("user_benefits")
     .select("id", { count: "exact", head: true })
-    .in(
-      "user_card_id",
-      (trackedCardRows ?? []).map((row) => (row as { id: string }).id),
-    )
+    .in("user_card_id", trackedCardIds)
     .eq("is_active", true);
 
   if (trackedBenefitsError) {
@@ -224,10 +326,9 @@ export async function buildHomeFeed(userId: string): Promise<HomeFeedResult> {
   const { data: candidateRows, error: candidatesError } = await supabase
     .from("user_benefits")
     .select(
-      "id, user_card_id, benefit_id, reminder_override, conditional_value, snoozed_until, user_cards!inner(id, card_id, card_anniversary_date, status, cards!inner(id, card_name, display_name, source_url, card_status)), benefits!inner(id, benefit_name, benefit_value, value_cents, cadence, reset_timing, requires_setup, requires_selection, selection_type, track_in_memento)",
+      "id, user_card_id, benefit_id, is_active, is_used_this_period, last_used_at, reminder_override, conditional_value, snoozed_until, user_cards!inner(id, card_id, card_anniversary_date, status, cards!inner(id, card_code, card_name, display_name, issuer, source_url, card_status)), benefits!inner(id, benefit_name, benefit_value, value_cents, cadence, reset_timing, enrollment_required, requires_setup, requires_selection, selection_type, track_in_memento)",
     )
     .eq("is_active", true)
-    .eq("is_used_this_period", false)
     .eq("user_cards.user_id", userId)
     .eq("benefits.track_in_memento", "yes");
 
@@ -235,32 +336,56 @@ export async function buildHomeFeed(userId: string): Promise<HomeFeedResult> {
     throw candidatesError;
   }
 
-  const allEligibleItems = sortHomeFeedItems(
-    ((candidateRows ?? []) as unknown as HomeCandidateRow[])
-      .map((row) => mapHomeFeedItem(row, now))
+  const typedCandidateRows = (candidateRows ?? []) as unknown as HomeCandidateRow[];
+  const periodKeys = Array.from(
+    new Set(
+      typedCandidateRows
+        .map((row) => {
+          const ownedUserCard = takeFirst(row.user_cards);
+          const canonicalBenefit = takeFirst(row.benefits);
+          if (!ownedUserCard || !canonicalBenefit) {
+            return null;
+          }
+
+          return computeBenefitPeriod({
+            cadence: canonicalBenefit.cadence,
+            resetTiming: canonicalBenefit.reset_timing,
+            cardAnniversaryDate: ownedUserCard.card_anniversary_date,
+            now,
+          })?.periodKey ?? null;
+        })
+        .filter((value): value is string => Boolean(value)),
+    ),
+  );
+  const benefitIds = Array.from(new Set(typedCandidateRows.map((row) => row.benefit_id)));
+
+  let periodStatusMap = new Map<string, PeriodStatusRow>();
+  if (periodKeys.length > 0 && benefitIds.length > 0) {
+    const { data: periodStatusRows, error: periodStatusError } = await supabase
+      .from("user_benefit_period_status")
+      .select("benefit_id, period_key, is_used, used_at")
+      .eq("user_id", userId)
+      .in("benefit_id", benefitIds)
+      .in("period_key", periodKeys);
+
+    if (periodStatusError) {
+      throw periodStatusError;
+    }
+
+    periodStatusMap = buildBenefitPeriodStatusMap((periodStatusRows ?? []) as PeriodStatusRow[]);
+  }
+
+  const allTrackedBenefits = sortHomeFeedItems(
+    typedCandidateRows
+      .map((row) => mapHomeFeedItem(row, now, periodStatusMap))
       .filter((row): row is HomeFeedItem => row !== null),
   );
 
-  const useSoonAll = allEligibleItems.filter((item) => item.daysRemaining <= 30);
-  const comingUp = allEligibleItems.filter((item) => item.daysRemaining >= 31 && item.daysRemaining <= 90);
-  const useSoon = useSoonAll.slice(0, USE_SOON_LIMIT);
-
-  return {
-    header: buildHomeHeader({
-      trackedCards,
-      trackedBenefits: trackedBenefitsCount ?? 0,
-      useSoonCount: useSoonAll.length,
-      comingUpCount: comingUp.length,
-    }),
-    useSoon,
-    useSoonHiddenCount: Math.max(0, useSoonAll.length - USE_SOON_LIMIT),
-    comingUp,
-    comingUpCount: comingUp.length,
-    walletSummary: {
-      trackedBenefits: trackedBenefitsCount ?? 0,
-      trackedCards,
-    },
-    isAllClear: trackedCards > 0 && useSoonAll.length === 0 && comingUp.length === 0,
-    isEmpty: trackedCards === 0,
-  };
+  return buildHomeFeedModel({
+    allTrackedBenefits,
+    trackedBenefits: trackedBenefitsCount ?? 0,
+    trackedCards,
+    now,
+    timeframe,
+  });
 }

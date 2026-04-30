@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Inter } from "next/font/google";
-import { AppHeader } from "@/components/app-header";
+import { AppChrome } from "@/components/app/AppChrome";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -33,10 +33,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${inter.variable} text-white antialiased`}
       >
-        <div className="min-h-screen bg-background">
-          <AppHeader />
-          <main>{children}</main>
-        </div>
+        <AppChrome>{children}</AppChrome>
       </body>
     </html>
   );

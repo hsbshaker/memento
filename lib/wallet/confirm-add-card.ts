@@ -66,18 +66,6 @@ export async function confirmAddCard(input: ConfirmAddCardInput): Promise<Confir
     }
   }
 
-  const { error: profileError } = await supabase.from("user_profiles").upsert(
-    {
-      user_id: input.userId,
-      global_reminder_style: input.reminderStyle,
-    },
-    { onConflict: "user_id" },
-  );
-
-  if (profileError) {
-    throw profileError;
-  }
-
   return {
     userCardId: insertedUserCard.id,
     duplicateStatus: (existingCardCount ?? 0) > 0 ? "possible_duplicate" : "none",

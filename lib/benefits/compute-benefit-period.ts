@@ -7,11 +7,7 @@ type ComputeBenefitPeriodArgs = {
   cardAnniversaryDate?: string | null;
 };
 
-const MONTH_LABEL_FORMATTER = new Intl.DateTimeFormat("en-US", {
-  month: "short",
-  year: "numeric",
-  timeZone: "UTC",
-});
+const ANNIVERSARY_RESET_PATTERN = /\b(card anniversary|account anniversary|anniversary|cardmember year|membership year|benefit year)\b/i;
 
 function createUtcDate(year: number, monthIndex: number, day: number) {
   return new Date(Date.UTC(year, monthIndex, day));
@@ -52,9 +48,51 @@ export function normalizeSupportedBenefitCadence(
       return "semiannual";
     case "annual":
       return "annual";
+    case "anniversary":
+      return "anniversary";
     default:
       return null;
   }
+}
+
+function buildDaysRemaining(end: Date, now: Date) {
+  return Math.max(
+    0,
+    Math.floor((startOfUtcDay(end).getTime() - startOfUtcDay(now).getTime()) / 86_400_000),
+  );
+}
+
+function buildAnniversaryPeriodKey(periodStart: Date) {
+  const month = String(periodStart.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(periodStart.getUTCDate()).padStart(2, "0");
+  return `${periodStart.getUTCFullYear()}-ANNIV-${month}-${day}`;
+}
+
+export function isBenefitResetOnAnniversary(resetTiming: string | null | undefined) {
+  return ANNIVERSARY_RESET_PATTERN.test((resetTiming ?? "").trim());
+}
+
+export function resolveSupportedBenefitCadence({
+  cadence,
+  resetTiming,
+}: {
+  cadence: string | null | undefined;
+  resetTiming?: string | null;
+}): SupportedBenefitCadence | null {
+  const normalizedCadence = normalizeSupportedBenefitCadence(cadence);
+
+  if (normalizedCadence === "anniversary") {
+    return "anniversary";
+  }
+
+  // The current schema does not cleanly model "calendar year" vs "anniversary year".
+  // Only explicit anniversary reset language should move an annual benefit onto
+  // anniversary-based date math.
+  if (normalizedCadence === "annual" && isBenefitResetOnAnniversary(resetTiming)) {
+    return "anniversary";
+  }
+
+  return normalizedCadence;
 }
 
 function computeMonthlyPeriod(now: Date): BenefitPeriodResult {
@@ -64,11 +102,11 @@ function computeMonthlyPeriod(now: Date): BenefitPeriodResult {
   return {
     periodStartDate: start.toISOString(),
     periodEndDate: end.toISOString(),
-    daysRemaining: Math.max(
-      0,
-      Math.floor((startOfUtcDay(end).getTime() - startOfUtcDay(now).getTime()) / 86_400_000),
-    ),
-    periodLabel: MONTH_LABEL_FORMATTER.format(start),
+    daysRemaining: buildDaysRemaining(end, now),
+    periodLabel: "This month",
+    periodKey: `${start.getUTCFullYear()}-${String(start.getUTCMonth() + 1).padStart(2, "0")}`,
+    resolvedCadence: "monthly",
+    isAnniversaryPeriod: false,
   };
 }
 
@@ -80,11 +118,11 @@ function computeQuarterlyPeriod(now: Date): BenefitPeriodResult {
   return {
     periodStartDate: start.toISOString(),
     periodEndDate: end.toISOString(),
-    daysRemaining: Math.max(
-      0,
-      Math.floor((startOfUtcDay(end).getTime() - startOfUtcDay(now).getTime()) / 86_400_000),
-    ),
-    periodLabel: `Q${Math.floor(now.getUTCMonth() / 3) + 1} ${now.getUTCFullYear()}`,
+    daysRemaining: buildDaysRemaining(end, now),
+    periodLabel: "This quarter",
+    periodKey: `${start.getUTCFullYear()}-Q${Math.floor(start.getUTCMonth() / 3) + 1}`,
+    resolvedCadence: "quarterly",
+    isAnniversaryPeriod: false,
   };
 }
 
@@ -96,59 +134,83 @@ function computeSemiannualPeriod(now: Date): BenefitPeriodResult {
   return {
     periodStartDate: start.toISOString(),
     periodEndDate: end.toISOString(),
-    daysRemaining: Math.max(
-      0,
-      Math.floor((startOfUtcDay(end).getTime() - startOfUtcDay(now).getTime()) / 86_400_000),
-    ),
-    periodLabel: inFirstHalf ? `Jan-Jun ${now.getUTCFullYear()}` : `Jul-Dec ${now.getUTCFullYear()}`,
+    daysRemaining: buildDaysRemaining(end, now),
+    periodLabel: "This half-year",
+    periodKey: `${start.getUTCFullYear()}-H${inFirstHalf ? 1 : 2}`,
+    resolvedCadence: "semiannual",
+    isAnniversaryPeriod: false,
   };
 }
 
-function computeAnnualPeriod(now: Date, cardAnniversaryDate: string | null | undefined): BenefitPeriodResult {
-  if (!cardAnniversaryDate) {
-    const start = createUtcDate(now.getUTCFullYear(), 0, 1);
-    const end = endOfUtcDay(createUtcDate(now.getUTCFullYear(), 11, 31));
+function computeAnnualPeriod(now: Date): BenefitPeriodResult {
+  const start = createUtcDate(now.getUTCFullYear(), 0, 1);
+  const end = endOfUtcDay(createUtcDate(now.getUTCFullYear(), 11, 31));
 
-    return {
-      periodStartDate: start.toISOString(),
-      periodEndDate: end.toISOString(),
-      daysRemaining: Math.max(
-        0,
-        Math.floor((startOfUtcDay(end).getTime() - startOfUtcDay(now).getTime()) / 86_400_000),
-      ),
-      periodLabel: String(now.getUTCFullYear()),
-    };
+  return {
+    periodStartDate: start.toISOString(),
+    periodEndDate: end.toISOString(),
+    daysRemaining: buildDaysRemaining(end, now),
+    periodLabel: "This year",
+    periodKey: String(start.getUTCFullYear()),
+    resolvedCadence: "annual",
+    isAnniversaryPeriod: false,
+  };
+}
+
+function computeAnniversaryPeriod(now: Date, cardAnniversaryDate: string | null | undefined): BenefitPeriodResult | null {
+  if (!cardAnniversaryDate) {
+    return null;
   }
 
   const anchor = new Date(`${cardAnniversaryDate}T00:00:00.000Z`);
   if (Number.isNaN(anchor.getTime())) {
-    return computeAnnualPeriod(now, null);
+    return null;
   }
 
   const anniversaryMonth = anchor.getUTCMonth();
   const anniversaryDay = anchor.getUTCDate();
-  const thisYearAnchor = createUtcDate(now.getUTCFullYear(), anniversaryMonth, anniversaryDay);
-  const periodStart = now >= thisYearAnchor ? thisYearAnchor : createUtcDate(now.getUTCFullYear() - 1, anniversaryMonth, anniversaryDay);
-  const nextPeriodStart = createUtcDate(periodStart.getUTCFullYear() + 1, anniversaryMonth, anniversaryDay);
+  const currentYear = now.getUTCFullYear();
+  const thisYearAnchorDay = Math.min(
+    anniversaryDay,
+    lastDayOfMonthUtc(currentYear, anniversaryMonth).getUTCDate(),
+  );
+  const thisYearAnchor = createUtcDate(currentYear, anniversaryMonth, thisYearAnchorDay);
+  const periodStart =
+    now >= thisYearAnchor
+      ? thisYearAnchor
+      : createUtcDate(
+          currentYear - 1,
+          anniversaryMonth,
+          Math.min(anniversaryDay, lastDayOfMonthUtc(currentYear - 1, anniversaryMonth).getUTCDate()),
+        );
+  const nextPeriodStart = createUtcDate(
+    periodStart.getUTCFullYear() + 1,
+    anniversaryMonth,
+    Math.min(
+      anniversaryDay,
+      lastDayOfMonthUtc(periodStart.getUTCFullYear() + 1, anniversaryMonth).getUTCDate(),
+    ),
+  );
   const periodEnd = endOfUtcDay(new Date(nextPeriodStart.getTime() - 86_400_000));
 
   return {
     periodStartDate: periodStart.toISOString(),
     periodEndDate: periodEnd.toISOString(),
-    daysRemaining: Math.max(
-      0,
-      Math.floor((startOfUtcDay(periodEnd).getTime() - startOfUtcDay(now).getTime()) / 86_400_000),
-    ),
-    periodLabel: `${MONTH_LABEL_FORMATTER.format(periodStart)}-${MONTH_LABEL_FORMATTER.format(periodEnd)}`,
+    daysRemaining: buildDaysRemaining(periodEnd, now),
+    periodLabel: "Anniversary year",
+    periodKey: buildAnniversaryPeriodKey(periodStart),
+    resolvedCadence: "anniversary",
+    isAnniversaryPeriod: true,
   };
 }
 
 export function computeBenefitPeriod({
   cadence,
+  resetTiming,
   now = new Date(),
   cardAnniversaryDate,
 }: ComputeBenefitPeriodArgs): BenefitPeriodResult | null {
-  switch (normalizeSupportedBenefitCadence(cadence)) {
+  switch (resolveSupportedBenefitCadence({ cadence, resetTiming })) {
     case "monthly":
       return computeMonthlyPeriod(now);
     case "quarterly":
@@ -156,7 +218,9 @@ export function computeBenefitPeriod({
     case "semiannual":
       return computeSemiannualPeriod(now);
     case "annual":
-      return computeAnnualPeriod(now, cardAnniversaryDate);
+      return computeAnnualPeriod(now);
+    case "anniversary":
+      return computeAnniversaryPeriod(now, cardAnniversaryDate);
     default:
       return null;
   }

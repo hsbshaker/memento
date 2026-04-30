@@ -29,7 +29,7 @@ export function sortHomeFeedItems(items: HomeFeedItem[]) {
   return [...items].sort(
     (a, b) =>
       a.daysRemaining - b.daysRemaining ||
-      valueRank(b.value) - valueRank(a.value) ||
-      compareNullableStrings(a.benefitName, b.benefitName),
+      compareNullableStrings(a.benefitName, b.benefitName) ||
+      compareNullableStrings(a.cardName, b.cardName),
   );
 }
