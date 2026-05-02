@@ -4,6 +4,12 @@ export type ReminderStyle = (typeof REMINDER_STYLES)[number];
 export const USER_CARD_STATUSES = ["active", "removed"] as const;
 export type UserCardStatus = (typeof USER_CARD_STATUSES)[number];
 
+export const USER_CARD_TYPES = ["personal", "business"] as const;
+export type UserCardType = (typeof USER_CARD_TYPES)[number];
+
+export const USER_BENEFIT_TRACKING_STATUSES = ["tracked", "not_tracked"] as const;
+export type UserBenefitTrackingStatus = (typeof USER_BENEFIT_TRACKING_STATUSES)[number];
+
 export const BENEFIT_REMINDER_STATUSES = [
   "scheduled",
   "delivered",

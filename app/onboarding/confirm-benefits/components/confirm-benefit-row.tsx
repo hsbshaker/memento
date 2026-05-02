@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
+import { cn } from "@/lib/cn";
+import { ROW_PRIMARY_TEXT_CLASS, ROW_SECONDARY_TEXT_CLASS } from "@/components/ui/row-typography";
 import type { ConfirmBenefitRow } from "./confirm-benefits-data";
 
 export function ConfirmBenefitRowItem({
@@ -16,9 +18,9 @@ export function ConfirmBenefitRowItem({
   const [isDescriptionOpen, setIsDescriptionOpen] = useState(false);
 
   return (
-    <div className="group/benefit flex items-start gap-3 py-3 first:pt-0 last:pb-0 sm:gap-3.5 sm:py-3.5">
+    <div className="group/benefit -mx-2 flex items-start gap-3 px-2 py-2.5 transition hover:bg-white/[0.03] sm:gap-3.5 sm:py-3">
       <label className="flex min-w-0 flex-1 cursor-pointer gap-3 sm:gap-3.5">
-        <div className="pt-1">
+        <div className="pt-0.5">
           <Checkbox
             checked={checked}
             onCheckedChange={onToggle}
@@ -29,15 +31,15 @@ export function ConfirmBenefitRowItem({
 
         <div className="min-w-0 flex-1">
           <div className="flex items-start gap-1.5">
-            <p className="min-w-0 text-sm font-medium leading-5 text-white/94">{benefit.benefitName}</p>
+            <p className={ROW_PRIMARY_TEXT_CLASS}>{benefit.benefitName}</p>
           </div>
 
           {benefit.valueDisplay ? (
-            <p className="mt-1 text-sm font-medium leading-5 text-white/74">{benefit.valueDisplay}</p>
+            <p className={cn("mt-0.5", ROW_SECONDARY_TEXT_CLASS, "text-white/48")}>{benefit.valueDisplay}</p>
           ) : null}
 
           {benefit.descriptionDisplay && isDescriptionOpen ? (
-            <p className="mt-1.5 pr-4 text-sm leading-6 text-white/52">{benefit.descriptionDisplay}</p>
+            <p className="mt-2 pr-4 text-sm leading-6 text-white/42">{benefit.descriptionDisplay}</p>
           ) : null}
         </div>
       </label>
@@ -48,7 +50,7 @@ export function ConfirmBenefitRowItem({
           aria-label={`${isDescriptionOpen ? "Hide" : "Show"} details for ${benefit.benefitName}`}
           aria-expanded={isDescriptionOpen}
           onClick={() => setIsDescriptionOpen((current) => !current)}
-          className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-white/28 transition hover:text-white/54 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F7C948]/35 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B1220]"
+          className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center text-white/24 transition hover:text-white/48 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F7C948]/35 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B1220]"
         >
           <svg
             viewBox="0 0 20 20"

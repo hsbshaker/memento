@@ -1,7 +1,7 @@
 import type { LucideIcon } from "lucide-react";
-import { House, List, Settings } from "lucide-react";
+import { LayoutDashboard, Settings, Wallet } from "lucide-react";
 
-export type AppNavId = "overview" | "benefits" | "settings";
+export type AppNavId = "overview" | "wallet" | "settings";
 
 export type AppNavItem = {
   id: AppNavId;
@@ -11,8 +11,8 @@ export type AppNavItem = {
 };
 
 export const APP_NAV_ITEMS: AppNavItem[] = [
-  { id: "overview", label: "Overview", href: "/home", icon: House },
-  { id: "benefits", label: "Benefits", href: "/wallet", icon: List },
+  { id: "overview", label: "Dashboard", href: "/home", icon: LayoutDashboard },
+  { id: "wallet", label: "Wallet", href: "/wallet", icon: Wallet },
   { id: "settings", label: "Settings", href: "/settings", icon: Settings },
 ];
 
@@ -24,7 +24,7 @@ export function isAuthenticatedAppRoute(pathname: string): boolean {
 
 export function getActiveAppNav(pathname: string): AppNavId | null {
   if (pathname === "/home" || pathname.startsWith("/home/")) return "overview";
-  if (pathname === "/wallet" || pathname.startsWith("/wallet/")) return "benefits";
+  if (pathname === "/wallet" || pathname.startsWith("/wallet/")) return "wallet";
   if (pathname === "/settings" || pathname.startsWith("/settings/")) return "settings";
   return null;
 }

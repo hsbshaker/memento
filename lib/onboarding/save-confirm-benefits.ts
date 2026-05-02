@@ -107,6 +107,7 @@ export async function saveConfirmBenefits(userId: string, input: SaveConfirmBene
     user_card_id: string;
     benefit_id: string;
     is_active: boolean;
+    tracking_status: "tracked" | "not_tracked";
   }> = [];
 
   const anniversaryUpdates: Array<{ userCardId: string; cardAnniversaryDate: string }> = [];
@@ -144,7 +145,8 @@ export async function saveConfirmBenefits(userId: string, input: SaveConfirmBene
       upsertRows.push({
         user_card_id: submittedUserCard.userCardId,
         benefit_id: benefitId,
-        is_active: submittedBenefit.selected,
+        is_active: true,
+        tracking_status: submittedBenefit.selected ? "tracked" : "not_tracked",
       });
     }
 

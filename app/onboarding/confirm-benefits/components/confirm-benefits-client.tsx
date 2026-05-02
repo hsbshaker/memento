@@ -4,7 +4,6 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
-import { Surface } from "@/components/ui/Surface";
 import type { ConfirmBenefitCardGroup, ConfirmBenefitsPageData } from "./confirm-benefits-data";
 import { ConfirmBenefitsCardGroup as ConfirmBenefitsCardGroupSection } from "./confirm-benefits-card-group";
 import { ConfirmBenefitsSummary } from "./confirm-benefits-summary";
@@ -171,7 +170,7 @@ export function ConfirmBenefitsClient({ data }: { data: ConfirmBenefitsPageData 
   };
 
   return (
-    <div className="space-y-4 pb-32 sm:space-y-5 md:pb-40">
+    <div className="space-y-4 pb-28 sm:space-y-5 md:pb-36">
       <ConfirmBenefitsSummary
         cardCount={data.totalCards}
         totalPotentialValueCents={data.totalPotentialValueCents}
@@ -198,9 +197,9 @@ export function ConfirmBenefitsClient({ data }: { data: ConfirmBenefitsPageData 
 
       {activeCardGroup ? (
         hasMultipleCards ? (
-          <Surface className="overflow-hidden rounded-[1.75rem] border-white/8 bg-white/[0.05] p-0">
-            <div className="px-4 pt-4 sm:px-5 sm:pt-5">
-              <div className="-mx-4 overflow-x-auto px-4 pb-2 sm:-mx-5 sm:px-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="overflow-hidden rounded-xl border border-white/10 bg-white/[0.03]">
+            <div className="px-4 py-3 sm:px-5 sm:py-3.5">
+              <div className="-mx-4 overflow-x-auto px-4 pb-1 sm:-mx-5 sm:px-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 <div role="tablist" aria-label="Selected cards" className="flex min-w-full gap-2 snap-x snap-mandatory">
                   {data.cardGroups.map((cardGroup) => {
                     const isActive = cardGroup.userCardId === activeCardGroup.userCardId;
@@ -214,10 +213,10 @@ export function ConfirmBenefitsClient({ data }: { data: ConfirmBenefitsPageData 
                         aria-selected={isActive}
                         aria-controls={`card-panel-${cardGroup.userCardId}`}
                         id={`card-tab-${cardGroup.userCardId}`}
-                        className={`shrink-0 snap-start rounded-full border px-3 py-2 text-left text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F7C948]/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B1220] ${
+                        className={`shrink-0 snap-start rounded-lg border px-3 py-1.5 text-left text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F7C948]/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B1220] ${
                           isActive
-                            ? "border-white/12 bg-white/[0.06] text-white"
-                            : "border-transparent bg-transparent text-white/58 hover:bg-white/[0.03] hover:text-white/82"
+                            ? "border-white/14 bg-white/[0.06] text-white"
+                            : "border-transparent bg-transparent text-white/50 hover:border-white/10 hover:bg-white/[0.03] hover:text-white/80"
                         }`}
                         tabIndex={isActive ? 0 : -1}
                       >
@@ -231,7 +230,7 @@ export function ConfirmBenefitsClient({ data }: { data: ConfirmBenefitsPageData 
               </div>
             </div>
 
-            <div className="border-t border-white/[0.06]">
+            <div className="border-t border-white/[0.08]">
               <div
                 role="tabpanel"
                 id={`card-panel-${activeCardGroup.userCardId}`}
@@ -252,7 +251,7 @@ export function ConfirmBenefitsClient({ data }: { data: ConfirmBenefitsPageData 
                 />
               </div>
             </div>
-          </Surface>
+          </div>
         ) : (
           <div>
             <ConfirmBenefitsCardGroupSection
@@ -278,10 +277,10 @@ export function ConfirmBenefitsClient({ data }: { data: ConfirmBenefitsPageData 
       ) : null}
 
       <div className="sticky bottom-4 z-30 hidden md:block">
-        <div className="rounded-3xl border border-white/12 bg-[#0B1220]/90 p-3 backdrop-blur-md">
+        <div className="rounded-xl border border-white/10 bg-[#0B1220]/94 px-4 py-3">
           <div className="flex items-center justify-between gap-4">
             <div className="min-w-0">
-              <p className="text-sm font-medium text-white/88">{footerCopy.desktop}</p>
+              <p className="text-sm font-medium text-white/84">{footerCopy.desktop}</p>
               {totalSelected === 0 ? (
                 <p className="mt-1 text-xs text-white/46">Select at least one benefit to continue.</p>
               ) : hasMissingRequiredAnniversaryDate ? (
@@ -292,6 +291,7 @@ export function ConfirmBenefitsClient({ data }: { data: ConfirmBenefitsPageData 
             </div>
             <Button
               disabled={isFooterActionDisabled || isSaving}
+              className="h-10 min-w-[152px] rounded-lg px-5"
               onClick={() => void handleSave()}
             >
               {isSaving ? "Saving..." : "Save reminders"}
@@ -300,12 +300,12 @@ export function ConfirmBenefitsClient({ data }: { data: ConfirmBenefitsPageData 
         </div>
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-white/10 bg-[#0B1220]/75 px-4 py-3 pb-[env(safe-area-inset-bottom)] backdrop-blur-md md:hidden">
+      <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-white/10 bg-[#0B1220]/82 px-4 py-3 pb-[env(safe-area-inset-bottom)] backdrop-blur-sm md:hidden">
         <div className="mx-auto w-full max-w-3xl">
-          <div className="rounded-[1.75rem] border border-white/12 bg-[#0B1220]/90 p-3 backdrop-blur-md">
+          <div className="rounded-xl border border-white/10 bg-[#0B1220]/94 px-4 py-3">
             <div className="flex items-center gap-3">
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium text-white/88">{footerCopy.mobile}</p>
+                <p className="truncate text-sm font-medium text-white/84">{footerCopy.mobile}</p>
                 {totalSelected === 0 ? (
                   <p className="mt-1 text-xs text-white/46">Select at least one benefit to continue.</p>
                 ) : hasMissingRequiredAnniversaryDate ? (
@@ -314,7 +314,7 @@ export function ConfirmBenefitsClient({ data }: { data: ConfirmBenefitsPageData 
               </div>
               <Button
                 disabled={isFooterActionDisabled || isSaving}
-                className="px-5"
+                className="h-10 rounded-lg px-5"
                 onClick={() => void handleSave()}
               >
                 {isSaving ? "Saving..." : "Save"}

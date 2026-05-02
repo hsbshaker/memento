@@ -3,11 +3,11 @@ import type { HomeTimeframeKey, HomeTimeframeOption } from "@/lib/types/server-d
 export const DEFAULT_HOME_TIMEFRAME: HomeTimeframeKey = "next_14_days";
 
 export const HOME_TIMEFRAME_OPTIONS: HomeTimeframeOption[] = [
-  { key: "next_14_days", label: "Next 14 days", shortLabel: "next 14 days" },
-  { key: "next_30_days", label: "Next 30 days", shortLabel: "next 30 days" },
-  { key: "next_90_days", label: "Next 90 days", shortLabel: "next 90 days" },
-  { key: "next_6_months", label: "Next 6 months", shortLabel: "next 6 months" },
-  { key: "this_year", label: "This year", shortLabel: "this year" },
+  { key: "next_14_days", label: "Next 14 days", shortLabel: "next 14 days", compactLabel: "2W" },
+  { key: "next_30_days", label: "Next 30 days", shortLabel: "next 30 days", compactLabel: "1M" },
+  { key: "next_90_days", label: "Next 90 days", shortLabel: "next 90 days", compactLabel: "3M" },
+  { key: "next_6_months", label: "Next 6 months", shortLabel: "next 6 months", compactLabel: "6M" },
+  { key: "this_year", label: "This year", shortLabel: "this year", compactLabel: "1Y" },
 ];
 
 function endOfDay(date: Date) {

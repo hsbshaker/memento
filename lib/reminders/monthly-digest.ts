@@ -79,6 +79,7 @@ async function loadDigestCandidates({
     .from("user_benefits")
     .select(selectExpr)
     .eq("remind_me", true)
+    .eq("tracking_status", "tracked")
     .in("benefits.cadence", DIGEST_CADENCES)
     .returns<DigestCandidateRow[]>();
 

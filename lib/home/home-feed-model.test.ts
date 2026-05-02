@@ -8,6 +8,7 @@ function makeItem(overrides: Partial<HomeFeedItem>): HomeFeedItem {
     userBenefitId: "ub-1",
     cardId: "card-1",
     benefitId: "benefit-1",
+    trackingStatus: "tracked",
     benefitName: "Dining credit",
     cardName: "Amex Gold",
     issuer: "American Express",
@@ -47,7 +48,7 @@ test("buildHomeFeedModel separates unused and used urgent benefits within the sa
     trackedBenefits: 4,
     now: new Date("2026-04-29T12:00:00.000Z"),
     timeframe: "next_14_days",
-    allTrackedBenefits: [
+    allActiveBenefits: [
       makeItem({ userBenefitId: "unused-urgent", benefitName: "Dining", currentPeriodValueCents: 1000 }),
       makeItem({
         userBenefitId: "used-urgent",
@@ -90,7 +91,7 @@ test("buildHomeFeedModel uses calendar year end for the this year timeframe", ()
     trackedBenefits: 2,
     now: new Date("2026-04-29T12:00:00.000Z"),
     timeframe: "this_year",
-    allTrackedBenefits: [
+    allActiveBenefits: [
       makeItem({
         userBenefitId: "within-year",
         benefitName: "Hotel credit",

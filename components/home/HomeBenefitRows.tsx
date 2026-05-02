@@ -4,14 +4,19 @@ import { HomeAllCaughtUpState } from "@/components/home/HomeAllCaughtUpState";
 import { HomeBenefitRow } from "@/components/home/HomeBenefitRow";
 import { cn } from "@/lib/cn";
 
+type HomeBenefitRowVariant = "urgent" | "upcoming" | "used" | "not_tracked";
+
 type HomeBenefitRowsProps = {
   title: string;
   helperText?: string;
   items: HomeFeedItem[];
-  variant?: "urgent" | "upcoming" | "used";
+  variant?: HomeBenefitRowVariant;
   pendingById?: Record<string, "mark-used" | "mark-not-used" | null | undefined>;
-  onAction?: (item: HomeFeedItem) => void;
-  actionLabel?: string | null;
+  pendingTrackingById?: Record<string, boolean>;
+  onMarkUsed?: (item: HomeFeedItem) => void;
+  onMarkNotUsed?: (item: HomeFeedItem) => void;
+  onDoNotTrack?: (item: HomeFeedItem) => void;
+  onStartTracking?: (item: HomeFeedItem) => void;
   footnote?: string | null;
   headerAccessory?: ReactNode;
   toolbar?: ReactNode;
@@ -27,8 +32,11 @@ export function HomeBenefitRows({
   items,
   variant = "urgent",
   pendingById,
-  onAction,
-  actionLabel = variant === "used" ? "Mark Not Used" : variant === "urgent" ? "Mark Used" : null,
+  pendingTrackingById,
+  onMarkUsed,
+  onMarkNotUsed,
+  onDoNotTrack,
+  onStartTracking,
   footnote = null,
   headerAccessory = null,
   toolbar = null,
@@ -38,17 +46,9 @@ export function HomeBenefitRows({
     return null;
   }
 
-  const isUrgent = variant === "urgent";
-  const isUsed = variant === "used";
-
   return (
     <section>
-      <div
-        className={cn(
-          "rounded-[1.6rem] border px-4 py-4 shadow-[0_18px_40px_-34px_rgba(0,0,0,0.92)] sm:px-5 sm:py-5",
-          isUrgent ? "border-white/9 bg-white/[0.045]" : isUsed ? "border-white/8 bg-white/[0.038]" : "border-white/7 bg-white/[0.035]",
-        )}
-      >
+      <div>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div className="space-y-1.5">
             <h2 className="text-lg font-semibold tracking-tight text-white sm:text-xl">{title}</h2>
@@ -58,9 +58,10 @@ export function HomeBenefitRows({
         </div>
 
         {toolbar ? <div className="mt-4">{toolbar}</div> : null}
+        <div className="mt-4 border-b border-white/8" />
 
         {items.length > 0 ? (
-          <div className="mt-4 overflow-hidden rounded-[1.05rem] border border-white/[0.05] bg-white/[0.015]">
+          <div className="mt-0 overflow-hidden rounded-xl border border-white/[0.05] bg-white/[0.015]">
             <div
               className={cn(
                 items.length > 6
@@ -68,25 +69,32 @@ export function HomeBenefitRows({
                   : "",
               )}
             >
-              {items.map((item, index) => (
-                <div key={item.userBenefitId} className={cn(index > 0 ? "border-t border-white/[0.045]" : undefined)}>
-                  <HomeBenefitRow
-                    item={item}
-                    variant={variant}
-                    pending={
-                      pendingById
-                        ? pendingById[item.userBenefitId] === (variant === "used" ? "mark-not-used" : "mark-used")
-                        : false
-                    }
-                    onAction={onAction}
-                    actionLabel={actionLabel}
-                  />
-                </div>
-              ))}
+              {items.map((item, index) => {
+                const pendingUsage =
+                  pendingById
+                    ? pendingById[item.userBenefitId] === (variant === "used" ? "mark-not-used" : "mark-used")
+                    : false;
+                const pendingTracking = pendingTrackingById?.[item.userBenefitId] === true;
+
+                return (
+                  <div key={item.userBenefitId} className={cn(index > 0 ? "border-t border-white/[0.045]" : undefined)}>
+                    <HomeBenefitRow
+                      item={item}
+                      variant={variant}
+                      pendingUsage={pendingUsage}
+                      pendingTracking={pendingTracking}
+                      onMarkUsed={onMarkUsed}
+                      onMarkNotUsed={onMarkNotUsed}
+                      onDoNotTrack={onDoNotTrack}
+                      onStartTracking={onStartTracking}
+                    />
+                  </div>
+                );
+              })}
             </div>
           </div>
         ) : emptyState ? (
-          <div className="mt-4">
+          <div className="mt-0 border-b border-white/8 py-6">
             <HomeAllCaughtUpState title={emptyState.title} description={emptyState.description} compact />
           </div>
         ) : null}

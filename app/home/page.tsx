@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
 import { HomeScreen } from "@/components/home/HomeScreen";
-import { buildHomeFeed } from "@/lib/home/build-home-feed";
-import { DEFAULT_HOME_TIMEFRAME } from "@/lib/home/home-timeframes";
+import { buildInitialHomeFeed } from "@/lib/home/build-home-feed";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -16,7 +15,7 @@ export default async function HomePage() {
     redirect("/login");
   }
 
-  const initialFeed = await buildHomeFeed(user.id, DEFAULT_HOME_TIMEFRAME);
+  const initialFeed = await buildInitialHomeFeed(user.id);
 
   return <HomeScreen initialFeed={initialFeed} />;
 }

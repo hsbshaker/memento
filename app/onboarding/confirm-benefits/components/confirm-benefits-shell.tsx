@@ -47,12 +47,12 @@ export function ConfirmBenefitsShell({
             Memento
           </div>
         </nav>
-        <div className="mx-auto max-w-4xl">
+        <div className="mx-auto max-w-[52rem]">
           <header className="mb-6 text-center sm:mb-7">
             {eyebrow ? (
               <p className="mb-3 text-xs font-semibold uppercase tracking-[0.22em] text-white/45">{eyebrow}</p>
             ) : null}
-            <h1 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">{title}</h1>
+            <h1 className="text-3xl font-bold tracking-tight text-white sm:text-[2.4rem]">{title}</h1>
             {description ? (
               <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-white/58 sm:text-base">{description}</p>
             ) : null}

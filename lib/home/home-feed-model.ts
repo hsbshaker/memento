@@ -21,13 +21,13 @@ function buildMetric(valueCents: number, helperText: string): HomeMetric {
 }
 
 export function buildHomeFeedModel({
-  allTrackedBenefits,
+  allActiveBenefits,
   trackedBenefits,
   trackedCards,
   now,
   timeframe,
 }: {
-  allTrackedBenefits: HomeFeedItem[];
+  allActiveBenefits: HomeFeedItem[];
   trackedBenefits: number;
   trackedCards: number;
   now: Date;
@@ -35,7 +35,11 @@ export function buildHomeFeedModel({
 }): HomeFeedResult {
   const timeframeOption = getHomeTimeframeOption(timeframe);
   const timeframeEnd = getHomeTimeframeEndDate(now, timeframe);
-  const unusedBenefits = allTrackedBenefits.filter((item) => !item.isUsedThisPeriod);
+  const trackedBenefitsInFeed = allActiveBenefits.filter((item) => item.trackingStatus === "tracked");
+  const notTrackedBenefits = sortHomeFeedItems(
+    allActiveBenefits.filter((item) => item.trackingStatus === "not_tracked"),
+  );
+  const unusedBenefits = trackedBenefitsInFeed.filter((item) => !item.isUsedThisPeriod);
   const actionableUnusedBenefits = unusedBenefits.filter((item) => {
     if (item.snoozedUntil && new Date(item.snoozedUntil) > now) {
       return false;
@@ -48,14 +52,14 @@ export function buildHomeFeedModel({
     actionableUnusedBenefits.filter((item) => new Date(item.resetDate) <= timeframeEnd),
   );
   const usedExpiringBenefits = sortHomeFeedItems(
-    allTrackedBenefits.filter((item) => item.isUsedThisPeriod && new Date(item.resetDate) <= timeframeEnd),
+    trackedBenefitsInFeed.filter((item) => item.isUsedThisPeriod && new Date(item.resetDate) <= timeframeEnd),
   );
 
   const availableNowValueCents = unusedBenefits.reduce((sum, item) => sum + item.currentPeriodValueCents, 0);
   const resettingSoonValueCents = unusedBenefits
     .filter((item) => new Date(item.resetDate) <= timeframeEnd)
     .reduce((sum, item) => sum + item.currentPeriodValueCents, 0);
-  const capturedThisPeriodValueCents = allTrackedBenefits
+  const capturedThisPeriodValueCents = trackedBenefitsInFeed
     .filter((item) => item.isUsedThisPeriod)
     .reduce((sum, item) => sum + item.currentPeriodValueCents, 0);
 
@@ -76,6 +80,8 @@ export function buildHomeFeedModel({
     expiringBenefitCount: expiringBenefits.length,
     usedExpiringBenefits,
     usedExpiringBenefitCount: usedExpiringBenefits.length,
+    notTrackedBenefits,
+    notTrackedBenefitCount: notTrackedBenefits.length,
     walletSummary: {
       trackedBenefits,
       trackedCards,

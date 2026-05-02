@@ -45,8 +45,8 @@ export function ConfirmBenefitsSummary({
   });
 
   return (
-    <div className="px-2 py-0.5 sm:py-1">
-      <p className="mx-auto max-w-3xl text-center text-xl font-semibold tracking-tight text-white/90 sm:text-2xl">
+    <div className="px-2 py-0.5">
+      <p className="mx-auto max-w-3xl text-center text-lg font-semibold tracking-tight text-white/88 sm:text-xl">
         {statement.amount ? (
           <>
             <span>Up to </span>

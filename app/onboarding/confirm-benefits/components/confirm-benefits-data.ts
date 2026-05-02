@@ -52,6 +52,7 @@ type UserBenefitPreferenceRow = {
   user_card_id: string;
   benefit_id: string;
   is_active: boolean;
+  tracking_status: "tracked" | "not_tracked";
 };
 
 export type ConfirmBenefitRow = {
@@ -313,7 +314,7 @@ export async function loadConfirmBenefitsData({
   if (userCardIds.length > 0 && benefitIds.length > 0) {
     const { data: preferenceRows, error: preferenceError } = await supabase
       .from("user_benefits")
-      .select("id, user_card_id, benefit_id, is_active")
+      .select("id, user_card_id, benefit_id, is_active, tracking_status")
       .in("user_card_id", userCardIds)
       .in("benefit_id", benefitIds);
 
@@ -344,7 +345,10 @@ export async function loadConfirmBenefitsData({
 
     const benefits = cardBenefits.map((benefit) => {
       const existingPreference = preferenceMap.get(`${walletRow.id}:${benefit.id}`);
-      const selected = existingPreference?.is_active ?? true;
+      const selected =
+        existingPreference == null
+          ? true
+          : existingPreference.is_active && existingPreference.tracking_status !== "not_tracked";
       const requiresAnniversaryDate = benefitRequiresAnniversaryDate(benefit);
 
       return {

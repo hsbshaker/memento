@@ -8,6 +8,7 @@ function makeItem(overrides: Partial<HomeFeedItem>): HomeFeedItem {
     userBenefitId: "ub-1",
     cardId: "card-1",
     benefitId: "benefit-1",
+    trackingStatus: "tracked",
     benefitName: "Dining credit",
     cardName: "Amex Gold",
     issuer: "American Express",
@@ -47,6 +48,7 @@ function makeFeed(item: HomeFeedItem): HomeFeedResult {
       key: "next_14_days",
       label: "Next 14 days",
       shortLabel: "next 14 days",
+      compactLabel: "2W",
     },
     metrics: {
       availableNow: { valueCents: 3000, valueLabel: "$30", helperText: "Unused value available in the current period." },
@@ -57,6 +59,8 @@ function makeFeed(item: HomeFeedItem): HomeFeedResult {
     expiringBenefitCount: 1,
     usedExpiringBenefits: [],
     usedExpiringBenefitCount: 0,
+    notTrackedBenefits: [],
+    notTrackedBenefitCount: 0,
     walletSummary: {
       trackedBenefits: 1,
       trackedCards: 1,

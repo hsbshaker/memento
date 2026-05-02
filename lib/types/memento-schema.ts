@@ -3,7 +3,9 @@ import type {
   CanonicalCardStatus,
   ReminderStyle,
   TrackInMemento,
+  UserBenefitTrackingStatus,
   UserCardStatus,
+  UserCardType,
 } from "@/lib/constants/memento-schema";
 
 export interface CanonicalCard {
@@ -42,8 +44,12 @@ export interface UserCard {
   user_id: string;
   card_id: string;
   added_at: string;
+  nickname: string | null;
+  last_four: string | null;
+  opened_date: string | null;
   card_anniversary_date: string | null;
   status: UserCardStatus;
+  user_card_type: UserCardType | null;
   created_at: string;
   updated_at: string;
 }
@@ -53,6 +59,7 @@ export interface UserBenefit {
   user_card_id: string;
   benefit_id: string;
   is_active: boolean;
+  tracking_status: UserBenefitTrackingStatus;
   is_used_this_period: boolean;
   last_used_at: string | null;
   reminder_override: ReminderStyle | null;

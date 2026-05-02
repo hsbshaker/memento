@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
-import { WalletList } from "@/components/wallet/WalletList";
-import { getWalletSummary } from "@/lib/wallet/get-wallet-summary";
+import { WalletScreen } from "@/components/wallet/WalletScreen";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getWalletCards } from "@/lib/wallet/get-wallet-cards";
 
 export const dynamic = "force-dynamic";
 
@@ -15,7 +15,7 @@ export default async function WalletPage() {
     redirect("/login");
   }
 
-  const cards = await getWalletSummary(user.id);
+  const cards = await getWalletCards(user.id);
 
-  return <WalletList cards={cards} />;
+  return <WalletScreen cards={cards} />;
 }

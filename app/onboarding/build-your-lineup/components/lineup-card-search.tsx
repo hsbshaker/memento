@@ -4,7 +4,14 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { ChevronRight, Search, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  ROW_ACTION_TEXT_CLASS,
+  ROW_MICRO_TEXT_CLASS,
+  ROW_PRIMARY_TEXT_CLASS,
+  ROW_SECONDARY_TEXT_CLASS,
+} from "@/components/ui/row-typography";
 import { Surface } from "@/components/ui/Surface";
+import { cn } from "@/lib/cn";
 import { getCleanCardName, getIssuerShortLabel } from "@/lib/format-card";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { CardSearchResult } from "@/lib/types/server-data";
@@ -372,11 +379,11 @@ export function LineupCardSearch() {
   };
 
   return (
-    <div className="mx-auto w-full max-w-2xl">
-      <div className="relative mb-8">
+    <div className="mx-auto w-full max-w-[44rem]">
+      <div className="relative mx-auto mb-8 w-full max-w-[40rem]">
         <Search
           aria-hidden="true"
-          className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-white/35"
+          className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-white/35"
         />
         <input
           ref={inputRef}
@@ -392,17 +399,17 @@ export function LineupCardSearch() {
             setError(null);
           }}
           placeholder="Search cards (e.g. Platinum, Sapphire...)"
-          className="w-full rounded-xl border border-white/10 bg-white/[0.045] py-4 pl-12 pr-4 text-white shadow-[0_18px_40px_-28px_rgba(0,0,0,0.95)] outline-none backdrop-blur-md transition-all placeholder:text-white/35 focus:border-[#4A9EFF]/35 focus:bg-white/[0.06] focus:ring-2 focus:ring-[#4A9EFF]/20"
+          className="h-11 w-full rounded-lg border border-white/10 bg-white/[0.04] pl-10 pr-4 text-sm text-white outline-none transition-all placeholder:text-white/35 focus:border-[#4A9EFF]/35 focus:bg-white/[0.055] focus:ring-2 focus:ring-[#4A9EFF]/18"
         />
 
         {showResults ? (
-          <Surface className="absolute left-0 right-0 top-[calc(100%+0.75rem)] z-20 overflow-hidden border-white/10 bg-[#11131A]/90 p-1 shadow-[0_28px_80px_-40px_rgba(0,0,0,0.95)]">
-            {error ? <p className="px-4 py-3 text-sm text-[#F7C948]">{error}</p> : null}
-            {isLoading ? <p className="px-4 py-3 text-sm text-white/55">Searching cards...</p> : null}
+          <Surface className="absolute left-0 right-0 top-[calc(100%+0.6rem)] z-20 overflow-hidden rounded-xl border-white/10 bg-[#11131A]/94 p-1 shadow-[0_20px_60px_-34px_rgba(0,0,0,0.92)] backdrop-blur-0">
+            {error ? <p className="px-3.5 py-3 text-sm text-[#F7C948]">{error}</p> : null}
+            {isLoading ? <p className="px-3.5 py-3 text-sm text-white/55">Searching cards...</p> : null}
 
             {!error && !isLoading ? (
               results.length > 0 ? (
-                <ul className="max-h-[26rem] overflow-y-auto py-1">
+                <ul className="max-h-[24rem] overflow-y-auto">
                   {results.map((card) => {
                     const isSelected = selectedCardIds.has(card.cardId);
                     const cardLabel = getCleanCardName(card.displayName, card.cardName);
@@ -414,7 +421,7 @@ export function LineupCardSearch() {
                           type="button"
                           onClick={() => handleSelectCard(card)}
                           disabled={isSelected}
-                          className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition-all ${
+                          className={`flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors ${
                             isSelected
                               ? "cursor-not-allowed opacity-55"
                               : "text-white/92 hover:bg-white/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4A9EFF]/30"
@@ -423,8 +430,8 @@ export function LineupCardSearch() {
                           <CardArtPreview card={card} />
 
                           <div className="min-w-0 flex-1">
-                            <p className="truncate text-sm font-medium text-white">{cardLabel}</p>
-                            <div className="mt-1 flex items-center gap-2 text-xs text-white/45">
+                            <p className={cn("truncate", ROW_PRIMARY_TEXT_CLASS)}>{cardLabel}</p>
+                            <div className={cn("mt-1 flex items-center gap-2 text-xs", ROW_SECONDARY_TEXT_CLASS, "text-xs")}>
                               <span>{issuerLabel}</span>
                               {card.cardStatus === "no_trackable_benefits" ? (
                                 <span className="rounded-full border border-[#C8A94B]/20 bg-[#C8A94B]/10 px-2 py-0.5 text-[10px] font-medium tracking-[0.06em] text-[#E5CD83]">
@@ -438,7 +445,7 @@ export function LineupCardSearch() {
                             {isSelected ? (
                               <span className="text-xs text-white/45">Added</span>
                             ) : (
-                              <span className="text-xs font-medium text-[#9CC8FF]">Add</span>
+                              <span className={cn("text-[#9CC8FF]", ROW_ACTION_TEXT_CLASS)}>Add</span>
                             )}
                           </div>
                         </button>
@@ -447,7 +454,7 @@ export function LineupCardSearch() {
                   })}
                 </ul>
               ) : (
-                <p className="px-4 py-3 text-sm text-white/55">No cards match that search.</p>
+                <p className="px-3.5 py-3 text-sm text-white/55">No cards match that search.</p>
               )
             ) : null}
           </Surface>
@@ -462,25 +469,25 @@ export function LineupCardSearch() {
         </div>
       ) : null}
 
-      <section className="mt-auto pt-2">
-        <div className="mb-4 flex items-center justify-between gap-4">
-          <h2 className="text-sm font-semibold uppercase tracking-[0.22em] text-white/45">Your Wallet</h2>
-          <span className="rounded-md border border-white/10 bg-white/[0.06] px-2.5 py-1 text-xs font-medium text-white/80">
+      <section className="mx-auto mt-auto w-full max-w-[40rem] pt-2">
+        <div className="mb-3 flex items-center justify-between gap-4">
+          <h2 className={ROW_MICRO_TEXT_CLASS}>YOUR WALLET</h2>
+          <span className="rounded-md border border-white/10 bg-white/[0.04] px-2 py-0.5 text-[11px] font-medium text-white/72">
             {formatCardCount(selectedCards.length)}
           </span>
         </div>
 
-        <div className="overflow-hidden rounded-2xl border border-white/8 bg-white/[0.04] shadow-[0_22px_60px_-42px_rgba(0,0,0,0.95)] backdrop-blur-md">
+        <div className="overflow-hidden rounded-xl border border-white/8 bg-white/[0.025]">
           {isWalletLoading ? (
-            <div className="flex min-h-[200px] items-center justify-center px-6 py-12">
+            <div className="flex min-h-[160px] items-center justify-center px-5 py-10">
               <p className="text-sm text-white/40">Loading your saved cards…</p>
             </div>
           ) : selectedCards.length === 0 ? (
-            <div className="flex min-h-[200px] items-center justify-center px-6 py-12">
+            <div className="flex min-h-[160px] items-center justify-center px-5 py-10">
               <p className="text-sm text-white/40">No cards added yet.</p>
             </div>
           ) : (
-            <div className="px-6">
+            <div className="px-4 sm:px-5">
               {selectedCards.map((card, index) => {
                 const cardLabel = getCleanCardName(card.displayName, card.cardName);
                 const issuerLabel = getIssuerShortLabel(card.issuer);
@@ -489,21 +496,21 @@ export function LineupCardSearch() {
                   <div
                     key={card.cardId}
                     className={`flex items-center justify-between gap-4 py-3 ${
-                      index === 0 ? "" : "border-t border-white/6"
+                      index === 0 ? "" : "border-t border-white/8"
                     }`}
                   >
                     <div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden pr-4">
-                      <p className="truncate text-sm font-medium leading-none text-white">{cardLabel}</p>
+                      <p className={cn("truncate leading-none", ROW_PRIMARY_TEXT_CLASS)}>{cardLabel}</p>
                       <span aria-hidden className="shrink-0 text-[10px] leading-none text-white/22">
                         •
                       </span>
-                      <p className="truncate text-xs leading-none text-white/45">{issuerLabel}</p>
+                      <p className={cn("truncate text-xs leading-none text-white/42", ROW_SECONDARY_TEXT_CLASS, "text-xs leading-none")}>{issuerLabel}</p>
                     </div>
 
                     <button
                       type="button"
                       onClick={() => void handleRemoveCard(card.cardId)}
-                      className="shrink-0 text-rose-300/70 transition-colors hover:text-rose-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-300/30"
+                      className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-rose-300/62 transition-colors hover:text-rose-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-300/30"
                       aria-label={`Remove ${cardLabel}`}
                     >
                       <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
@@ -517,15 +524,15 @@ export function LineupCardSearch() {
 
         {saveError ? <p className="mb-4 text-sm text-rose-100/88">{saveError}</p> : null}
 
-        <div className="mt-8 flex justify-end">
+        <div className="mt-6 flex justify-end">
           <button
             type="button"
             disabled={selectedCards.length === 0 || isContinuing}
             onClick={() => void handleContinue()}
-            className="inline-flex items-center gap-2 rounded-xl bg-white px-8 py-3.5 font-semibold text-black transition-all hover:bg-white/90 disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex min-w-[240px] items-center justify-center gap-2 rounded-xl bg-white px-6 py-3 text-sm font-medium text-black transition-colors hover:bg-white/92 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isContinuing ? "Saving..." : "Continue to reminders"}
-            <ChevronRight className="h-5 w-5" aria-hidden="true" />
+            <ChevronRight className="h-4 w-4" aria-hidden="true" />
           </button>
         </div>
       </section>

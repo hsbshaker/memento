@@ -1,4 +1,8 @@
-import type { ReminderStyle } from "@/lib/constants/memento-schema";
+import type {
+  ReminderStyle,
+  UserBenefitTrackingStatus,
+  UserCardType,
+} from "@/lib/constants/memento-schema";
 
 export type SupportedBenefitCadence = "monthly" | "quarterly" | "semiannual" | "annual" | "anniversary";
 export type ConfigurationType = "selection" | "setup" | null;
@@ -66,6 +70,33 @@ export interface WalletCardSummary {
   hasUrgentBenefit: boolean;
 }
 
+export interface WalletCardListItem {
+  userCardId: string;
+  cardId: string;
+  cardName: string;
+  issuer: string;
+  nickname: string | null;
+  lastFour: string | null;
+  openedDate: string | null;
+  userCardType: UserCardType | null;
+  addedAt: string;
+  createdAt: string;
+  sortDate: string;
+}
+
+export interface WalletCardMetadataResult {
+  userCardId: string;
+  nickname: string | null;
+  lastFour: string | null;
+  openedDate: string | null;
+  userCardType: UserCardType | null;
+}
+
+export interface AddWalletCardResult {
+  duplicateStatus: "none" | "possible_duplicate";
+  card: WalletCardListItem;
+}
+
 export interface CardDetailBenefitRow {
   userBenefitId: string;
   benefitId: string;
@@ -101,6 +132,7 @@ export interface HomeFeedItem {
   userBenefitId: string;
   cardId: string;
   benefitId: string;
+  trackingStatus: UserBenefitTrackingStatus;
   benefitName: string;
   cardName: string;
   issuer: string;
@@ -142,6 +174,7 @@ export interface HomeTimeframeOption {
   key: HomeTimeframeKey;
   label: string;
   shortLabel: string;
+  compactLabel: string;
 }
 
 export interface HomeDashboardState {
@@ -162,6 +195,8 @@ export interface HomeFeedResult {
   expiringBenefitCount: number;
   usedExpiringBenefits: HomeFeedItem[];
   usedExpiringBenefitCount: number;
+  notTrackedBenefits: HomeFeedItem[];
+  notTrackedBenefitCount: number;
   walletSummary: {
     trackedBenefits: number;
     trackedCards: number;

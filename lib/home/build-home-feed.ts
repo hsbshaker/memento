@@ -11,15 +11,22 @@ import { sortHomeFeedItems } from "@/lib/benefits/rank-benefits";
 import { buildBenefitPeriodStatusMap } from "@/lib/benefits/usage-state";
 import { getIssuerDisplayName, getIssuerShortLabel } from "@/lib/format-card";
 import { buildHomeFeedModel } from "@/lib/home/home-feed-model";
-import { DEFAULT_HOME_TIMEFRAME, getHomeTimeframeOption } from "@/lib/home/home-timeframes";
+import {
+  DEFAULT_HOME_TIMEFRAME,
+  HOME_TIMEFRAME_OPTIONS,
+  getHomeTimeframeEndDate,
+  getHomeTimeframeOption,
+} from "@/lib/home/home-timeframes";
 import { getServiceRoleSupabaseClient } from "@/lib/supabase/service-role";
 import type { HomeFeedItem, HomeFeedResult, HomeMetric, HomeTimeframeKey } from "@/lib/types/server-data";
+import type { UserBenefitTrackingStatus } from "@/lib/constants/memento-schema";
 
 type HomeCandidateRow = {
   id: string;
   user_card_id: string;
   benefit_id: string;
   is_active: boolean;
+  tracking_status: UserBenefitTrackingStatus;
   is_used_this_period: boolean;
   last_used_at: string | null;
   reminder_override: "balanced" | "earlier" | "minimal" | null;
@@ -102,6 +109,13 @@ type PeriodStatusRow = {
   period_key: string;
   is_used: boolean;
   used_at?: string | null;
+};
+
+type LoadedHomeFeedData = {
+  allActiveBenefits: HomeFeedItem[];
+  trackedBenefitsCount: number;
+  trackedCards: number;
+  now: Date;
 };
 
 const RESETTING_SOON_WINDOW_DAYS = 14;
@@ -228,6 +242,7 @@ function mapHomeFeedItem(
     userBenefitId: row.id,
     cardId: ownedUserCard.card_id,
     benefitId: row.benefit_id,
+    trackingStatus: row.tracking_status,
     benefitName: canonicalBenefit.benefit_name?.trim() || "Unnamed benefit",
     cardName: canonicalCard.display_name ?? canonicalCard.card_name,
     issuer,
@@ -265,10 +280,52 @@ function mapHomeFeedItem(
   };
 }
 
-export async function buildHomeFeed(
-  userId: string,
-  timeframe: HomeTimeframeKey = DEFAULT_HOME_TIMEFRAME,
-): Promise<HomeFeedResult> {
+// Selects the soonest timeframe that has at least one unused tracked benefit.
+// Falls back to DEFAULT_HOME_TIMEFRAME if none found.
+function selectSmartInitialTimeframe(allActiveBenefits: HomeFeedItem[], now: Date): HomeTimeframeKey {
+  const trackedUnused = allActiveBenefits.filter(
+    (item) => item.trackingStatus === "tracked" && !item.isUsedThisPeriod,
+  );
+
+  for (const option of HOME_TIMEFRAME_OPTIONS) {
+    const end = getHomeTimeframeEndDate(now, option.key);
+    const hasAny = trackedUnused.some((item) => new Date(item.resetDate) <= end);
+    if (hasAny) return option.key;
+  }
+
+  return DEFAULT_HOME_TIMEFRAME;
+}
+
+function buildEmptyFeed(timeframe: HomeTimeframeKey): HomeFeedResult {
+  const timeframeOption = getHomeTimeframeOption(timeframe);
+
+  return {
+    timeframe: timeframeOption,
+    metrics: {
+      availableNow: buildMetric(0, "Unused value available in the current period."),
+      resettingSoon: buildMetric(0, "Unused value expiring in view."),
+      capturedThisPeriod: buildMetric(0, "Value you've already captured this period."),
+    },
+    expiringBenefits: [],
+    expiringBenefitCount: 0,
+    usedExpiringBenefits: [],
+    usedExpiringBenefitCount: 0,
+    notTrackedBenefits: [],
+    notTrackedBenefitCount: 0,
+    walletSummary: {
+      trackedBenefits: 0,
+      trackedCards: 0,
+    },
+    state: {
+      isEmpty: true,
+      isAllCaughtUp: false,
+      headline: "Add your first card to get started.",
+      supportingText: "Track benefits here so Memento can tell you what to use next.",
+    },
+  };
+}
+
+async function loadHomeFeedData(userId: string): Promise<LoadedHomeFeedData | null> {
   const supabase = getServiceRoleSupabaseClient();
   const now = new Date();
 
@@ -286,38 +343,15 @@ export async function buildHomeFeed(
   const trackedCardIds = (trackedCardRows ?? []).map((row) => (row as { id: string }).id);
 
   if (trackedCards === 0) {
-    const timeframeOption = getHomeTimeframeOption(timeframe);
-
-    return {
-      timeframe: timeframeOption,
-      metrics: {
-        availableNow: buildMetric(0, "Unused value available in the current period."),
-        resettingSoon: buildMetric(0, "Unused value expiring in view."),
-        capturedThisPeriod: buildMetric(0, "Value you’ve already captured this period."),
-      },
-      expiringBenefits: [],
-      expiringBenefitCount: 0,
-      usedExpiringBenefits: [],
-      usedExpiringBenefitCount: 0,
-      walletSummary: {
-        trackedBenefits: 0,
-        trackedCards: 0,
-      },
-      state: {
-        isEmpty: true,
-        isAllCaughtUp: false,
-        headline: "Add your first card to get started.",
-        supportingText: "Track benefits here so Memento can tell you what to use next.",
-      },
-      
-    };
+    return null;
   }
 
   const { count: trackedBenefitsCount, error: trackedBenefitsError } = await supabase
     .from("user_benefits")
     .select("id", { count: "exact", head: true })
     .in("user_card_id", trackedCardIds)
-    .eq("is_active", true);
+    .eq("is_active", true)
+    .eq("tracking_status", "tracked");
 
   if (trackedBenefitsError) {
     throw trackedBenefitsError;
@@ -326,7 +360,7 @@ export async function buildHomeFeed(
   const { data: candidateRows, error: candidatesError } = await supabase
     .from("user_benefits")
     .select(
-      "id, user_card_id, benefit_id, is_active, is_used_this_period, last_used_at, reminder_override, conditional_value, snoozed_until, user_cards!inner(id, card_id, card_anniversary_date, status, cards!inner(id, card_code, card_name, display_name, issuer, source_url, card_status)), benefits!inner(id, benefit_name, benefit_value, value_cents, cadence, reset_timing, enrollment_required, requires_setup, requires_selection, selection_type, track_in_memento)",
+      "id, user_card_id, benefit_id, is_active, tracking_status, is_used_this_period, last_used_at, reminder_override, conditional_value, snoozed_until, user_cards!inner(id, card_id, card_anniversary_date, status, cards!inner(id, card_code, card_name, display_name, issuer, source_url, card_status)), benefits!inner(id, benefit_name, benefit_value, value_cents, cadence, reset_timing, enrollment_required, requires_setup, requires_selection, selection_type, track_in_memento)",
     )
     .eq("is_active", true)
     .eq("user_cards.user_id", userId)
@@ -375,17 +409,55 @@ export async function buildHomeFeed(
     periodStatusMap = buildBenefitPeriodStatusMap((periodStatusRows ?? []) as PeriodStatusRow[]);
   }
 
-  const allTrackedBenefits = sortHomeFeedItems(
+  const allActiveBenefits = sortHomeFeedItems(
     typedCandidateRows
       .map((row) => mapHomeFeedItem(row, now, periodStatusMap))
       .filter((row): row is HomeFeedItem => row !== null),
   );
 
-  return buildHomeFeedModel({
-    allTrackedBenefits,
-    trackedBenefits: trackedBenefitsCount ?? 0,
+  return {
+    allActiveBenefits,
+    trackedBenefitsCount: trackedBenefitsCount ?? 0,
     trackedCards,
     now,
+  };
+}
+
+export async function buildHomeFeed(
+  userId: string,
+  timeframe: HomeTimeframeKey = DEFAULT_HOME_TIMEFRAME,
+): Promise<HomeFeedResult> {
+  const data = await loadHomeFeedData(userId);
+
+  if (!data) {
+    return buildEmptyFeed(timeframe);
+  }
+
+  return buildHomeFeedModel({
+    allActiveBenefits: data.allActiveBenefits,
+    trackedBenefits: data.trackedBenefitsCount,
+    trackedCards: data.trackedCards,
+    now: data.now,
+    timeframe,
+  });
+}
+
+// Builds the initial home feed with smart timeframe selection.
+// Picks the soonest window that has at least one unused tracked benefit.
+export async function buildInitialHomeFeed(userId: string): Promise<HomeFeedResult> {
+  const data = await loadHomeFeedData(userId);
+
+  if (!data) {
+    return buildEmptyFeed(DEFAULT_HOME_TIMEFRAME);
+  }
+
+  const timeframe = selectSmartInitialTimeframe(data.allActiveBenefits, data.now);
+
+  return buildHomeFeedModel({
+    allActiveBenefits: data.allActiveBenefits,
+    trackedBenefits: data.trackedBenefitsCount,
+    trackedCards: data.trackedCards,
+    now: data.now,
     timeframe,
   });
 }
