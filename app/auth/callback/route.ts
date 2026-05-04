@@ -54,7 +54,9 @@ export async function GET(request: NextRequest) {
     }
 
     const successRedirect = isNewAuthUser(user) ? NEW_USER_REDIRECT : RETURNING_USER_REDIRECT;
-    return withResponseCookies(NextResponse.redirect(new URL(successRedirect, origin)), response);
+    const handoffRedirect = new URL("/auth/complete", origin);
+    handoffRedirect.searchParams.set("next", successRedirect);
+    return withResponseCookies(NextResponse.redirect(handoffRedirect), response);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown callback exchange error";
     console.error("Auth callback threw", {
