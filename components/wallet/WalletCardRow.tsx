@@ -34,8 +34,7 @@ function getCardTileLabel(cardName: string): string {
 }
 
 function buildSecondaryLine(card: WalletCardListItem): string {
-  const cardTypeLabel = card.userCardType ? `${card.userCardType.charAt(0).toUpperCase()}${card.userCardType.slice(1)}` : null;
-  const parts = [card.nickname, cardTypeLabel, card.issuer, card.lastFour ? `Last Four: ${card.lastFour}` : null].filter(Boolean);
+  const parts = [card.nickname, card.issuer, card.lastFour ? `Last Four: ${card.lastFour}` : null].filter(Boolean);
   return parts.join(" • ");
 }
 

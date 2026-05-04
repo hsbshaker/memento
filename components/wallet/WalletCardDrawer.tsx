@@ -1,21 +1,20 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { CreditCard, LoaderCircle, X } from "lucide-react";
-import type { UserCardType } from "@/lib/constants/memento-schema";
 import type { WalletCardListItem, WalletCardMetadataResult } from "@/lib/types/server-data";
-import { Button } from "@/components/ui/Button";
+import { DatePicker } from "@/components/ui/DatePicker";
+import { Surface } from "@/components/ui/Surface";
 import {
-  ROW_ACTION_TEXT_CLASS,
   ROW_MICRO_TEXT_CLASS,
-  ROW_PRIMARY_TEXT_CLASS,
   ROW_SECONDARY_TEXT_CLASS,
 } from "@/components/ui/row-typography";
 import { cn } from "@/lib/cn";
 import { normalizeWalletCardMetadata } from "@/lib/wallet/wallet-card-metadata";
 
-type WalletCardDrawerProps = {
+type WalletCardModalProps = {
   card: WalletCardListItem | null;
   open: boolean;
   onClose: () => void;
@@ -27,10 +26,6 @@ type SaveState = {
   state: "idle" | "saving" | "saved" | "error";
   message: string | null;
 };
-
-function formatCardTypeLabel(value: UserCardType) {
-  return value === "personal" ? "Personal" : "Business";
-}
 
 function formatSaveState(saveState: SaveState) {
   if (saveState.state === "saving") return "Saving...";
@@ -52,7 +47,7 @@ function getCardTileLabel(cardName: string): string {
     .toUpperCase();
 }
 
-function WalletCardDrawerPanel({
+function WalletCardModalPanel({
   card,
   onClose,
   onCardUpdated,
@@ -63,10 +58,11 @@ function WalletCardDrawerPanel({
   onCardUpdated: (card: WalletCardMetadataResult) => void;
   onCardRemoved: (userCardId: string) => void;
 }) {
+  const router = useRouter();
   const [nickname, setNickname] = useState(card.nickname ?? "");
   const [lastFour, setLastFour] = useState(card.lastFour ?? "");
   const [openedDate, setOpenedDate] = useState(card.openedDate ?? "");
-  const [userCardType, setUserCardType] = useState<UserCardType | null>(card.userCardType ?? null);
+  const userCardType = card.userCardType ?? null;
   const [persistedValues, setPersistedValues] = useState({
     nickname: card.nickname ?? null,
     lastFour: card.lastFour ?? null,
@@ -128,9 +124,7 @@ function WalletCardDrawerPanel({
       return;
     }
 
-    if (!isDirty) {
-      return;
-    }
+    if (!isDirty) return;
 
     setSaveState({ state: "saving", message: null });
 
@@ -138,9 +132,7 @@ function WalletCardDrawerPanel({
       const response = await fetch("/api/wallet/update-card-metadata", {
         method: "PATCH",
         credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           userCardId: card.userCardId,
           nickname,
@@ -164,9 +156,7 @@ function WalletCardDrawerPanel({
       onCardUpdated(result);
       setSaveState({ state: "saved", message: null });
 
-      if (savedTimerRef.current) {
-        window.clearTimeout(savedTimerRef.current);
-      }
+      if (savedTimerRef.current) window.clearTimeout(savedTimerRef.current);
       savedTimerRef.current = window.setTimeout(() => {
         setSaveState({ state: "idle", message: null });
       }, 1400);
@@ -186,9 +176,7 @@ function WalletCardDrawerPanel({
       const response = await fetch("/api/wallet/remove-card", {
         method: "DELETE",
         credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userCardId: card.userCardId }),
       });
       const payload = (await response.json()) as { error?: string };
@@ -209,23 +197,24 @@ function WalletCardDrawerPanel({
 
   return (
     <motion.div
-      initial={{ y: 20, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      exit={{ y: 14, opacity: 0 }}
+      initial={{ opacity: 0, y: 16, scale: 0.98 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: 12, scale: 0.98 }}
       transition={{ duration: 0.18, ease: "easeOut" }}
-      className="h-full w-full md:max-w-[25rem]"
+      className="w-full max-w-[40rem]"
       onClick={(event) => event.stopPropagation()}
     >
-      <div className="flex h-full max-h-[100dvh] flex-col border-l border-white/10 bg-[#0D1525] px-4 py-4 shadow-[-24px_0_48px_-36px_rgba(0,0,0,0.92)] sm:px-5">
+      <Surface className="max-h-[88vh] overflow-y-auto rounded-xl border-white/10 bg-white/[0.06] p-5 shadow-[0_20px_60px_-32px_rgba(0,0,0,0.92)]">
+        {/* Header */}
         <div className="flex items-start justify-between gap-4 border-b border-white/8 pb-4">
           <div className="flex min-w-0 items-center gap-3">
-            <div className="flex h-10 w-10 shrink-0 flex-col items-center justify-center rounded-lg border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.02))] text-white/72">
+            <div className="flex h-10 w-10 shrink-0 flex-col items-center justify-center rounded-lg border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.07),rgba(255,255,255,0.02))] text-white/70">
               <CreditCard className="h-4 w-4" />
               <span className="mt-0.5 text-[9px] font-semibold tracking-[0.16em]">{getCardTileLabel(card.cardName)}</span>
             </div>
             <div className="min-w-0">
               <h2 className="truncate text-lg font-semibold tracking-tight text-white">{card.cardName}</h2>
-              <p className={cn("mt-1", ROW_SECONDARY_TEXT_CLASS)}>{card.issuer}</p>
+              <p className={cn("mt-0.5", ROW_SECONDARY_TEXT_CLASS)}>{card.issuer}</p>
             </div>
           </div>
 
@@ -239,137 +228,116 @@ function WalletCardDrawerPanel({
           </button>
         </div>
 
-        <div className="mt-4 min-h-0 flex-1 space-y-5 overflow-y-auto pr-1">
-          <div className="space-y-1">
-            <p className={ROW_MICRO_TEXT_CLASS}>Card details</p>
-          </div>
-
+        {/* Form */}
+        <div className="mt-5 space-y-5">
           <div className="space-y-4">
-            <div className="space-y-1">
-              <p className={ROW_MICRO_TEXT_CLASS}>Card name</p>
-              <p className={ROW_PRIMARY_TEXT_CLASS}>{card.cardName}</p>
-            </div>
-
-            <div className="space-y-1">
-              <p className={ROW_MICRO_TEXT_CLASS}>Issuer</p>
-              <p className={ROW_SECONDARY_TEXT_CLASS}>{card.issuer}</p>
-            </div>
-
             <label className="block">
-              <div className="flex items-center justify-between gap-3">
-                <span className={ROW_MICRO_TEXT_CLASS}>Nickname</span>
-              </div>
+              <span className={ROW_MICRO_TEXT_CLASS}>Nickname</span>
               <input
                 value={nickname}
                 onChange={(event) => handleDraftChange(setNickname, event.target.value)}
                 placeholder="Optional"
-                className="mt-2 h-10 w-full rounded-lg border border-white/10 bg-[#0D1420]/85 px-3.5 text-sm text-white placeholder:text-white/28 focus:border-[#7FB6FF]/35 focus:outline-none"
+                className="mt-2 h-10 w-full rounded-lg border border-white/10 bg-white/[0.05] px-3.5 text-sm text-white placeholder:text-white/28 focus:border-[#7FB6FF]/35 focus:outline-none"
               />
             </label>
 
             <label className="block">
-              <div className="flex items-center justify-between gap-3">
-                <span className={ROW_MICRO_TEXT_CLASS}>Last Four</span>
-              </div>
+              <span className={ROW_MICRO_TEXT_CLASS}>Last Four</span>
               <input
                 value={lastFour}
                 inputMode="numeric"
                 onChange={(event) => handleDraftChange(setLastFour, normalizeLastFourInput(event.target.value))}
                 placeholder="Optional"
-                className="mt-2 h-10 w-full rounded-lg border border-white/10 bg-[#0D1420]/85 px-3.5 text-sm text-white placeholder:text-white/28 focus:border-[#7FB6FF]/35 focus:outline-none"
-              />
-            </label>
-
-            <label className="block">
-              <div className="flex items-center justify-between gap-3">
-                <span className={ROW_MICRO_TEXT_CLASS}>Opened</span>
-              </div>
-              <input
-                type="date"
-                value={openedDate}
-                onChange={(event) => handleDraftChange(setOpenedDate, event.target.value)}
-                className="mt-2 h-10 w-full rounded-lg border border-white/10 bg-[#0D1420]/85 px-3.5 text-sm text-white focus:border-[#7FB6FF]/35 focus:outline-none"
+                className="mt-2 h-10 w-full rounded-lg border border-white/10 bg-white/[0.05] px-3.5 text-sm text-white placeholder:text-white/28 focus:border-[#7FB6FF]/35 focus:outline-none"
               />
             </label>
 
             <div>
-              <div className="flex items-center justify-between gap-3">
-                <span className={ROW_MICRO_TEXT_CLASS}>Card type</span>
-              </div>
-              <div className="mt-2 inline-flex rounded-lg border border-white/10 bg-[#0D1420]/80 p-1">
-                {(["personal", "business"] as const).map((value) => (
-                  <button
-                    key={value}
-                    type="button"
-                    onClick={() => handleDraftChange(setUserCardType, userCardType === value ? null : value)}
-                    className={cn(
-                      "rounded-md px-3 py-1.5 text-sm font-medium transition",
-                      userCardType === value ? "bg-[#7FB6FF]/12 text-[#7FB6FF]" : "text-white/62 hover:text-white",
-                    )}
-                  >
-                    {formatCardTypeLabel(value)}
-                  </button>
-                ))}
-              </div>
+              <span className={ROW_MICRO_TEXT_CLASS}>Date Opened</span>
+              <DatePicker
+                value={openedDate}
+                onChange={(v) => handleDraftChange(setOpenedDate, v)}
+                placeholder="Optional"
+                className="mt-2"
+              />
             </div>
+
           </div>
         </div>
 
-        <div className="mt-5 flex flex-col gap-3 border-t border-white/8 pt-4">
-          <div className="flex items-center justify-between gap-3">
-            <span
-              className={cn(
-                "text-xs",
-                saveState.state === "error" || normalizedDraft.error ? "text-rose-200/88" : "text-white/42",
-              )}
-            >
+        {/* Footer */}
+        <div className="mt-6 border-t border-white/8 pt-4">
+          {saveMessage ? (
+            <p className={cn("mb-3 text-xs", saveState.state === "error" || normalizedDraft.error ? "text-rose-200/88" : "text-white/42")}>
               {saveMessage}
-            </span>
-            <Button size="sm" className={ROW_ACTION_TEXT_CLASS} disabled={saveDisabled} onClick={() => void handleSave()}>
-              {saveState.state === "saving" ? <LoaderCircle className="h-4 w-4 animate-spin" /> : null}
-              <span>{saveState.state === "saving" ? "Saving..." : "Save"}</span>
-            </Button>
-          </div>
+            </p>
+          ) : null}
+          {removeError ? (
+            <p className="mb-3 text-xs text-rose-100/72">{removeError}</p>
+          ) : null}
 
-          {removeError ? <p className="text-sm text-rose-100/72">{removeError}</p> : null}
-
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <Button variant="secondary" size="sm" className={cn("self-start", ROW_ACTION_TEXT_CLASS)} onClick={() => {}}>
-              View all benefits
-            </Button>
-
+          <div className="flex items-center gap-2">
             {confirmingRemove ? (
-              <div className="flex gap-3 self-start sm:self-auto">
-                <Button variant="secondary" size="sm" className={ROW_ACTION_TEXT_CLASS} disabled={removing} onClick={() => setConfirmingRemove(false)}>
+              <>
+                <button
+                  type="button"
+                  disabled={removing}
+                  onClick={() => setConfirmingRemove(false)}
+                  className="inline-flex items-center justify-center rounded-xl bg-white/5 px-4 py-2 text-sm font-semibold text-white/80 ring-1 ring-white/10 transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
+                >
                   Cancel
-                </Button>
+                </button>
                 <button
                   type="button"
                   disabled={removing}
                   onClick={() => void handleRemove()}
-                  className="inline-flex items-center justify-center gap-2 rounded-lg border border-rose-300/25 bg-rose-300/14 px-4 py-2 text-sm font-medium text-rose-100 transition hover:bg-rose-300/18 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-rose-300/10 px-4 py-2 text-sm font-semibold text-rose-200/85 ring-1 ring-rose-300/20 transition hover:bg-rose-300/15 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {removing ? <LoaderCircle className="h-4 w-4 animate-spin" /> : null}
-                  <span>{removing ? "Removing..." : "Remove card"}</span>
+                  {removing ? "Removing..." : "Confirm remove"}
                 </button>
-              </div>
+              </>
             ) : (
-              <button
-                type="button"
-                onClick={() => setConfirmingRemove(true)}
-                className="inline-flex items-center justify-center self-start rounded-lg border border-rose-300/18 bg-rose-300/10 px-4 py-2 text-sm font-medium text-rose-100/90 transition hover:bg-rose-300/14 sm:self-auto"
-              >
-                Remove card
-              </button>
+              <>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onClose();
+                    router.push(`/benefits?userCardId=${card.userCardId}`);
+                  }}
+                  className="inline-flex items-center justify-center rounded-xl bg-white/5 px-4 py-2 text-sm font-semibold text-white/80 ring-1 ring-white/10 transition hover:bg-white/10"
+                >
+                  View benefits
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setConfirmingRemove(true)}
+                  className="inline-flex items-center justify-center rounded-xl bg-rose-300/10 px-4 py-2 text-sm font-semibold text-rose-200/85 ring-1 ring-rose-300/20 transition hover:bg-rose-300/15"
+                >
+                  Remove card
+                </button>
+              </>
             )}
+
+            <div className="flex-1" />
+
+            <button
+              type="button"
+              disabled={saveDisabled}
+              onClick={() => void handleSave()}
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#7FB6FF] px-4 py-2 text-sm font-semibold text-[#08111F] transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {saveState.state === "saving" ? <LoaderCircle className="h-4 w-4 animate-spin" /> : null}
+              {saveState.state === "saving" ? "Saving..." : "Save"}
+            </button>
           </div>
         </div>
-      </div>
+      </Surface>
     </motion.div>
   );
 }
 
-export function WalletCardDrawer({ card, open, onClose, onCardUpdated, onCardRemoved }: WalletCardDrawerProps) {
+export function WalletCardModal({ card, open, onClose, onCardUpdated, onCardRemoved }: WalletCardModalProps) {
   useEffect(() => {
     if (!open) return;
 
@@ -377,9 +345,7 @@ export function WalletCardDrawer({ card, open, onClose, onCardUpdated, onCardRem
     document.body.style.overflow = "hidden";
 
     const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        onClose();
-      }
+      if (event.key === "Escape") onClose();
     };
 
     document.addEventListener("keydown", handleEscape);
@@ -396,18 +362,16 @@ export function WalletCardDrawer({ card, open, onClose, onCardUpdated, onCardRem
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[120] flex items-end justify-center bg-[#050914]/48 p-0 md:items-stretch md:justify-end"
+          className="fixed inset-0 z-[120] flex items-end justify-center bg-black/60 p-3 sm:items-center sm:p-6"
           onClick={onClose}
         >
-          <div className="h-full w-full md:h-auto md:max-h-full md:w-auto">
-            <WalletCardDrawerPanel
-              key={card.userCardId}
-              card={card}
-              onClose={onClose}
-              onCardUpdated={onCardUpdated}
-              onCardRemoved={onCardRemoved}
-            />
-          </div>
+          <WalletCardModalPanel
+            key={card.userCardId}
+            card={card}
+            onClose={onClose}
+            onCardUpdated={onCardUpdated}
+            onCardRemoved={onCardRemoved}
+          />
         </motion.div>
       ) : null}
     </AnimatePresence>

@@ -346,25 +346,29 @@ async function loadHomeFeedData(userId: string): Promise<LoadedHomeFeedData | nu
     return null;
   }
 
-  const { count: trackedBenefitsCount, error: trackedBenefitsError } = await supabase
-    .from("user_benefits")
-    .select("id", { count: "exact", head: true })
-    .in("user_card_id", trackedCardIds)
-    .eq("is_active", true)
-    .eq("tracking_status", "tracked");
+  const [
+    { count: trackedBenefitsCount, error: trackedBenefitsError },
+    { data: candidateRows, error: candidatesError },
+  ] = await Promise.all([
+    supabase
+      .from("user_benefits")
+      .select("id", { count: "exact", head: true })
+      .in("user_card_id", trackedCardIds)
+      .eq("is_active", true)
+      .eq("tracking_status", "tracked"),
+    supabase
+      .from("user_benefits")
+      .select(
+        "id, user_card_id, benefit_id, is_active, tracking_status, is_used_this_period, last_used_at, reminder_override, conditional_value, snoozed_until, user_cards!inner(id, card_id, card_anniversary_date, status, cards!inner(id, card_code, card_name, display_name, issuer, source_url, card_status)), benefits!inner(id, benefit_name, benefit_value, value_cents, cadence, reset_timing, enrollment_required, requires_setup, requires_selection, selection_type, track_in_memento)",
+      )
+      .eq("is_active", true)
+      .eq("user_cards.user_id", userId)
+      .eq("benefits.track_in_memento", "yes"),
+  ]);
 
   if (trackedBenefitsError) {
     throw trackedBenefitsError;
   }
-
-  const { data: candidateRows, error: candidatesError } = await supabase
-    .from("user_benefits")
-    .select(
-      "id, user_card_id, benefit_id, is_active, tracking_status, is_used_this_period, last_used_at, reminder_override, conditional_value, snoozed_until, user_cards!inner(id, card_id, card_anniversary_date, status, cards!inner(id, card_code, card_name, display_name, issuer, source_url, card_status)), benefits!inner(id, benefit_name, benefit_value, value_cents, cadence, reset_timing, enrollment_required, requires_setup, requires_selection, selection_type, track_in_memento)",
-    )
-    .eq("is_active", true)
-    .eq("user_cards.user_id", userId)
-    .eq("benefits.track_in_memento", "yes");
 
   if (candidatesError) {
     throw candidatesError;

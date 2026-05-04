@@ -1,13 +1,14 @@
 "use client";
 
 import { useDeferredValue, useMemo, useState } from "react";
+import { CreditCard, Plus } from "lucide-react";
 import type { ChangeEvent } from "react";
 import type { AddWalletCardResult, WalletCardListItem, WalletCardMetadataResult } from "@/lib/types/server-data";
 import { AppShell } from "@/components/ui/AppShell";
 import { MobilePageContainer } from "@/components/ui/MobilePageContainer";
-import { WalletAddCardButton } from "@/components/wallet/WalletAddCardButton";
 import { WalletAddCardModal } from "@/components/wallet/WalletAddCardModal";
-import { WalletCardDrawer } from "@/components/wallet/WalletCardDrawer";
+import { WalletMetrics } from "@/components/wallet/WalletMetrics";
+import { WalletCardModal } from "@/components/wallet/WalletCardDrawer";
 import { WalletCardRow } from "@/components/wallet/WalletCardRow";
 import { WalletEmptyState } from "@/components/wallet/WalletEmptyState";
 
@@ -48,7 +49,7 @@ export function WalletScreen({ cards }: WalletScreenProps) {
   const [sort, setSort] = useState<WalletSortOption>("recently_added");
   const [issuerFilter, setIssuerFilter] = useState("All issuers");
   const [selectedCardId, setSelectedCardId] = useState<string | null>(cards[0]?.userCardId ?? null);
-  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [cardModalOpen, setCardModalOpen] = useState(false);
   const [addModalOpen, setAddModalOpen] = useState(false);
   const deferredQuery = useDeferredValue(query);
 
@@ -101,15 +102,13 @@ export function WalletScreen({ cards }: WalletScreenProps) {
 
   const handleCardRemoved = (userCardId: string) => {
     setWalletCards((current) => current.filter((card) => card.userCardId !== userCardId));
-    setDrawerOpen(false);
+    setCardModalOpen(false);
     setSelectedCardId((current) => (current === userCardId ? null : current));
   };
 
   const handleCardAdded = (result: AddWalletCardResult) => {
     setWalletCards((current) => [result.card, ...current]);
-    setSelectedCardId(result.card.userCardId);
     setAddModalOpen(false);
-    setDrawerOpen(true);
   };
 
   if (walletCards.length === 0) {
@@ -117,13 +116,7 @@ export function WalletScreen({ cards }: WalletScreenProps) {
       <AppShell containerClassName="max-w-5xl px-0 md:px-6">
         <MobilePageContainer className="pb-20">
           <div className="space-y-8 pt-6">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-              <div className="space-y-2">
-                <h1 className="text-3xl font-semibold tracking-tight text-white sm:text-4xl">Wallet</h1>
-                <p className="text-sm text-white/58 sm:text-base">Manage your lineup.</p>
-              </div>
-              <WalletAddCardButton className="w-full sm:w-auto" onClick={() => setAddModalOpen(true)} />
-            </div>
+            <p className="text-xs font-medium tracking-[0.24em] text-[#F7C948] uppercase">Wallet</p>
 
             <WalletEmptyState onAddCard={() => setAddModalOpen(true)} />
           </div>
@@ -137,55 +130,51 @@ export function WalletScreen({ cards }: WalletScreenProps) {
     <AppShell containerClassName="max-w-5xl px-0 md:px-6">
       <MobilePageContainer className="pb-20">
         <div className="space-y-5 pt-6">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-            <div className="space-y-2">
-              <h1 className="text-3xl font-semibold tracking-tight text-white sm:text-4xl">Wallet</h1>
-              <p className="text-sm text-white/58 sm:text-base">Manage your lineup.</p>
-            </div>
-            <WalletAddCardButton className="w-full sm:w-auto" onClick={() => setAddModalOpen(true)} />
-          </div>
+          <p className="text-xs font-medium tracking-[0.24em] text-[#F7C948] uppercase">Wallet</p>
 
-          <div className="border-b border-white/8 pb-4">
-            <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_160px_180px]">
-              <label className="flex flex-col gap-2">
-                <span className="text-[11px] font-semibold tracking-[0.18em] text-white/42 uppercase">Search</span>
-                <input
-                  value={query}
-                  onChange={handleSearchChange}
-                  placeholder="Search cards"
-                  className="h-10 rounded-lg border border-white/10 bg-[#0D1420]/80 px-3.5 text-sm text-white placeholder:text-white/28 focus:border-[#7FB6FF]/35 focus:outline-none"
-                />
-              </label>
+          <WalletMetrics cardCount={walletCards.length} />
 
-              <label className="flex flex-col gap-2">
-                <span className="text-[11px] font-semibold tracking-[0.18em] text-white/42 uppercase">Sort</span>
-                <select
-                  value={sort}
-                  onChange={(event) => setSort(event.target.value as WalletSortOption)}
-                  className="h-10 rounded-lg border border-white/10 bg-[#0D1420]/80 px-3.5 text-sm text-white focus:border-[#7FB6FF]/35 focus:outline-none"
-                >
-                  <option value="recently_added">Recently added</option>
-                  <option value="card_name">Card name A-Z</option>
-                  <option value="opened_date">Opened date</option>
-                </select>
-              </label>
-
-              <label className="flex flex-col gap-2">
-                <span className="text-[11px] font-semibold tracking-[0.18em] text-white/42 uppercase">Issuer</span>
-                <select
-                  value={issuerFilter}
-                  onChange={(event) => setIssuerFilter(event.target.value)}
-                  className="h-10 rounded-lg border border-white/10 bg-[#0D1420]/80 px-3.5 text-sm text-white focus:border-[#7FB6FF]/35 focus:outline-none"
-                >
-                  <option value="All issuers">All issuers</option>
-                  {issuers.map((issuer) => (
-                    <option key={issuer} value={issuer}>
-                      {issuer}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </div>
+          <div className="flex items-center gap-2 border-b border-white/8 pb-4">
+            <input
+              aria-label="Search cards"
+              value={query}
+              onChange={handleSearchChange}
+              placeholder="Search cards"
+              className="h-9 min-w-0 flex-1 rounded-lg border border-white/8 bg-transparent px-3 text-sm text-white placeholder:text-white/28 focus:border-white/20 focus:outline-none"
+            />
+            <select
+              aria-label="Sort"
+              value={sort}
+              onChange={(event) => setSort(event.target.value as WalletSortOption)}
+              className="h-9 rounded-lg border border-white/8 bg-transparent px-3 text-sm text-white/60 focus:border-white/20 focus:outline-none"
+            >
+              <option value="recently_added">Recently added</option>
+              <option value="card_name">A–Z</option>
+              <option value="opened_date">Opened date</option>
+            </select>
+            <select
+              aria-label="Filter by issuer"
+              value={issuerFilter}
+              onChange={(event) => setIssuerFilter(event.target.value)}
+              className="h-9 rounded-lg border border-white/8 bg-transparent px-3 text-sm text-white/60 focus:border-white/20 focus:outline-none"
+            >
+              <option value="All issuers">All issuers</option>
+              {issuers.map((issuer) => (
+                <option key={issuer} value={issuer}>
+                  {issuer}
+                </option>
+              ))}
+            </select>
+            <div className="h-4 w-px shrink-0 bg-white/10" />
+            <button
+              type="button"
+              onClick={() => setAddModalOpen(true)}
+              aria-label="Add card"
+              className="inline-flex shrink-0 items-center gap-1 text-[#F7C948] transition-colors hover:text-[#F7C948]/70"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              <CreditCard className="h-4 w-4" />
+            </button>
           </div>
 
           {filteredCards.length === 0 ? (
@@ -202,19 +191,20 @@ export function WalletScreen({ cards }: WalletScreenProps) {
                     isSelected={selectedCardId === card.userCardId}
                     onSelect={(userCardId) => {
                       setSelectedCardId(userCardId);
-                      setDrawerOpen(true);
+                      setCardModalOpen(true);
                     }}
                   />
                 </div>
               ))}
             </div>
           )}
+
         </div>
       </MobilePageContainer>
-      <WalletCardDrawer
-        open={drawerOpen}
+      <WalletCardModal
+        open={cardModalOpen}
         card={selectedCard}
-        onClose={() => setDrawerOpen(false)}
+        onClose={() => setCardModalOpen(false)}
         onCardUpdated={handleCardUpdated}
         onCardRemoved={handleCardRemoved}
       />

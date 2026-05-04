@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/Button";
-import { Surface } from "@/components/ui/Surface";
 
 type AccountSectionProps = {
   email: string | null;
@@ -28,17 +27,17 @@ export function AccountSection({ email }: AccountSectionProps) {
   };
 
   return (
-    <Surface className="rounded-[1.75rem] border-white/12 bg-white/6 p-5 sm:p-6">
+    <div className="space-y-3">
       <p className="text-xs font-medium tracking-[0.22em] text-white/42 uppercase">Account</p>
-      <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex items-center justify-between gap-4 rounded-xl border border-white/10 bg-white/5 px-4 py-3.5">
         <div>
-          <p className="text-sm text-white/56">Signed in as</p>
-          <p className="mt-1 text-base font-semibold text-white">{email ?? "Unknown email"}</p>
+          <p className="text-xs text-white/50">Signed in as</p>
+          <p className="mt-0.5 text-sm font-medium text-white">{email ?? "Unknown email"}</p>
         </div>
-        <Button variant="secondary" onClick={() => void handleSignOut()} disabled={isSigningOut}>
+        <Button variant="secondary" size="sm" onClick={() => void handleSignOut()} disabled={isSigningOut}>
           {isSigningOut ? "Signing out..." : "Sign out"}
         </Button>
       </div>
-    </Surface>
+    </div>
   );
 }

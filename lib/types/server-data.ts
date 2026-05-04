@@ -204,6 +204,57 @@ export interface HomeFeedResult {
   state: HomeDashboardState;
 }
 
+export type BenefitInventoryStatus = "unused" | "used" | "not_tracked";
+
+export interface BenefitsInventoryItem {
+  userBenefitId: string;
+  benefitId: string;
+  userCardId: string;
+  cardId: string;
+  cardName: string;
+  issuer: string;
+  nickname: string | null;
+  lastFour: string | null;
+  benefitName: string;
+  value: string | null;
+  valueDescriptor: string | null;
+  valueCents: number;
+  cadence: SupportedBenefitCadence;
+  periodStart: string;
+  periodEnd: string;
+  periodLabel: string;
+  periodKey: string;
+  daysRemaining: number;
+  trackingStatus: UserBenefitTrackingStatus;
+  isUsedThisPeriod: boolean;
+  lastUsedAt: string | null;
+  inventoryStatus: BenefitInventoryStatus;
+  enrollmentRequired: boolean;
+  requiresConfiguration: boolean;
+  configurationType: ConfigurationType;
+  configurationStatus: ConfigurationStatus;
+}
+
+export interface BenefitsFeedResult {
+  items: BenefitsInventoryItem[];
+  counts: {
+    all: number;
+    unused: number;
+    used: number;
+    notTracked: number;
+  };
+  filters: {
+    issuers: string[];
+    cadences: SupportedBenefitCadence[];
+    cards: Array<{
+      userCardId: string;
+      cardName: string;
+      issuer: string;
+      nickname: string | null;
+    }>;
+  };
+}
+
 export interface ConfirmAddCardSelectionInput {
   benefitId: string;
   enabled: boolean;
