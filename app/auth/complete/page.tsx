@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
@@ -15,7 +15,7 @@ function sanitizeNextPath(value: string | null) {
   return value;
 }
 
-export default function AuthCompletePage() {
+function AuthCompleteContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const nextPath = sanitizeNextPath(searchParams.get("next"));
@@ -65,5 +65,22 @@ export default function AuthCompletePage() {
         <p className="text-sm text-white/70">{message}</p>
       </div>
     </main>
+  );
+}
+
+export default function AuthCompletePage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="flex min-h-screen items-center justify-center p-6">
+          <div className="max-w-md space-y-3 text-center">
+            <h1 className="text-xl font-semibold text-white">Signing you in</h1>
+            <p className="text-sm text-white/70">Finishing sign-in...</p>
+          </div>
+        </main>
+      }
+    >
+      <AuthCompleteContent />
+    </Suspense>
   );
 }
