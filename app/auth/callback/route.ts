@@ -57,7 +57,6 @@ export async function GET(request: NextRequest) {
     const successRedirect = isNewAuthUser(user) ? NEW_USER_REDIRECT : RETURNING_USER_REDIRECT;
     const handoffRedirect = new URL("/auth/complete", origin);
     handoffRedirect.searchParams.set("next", successRedirect);
-    handoffRedirect.searchParams.set("debug", "1");
     return auth.finalize(NextResponse.redirect(handoffRedirect));
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown callback exchange error";
