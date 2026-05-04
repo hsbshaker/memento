@@ -3,6 +3,8 @@ import { AppShell } from "@/components/ui/AppShell";
 import { Surface } from "@/components/ui/Surface";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
+export const dynamic = "force-dynamic";
+
 type AuthUserLike = {
   email?: string | null;
   user_metadata?: Record<string, unknown> | null;

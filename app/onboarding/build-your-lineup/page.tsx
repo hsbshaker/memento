@@ -3,6 +3,8 @@ import { redirect } from "next/navigation";
 import { LineupCardSearch } from "./components/lineup-card-search";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
+export const dynamic = "force-dynamic";
+
 export default async function BuildYourLineupPage() {
   const supabase = await createSupabaseServerClient();
   const {

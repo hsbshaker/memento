@@ -3,6 +3,8 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { loadConfirmBenefitsData } from "./components/confirm-benefits-data";
 import { ConfirmBenefitsScreen } from "./components/confirm-benefits-screen";
 
+export const dynamic = "force-dynamic";
+
 export default async function ConfirmBenefitsPage() {
   const supabase = await createSupabaseServerClient();
   const {
