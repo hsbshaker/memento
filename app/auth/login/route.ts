@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { createSupabaseRouteHandlerClient, withResponseCookies } from "@/lib/supabase/route-handler";
+import { createSupabaseRouteHandlerClient } from "@/lib/supabase/route-handler";
 
 const ERROR_REDIRECT = "/auth/error?reason=oauth_sign_in_failed&detail=init_failed";
 
@@ -8,7 +8,8 @@ export async function GET(request: NextRequest) {
   const redirectTo = `${origin}/auth/callback`;
 
   try {
-    const { supabase, response } = createSupabaseRouteHandlerClient(request);
+    const auth = createSupabaseRouteHandlerClient(request);
+    const { supabase } = auth;
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
@@ -28,10 +29,10 @@ export async function GET(request: NextRequest) {
         message: error?.message ?? "Missing OAuth URL",
         hasUrl: Boolean(data.url),
       });
-      return withResponseCookies(NextResponse.redirect(new URL(ERROR_REDIRECT, origin)), response);
+      return auth.finalize(NextResponse.redirect(new URL(ERROR_REDIRECT, origin)));
     }
 
-    return withResponseCookies(NextResponse.redirect(data.url), response);
+    return auth.finalize(NextResponse.redirect(data.url));
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown OAuth sign-in error";
     console.error("OAuth sign-in route threw", {

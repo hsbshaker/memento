@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { isNewAuthUser } from "@/lib/auth/is-new-auth-user";
-import { createSupabaseRouteHandlerClient, withResponseCookies } from "@/lib/supabase/route-handler";
+import { createSupabaseRouteHandlerClient } from "@/lib/supabase/route-handler";
 
 const ERROR_REDIRECT = "/auth/error?reason=oauth_callback_failed&detail=exchange_failed";
 const NEW_USER_REDIRECT = "/onboarding/build-your-lineup";
@@ -22,7 +22,8 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const { supabase, response } = createSupabaseRouteHandlerClient(request);
+    const auth = createSupabaseRouteHandlerClient(request);
+    const { supabase } = auth;
     const { error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (error) {
@@ -56,7 +57,7 @@ export async function GET(request: NextRequest) {
     const successRedirect = isNewAuthUser(user) ? NEW_USER_REDIRECT : RETURNING_USER_REDIRECT;
     const handoffRedirect = new URL("/auth/complete", origin);
     handoffRedirect.searchParams.set("next", successRedirect);
-    return withResponseCookies(NextResponse.redirect(handoffRedirect), response);
+    return auth.finalize(NextResponse.redirect(handoffRedirect));
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown callback exchange error";
     console.error("Auth callback threw", {
