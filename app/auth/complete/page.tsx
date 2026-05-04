@@ -37,6 +37,7 @@ function AuthCompleteContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const nextPath = sanitizeNextPath(searchParams.get("next"));
+  const debugMode = searchParams.get("debug") === "1";
   const fallbackPath = useMemo(() => `/auth/login?next=${encodeURIComponent(nextPath)}`, [nextPath]);
   const [message, setMessage] = useState("Finishing sign-in...");
   const [debug, setDebug] = useState<ClientSessionDebug | null>(null);
@@ -53,10 +54,14 @@ function AuthCompleteContent() {
           data: { user },
         } = await supabase.auth.getUser();
 
-        if (user) {
+        if (user && !debugMode) {
           router.replace(nextPath);
           router.refresh();
           return;
+        }
+
+        if (user && debugMode) {
+          break;
         }
 
         await new Promise((resolve) => window.setTimeout(resolve, SESSION_POLL_INTERVAL_MS));
@@ -90,7 +95,11 @@ function AuthCompleteContent() {
         browserCookieNames,
         server,
       });
-      setMessage("We couldn't finish sign-in automatically.");
+      setMessage(
+        user
+          ? "Debug mode is on. Review the session state below before continuing."
+          : "We couldn't finish sign-in automatically.",
+      );
     };
 
     void finishSignIn();
@@ -98,7 +107,7 @@ function AuthCompleteContent() {
     return () => {
       cancelled = true;
     };
-  }, [fallbackPath, nextPath, router]);
+  }, [debugMode, fallbackPath, nextPath, router]);
 
   return (
     <main className="flex min-h-screen items-center justify-center p-6">
@@ -117,17 +126,17 @@ function AuthCompleteContent() {
             <div className="flex gap-3 pt-2">
               <button
                 type="button"
+                onClick={() => window.location.replace(nextPath)}
+                className="rounded-lg border border-white/15 px-3 py-2 text-white transition hover:border-white/30"
+              >
+                Continue
+              </button>
+              <button
+                type="button"
                 onClick={() => window.location.replace(fallbackPath)}
                 className="rounded-lg border border-white/15 px-3 py-2 text-white transition hover:border-white/30"
               >
                 Back to login
-              </button>
-              <button
-                type="button"
-                onClick={() => window.location.replace(nextPath)}
-                className="rounded-lg border border-white/15 px-3 py-2 text-white transition hover:border-white/30"
-              >
-                Try destination
               </button>
             </div>
           </div>
