@@ -7,6 +7,7 @@ import {
   formatBenefitValue,
   getConfigurationStatus,
   getConfigurationType,
+  getBenefitResetsLabel,
 } from "@/lib/benefits/format-benefit-labels";
 import { buildBenefitPeriodStatusMap } from "@/lib/benefits/usage-state";
 import { getIssuerDisplayName } from "@/lib/format-card";
@@ -231,6 +232,12 @@ function mapBenefitsInventoryItem(
     periodStart: period.periodStartDate,
     periodEnd: period.periodEndDate,
     periodLabel: period.periodLabel,
+    resetsLabel: getBenefitResetsLabel({
+      cadence: canonicalBenefit.cadence,
+      resetTiming: canonicalBenefit.reset_timing,
+      cardAnniversaryDate: ownedUserCard.card_anniversary_date,
+      now,
+    }),
     periodKey: period.periodKey,
     daysRemaining: period.daysRemaining,
     trackingStatus: row.tracking_status,

@@ -1,5 +1,9 @@
 import type { ConfigurationStatus, ConfigurationType } from "@/lib/types/server-data";
-import { computeBenefitPeriod, normalizeSupportedBenefitCadence } from "@/lib/benefits/compute-benefit-period";
+import {
+  computeBenefitPeriod,
+  isBenefitResetOnAnniversary,
+  normalizeSupportedBenefitCadence,
+} from "@/lib/benefits/compute-benefit-period";
 
 type BenefitValueInput = {
   benefitValue: string | null;
@@ -15,6 +19,14 @@ type ConfigurationInput = {
 type ConfigurationStatusInput = ConfigurationInput & {
   conditionalValue?: string | null;
 };
+
+const SHORT_MONTH_DAY_FORMATTER = new Intl.DateTimeFormat("en-US", {
+  month: "short",
+  day: "numeric",
+  timeZone: "UTC",
+});
+const RENEWAL_RESET_PATTERN = /\brenew(?:al|s)?\b/i;
+const OFFER_TERMS_PATTERN = /\b(offer|booking|bookings|terms?)\b/i;
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function normalizeCardArtUrl(sourceUrl: string | null | undefined) {
@@ -174,4 +186,57 @@ export function getBenefitPeriodLabel({
     default:
       return null;
   }
+}
+
+export function getBenefitResetsLabel({
+  cadence,
+  resetTiming,
+  cardAnniversaryDate,
+  now = new Date(),
+}: {
+  cadence: string | null;
+  resetTiming?: string | null;
+  cardAnniversaryDate?: string | null;
+  now?: Date;
+}) {
+  const period = computeBenefitPeriod({
+    cadence: normalizeSupportedBenefitCadence(cadence),
+    resetTiming,
+    cardAnniversaryDate,
+    now,
+  });
+
+  if (period) {
+    const periodEnd = new Date(period.periodEndDate);
+    if (!Number.isNaN(periodEnd.getTime())) {
+      const labelDate =
+        period.resolvedCadence === "anniversary"
+          ? new Date(periodEnd.getTime() + 86_400_000)
+          : periodEnd;
+      return SHORT_MONTH_DAY_FORMATTER.format(labelDate);
+    }
+  }
+
+  const normalizedCadence = (cadence ?? "").trim();
+  const normalizedResetTiming = (resetTiming ?? "").trim();
+
+  if (
+    normalizedCadence === "anniversary" ||
+    isBenefitResetOnAnniversary(normalizedResetTiming)
+  ) {
+    return "Card anniversary";
+  }
+
+  if (RENEWAL_RESET_PATTERN.test(normalizedResetTiming)) {
+    return "After renewal";
+  }
+
+  if (
+    normalizedCadence === "per_booking" ||
+    OFFER_TERMS_PATTERN.test(normalizedResetTiming)
+  ) {
+    return "Offer terms";
+  }
+
+  return "Varies";
 }

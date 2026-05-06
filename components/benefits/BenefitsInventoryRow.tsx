@@ -120,9 +120,9 @@ export function BenefitsInventoryRow({
               <p className={cn("mt-1 text-sm font-medium leading-5", nameOpacity)}>{valueDisplay}</p>
             </div>
             <div className="min-w-0">
-              <p className={ROW_MICRO_TEXT_CLASS}>Period</p>
+              <p className={ROW_MICRO_TEXT_CLASS}>Resets</p>
               <p className={cn("mt-1 truncate", ROW_SECONDARY_TEXT_CLASS, secondaryOpacity)}>
-                {item.periodLabel}
+                {item.resetsLabel}
               </p>
             </div>
             <div className="min-w-0">

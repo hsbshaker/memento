@@ -223,6 +223,7 @@ export interface BenefitsInventoryItem {
   periodStart: string;
   periodEnd: string;
   periodLabel: string;
+  resetsLabel: string;
   periodKey: string;
   daysRemaining: number;
   trackingStatus: UserBenefitTrackingStatus;
