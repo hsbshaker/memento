@@ -1,6 +1,7 @@
 import "server-only";
 
 import { computeBenefitPeriod, resolveSupportedBenefitCadence } from "@/lib/benefits/compute-benefit-period";
+import { dedupeUserBenefitRows } from "@/lib/benefits/dedupe-user-benefit-rows";
 import {
   formatBenefitValue,
   getConfigurationStatus,
@@ -79,6 +80,7 @@ type HomeCandidateRow = {
   }[] | null;
   benefits: {
     id: string;
+    benefit_code: string | null;
     benefit_name: string | null;
     benefit_value: string | null;
     value_cents: number | null;
@@ -89,8 +91,11 @@ type HomeCandidateRow = {
     requires_selection: boolean | null;
     selection_type: string | null;
     track_in_memento: "yes" | "later" | "no" | null;
+    source_url: string | null;
+    notes: string | null;
   } | {
     id: string;
+    benefit_code: string | null;
     benefit_name: string | null;
     benefit_value: string | null;
     value_cents: number | null;
@@ -101,6 +106,8 @@ type HomeCandidateRow = {
     requires_selection: boolean | null;
     selection_type: string | null;
     track_in_memento: "yes" | "later" | "no" | null;
+    source_url: string | null;
+    notes: string | null;
   }[] | null;
 };
 
@@ -340,44 +347,28 @@ async function loadHomeFeedData(userId: string): Promise<LoadedHomeFeedData | nu
   }
 
   const trackedCards = (trackedCardRows ?? []).length;
-  const trackedCardIds = (trackedCardRows ?? []).map((row) => (row as { id: string }).id);
 
   if (trackedCards === 0) {
     return null;
   }
 
-  const [
-    { count: trackedBenefitsCount, error: trackedBenefitsError },
-    { data: candidateRows, error: candidatesError },
-  ] = await Promise.all([
-    supabase
-      .from("user_benefits")
-      .select("id", { count: "exact", head: true })
-      .in("user_card_id", trackedCardIds)
-      .eq("is_active", true)
-      .eq("tracking_status", "tracked"),
-    supabase
-      .from("user_benefits")
-      .select(
-        "id, user_card_id, benefit_id, is_active, tracking_status, is_used_this_period, last_used_at, reminder_override, conditional_value, snoozed_until, user_cards!inner(id, card_id, card_anniversary_date, status, cards!inner(id, card_code, card_name, display_name, issuer, source_url, card_status)), benefits!inner(id, benefit_name, benefit_value, value_cents, cadence, reset_timing, enrollment_required, requires_setup, requires_selection, selection_type, track_in_memento)",
-      )
-      .eq("is_active", true)
-      .eq("user_cards.user_id", userId)
-      .eq("benefits.track_in_memento", "yes"),
-  ]);
-
-  if (trackedBenefitsError) {
-    throw trackedBenefitsError;
-  }
+  const { data: candidateRows, error: candidatesError } = await supabase
+    .from("user_benefits")
+    .select(
+      "id, user_card_id, benefit_id, is_active, tracking_status, is_used_this_period, last_used_at, reminder_override, conditional_value, snoozed_until, user_cards!inner(id, card_id, card_anniversary_date, status, cards!inner(id, card_code, card_name, display_name, issuer, source_url, card_status)), benefits!inner(id, benefit_code, benefit_name, benefit_value, value_cents, cadence, reset_timing, enrollment_required, requires_setup, requires_selection, selection_type, track_in_memento, source_url, notes)",
+    )
+    .eq("is_active", true)
+    .eq("user_cards.user_id", userId)
+    .eq("benefits.track_in_memento", "yes");
 
   if (candidatesError) {
     throw candidatesError;
   }
 
-  const typedCandidateRows = (candidateRows ?? []) as unknown as HomeCandidateRow[];
+  const rawCandidateRows = (candidateRows ?? []) as unknown as HomeCandidateRow[];
   const periodKeys = Array.from(
     new Set(
-      typedCandidateRows
+      rawCandidateRows
         .map((row) => {
           const ownedUserCard = takeFirst(row.user_cards);
           const canonicalBenefit = takeFirst(row.benefits);
@@ -395,7 +386,7 @@ async function loadHomeFeedData(userId: string): Promise<LoadedHomeFeedData | nu
         .filter((value): value is string => Boolean(value)),
     ),
   );
-  const benefitIds = Array.from(new Set(typedCandidateRows.map((row) => row.benefit_id)));
+  const benefitIds = Array.from(new Set(rawCandidateRows.map((row) => row.benefit_id)));
 
   let periodStatusMap = new Map<string, PeriodStatusRow>();
   if (periodKeys.length > 0 && benefitIds.length > 0) {
@@ -413,6 +404,46 @@ async function loadHomeFeedData(userId: string): Promise<LoadedHomeFeedData | nu
     periodStatusMap = buildBenefitPeriodStatusMap((periodStatusRows ?? []) as PeriodStatusRow[]);
   }
 
+  const typedCandidateRows = dedupeUserBenefitRows(rawCandidateRows, {
+    getUserCardId: (row) => row.user_card_id,
+    getCardId: (row) => takeFirst(row.user_cards)?.card_id,
+    getBenefitName: (row) => takeFirst(row.benefits)?.benefit_name,
+    getBenefitCode: (row) => takeFirst(row.benefits)?.benefit_code,
+    getIsActive: (row) => row.is_active,
+    getTrackingStatus: (row) => row.tracking_status,
+    getHasCurrentPeriodData: (row) => {
+      const ownedUserCard = takeFirst(row.user_cards);
+      const canonicalBenefit = takeFirst(row.benefits);
+      if (!ownedUserCard || !canonicalBenefit) return false;
+
+      const periodKey =
+        computeBenefitPeriod({
+          cadence: canonicalBenefit.cadence,
+          resetTiming: canonicalBenefit.reset_timing,
+          cardAnniversaryDate: ownedUserCard.card_anniversary_date,
+          now,
+        })?.periodKey ?? null;
+
+      return periodKey ? periodStatusMap.has(`${row.benefit_id}:${periodKey}`) : false;
+    },
+    getMetadataScore: (row) => {
+      const benefit = takeFirst(row.benefits);
+      if (!benefit) return 0;
+
+      return [
+        benefit.benefit_value,
+        benefit.cadence,
+        benefit.reset_timing,
+        benefit.source_url,
+        benefit.notes,
+      ].reduce((score, value) => score + (value?.trim() ? 1 : 0), 0);
+    },
+  });
+
+  const trackedBenefitsCount = typedCandidateRows.filter(
+    (row) => row.is_active && row.tracking_status === "tracked",
+  ).length;
+
   const allActiveBenefits = sortHomeFeedItems(
     typedCandidateRows
       .map((row) => mapHomeFeedItem(row, now, periodStatusMap))
@@ -421,7 +452,7 @@ async function loadHomeFeedData(userId: string): Promise<LoadedHomeFeedData | nu
 
   return {
     allActiveBenefits,
-    trackedBenefitsCount: trackedBenefitsCount ?? 0,
+    trackedBenefitsCount,
     trackedCards,
     now,
   };

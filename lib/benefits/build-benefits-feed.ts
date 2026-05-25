@@ -3,6 +3,7 @@
 import "server-only";
 
 import { computeBenefitPeriod, resolveSupportedBenefitCadence } from "@/lib/benefits/compute-benefit-period";
+import { dedupeUserBenefitRows } from "@/lib/benefits/dedupe-user-benefit-rows";
 import {
   formatBenefitValue,
   getConfigurationStatus,
@@ -89,6 +90,7 @@ type BenefitsCandidateRow = {
   benefits:
     | {
         id: string;
+        benefit_code: string | null;
         benefit_name: string | null;
         benefit_value: string | null;
         value_cents: number | null;
@@ -99,9 +101,12 @@ type BenefitsCandidateRow = {
         requires_selection: boolean | null;
         selection_type: string | null;
         track_in_memento: "yes" | "later" | "no" | null;
+        source_url: string | null;
+        notes: string | null;
       }
     | {
         id: string;
+        benefit_code: string | null;
         benefit_name: string | null;
         benefit_value: string | null;
         value_cents: number | null;
@@ -112,6 +117,8 @@ type BenefitsCandidateRow = {
         requires_selection: boolean | null;
         selection_type: string | null;
         track_in_memento: "yes" | "later" | "no" | null;
+        source_url: string | null;
+        notes: string | null;
       }[]
     | null;
 };
@@ -265,7 +272,7 @@ export async function buildBenefitsFeed(userId: string): Promise<BenefitsFeedRes
   const { data: candidateRows, error: candidatesError } = await supabase
     .from("user_benefits")
     .select(
-      "id, user_card_id, benefit_id, is_active, tracking_status, is_used_this_period, last_used_at, reminder_override, conditional_value, user_cards!inner(id, card_id, card_anniversary_date, status, nickname, last_four, cards!inner(id, card_code, card_name, display_name, issuer, card_status)), benefits!inner(id, benefit_name, benefit_value, value_cents, cadence, reset_timing, enrollment_required, requires_setup, requires_selection, selection_type, track_in_memento)",
+      "id, user_card_id, benefit_id, is_active, tracking_status, is_used_this_period, last_used_at, reminder_override, conditional_value, user_cards!inner(id, card_id, card_anniversary_date, status, nickname, last_four, cards!inner(id, card_code, card_name, display_name, issuer, card_status)), benefits!inner(id, benefit_code, benefit_name, benefit_value, value_cents, cadence, reset_timing, enrollment_required, requires_setup, requires_selection, selection_type, track_in_memento, source_url, notes)",
     )
     .eq("is_active", true)
     .eq("user_cards.user_id", userId)
@@ -273,13 +280,13 @@ export async function buildBenefitsFeed(userId: string): Promise<BenefitsFeedRes
 
   if (candidatesError) throw candidatesError;
 
-  const typedRows = (candidateRows ?? []) as unknown as BenefitsCandidateRow[];
+  const rawRows = (candidateRows ?? []) as unknown as BenefitsCandidateRow[];
 
   // Collect distinct period keys and benefit IDs for the period-status lookup
-  const benefitIds = Array.from(new Set(typedRows.map((r) => r.benefit_id)));
+  const benefitIds = Array.from(new Set(rawRows.map((r) => r.benefit_id)));
   const periodKeys = Array.from(
     new Set(
-      typedRows
+      rawRows
         .map((row) => {
           const uc = takeFirst(row.user_cards);
           const b = takeFirst(row.benefits);
@@ -312,6 +319,42 @@ export async function buildBenefitsFeed(userId: string): Promise<BenefitsFeedRes
       (statusRows ?? []) as PeriodStatusRow[],
     );
   }
+
+  const typedRows = dedupeUserBenefitRows(rawRows, {
+    getUserCardId: (row) => row.user_card_id,
+    getCardId: (row) => takeFirst(row.user_cards)?.card_id,
+    getBenefitName: (row) => takeFirst(row.benefits)?.benefit_name,
+    getBenefitCode: (row) => takeFirst(row.benefits)?.benefit_code,
+    getIsActive: (row) => row.is_active,
+    getTrackingStatus: (row) => row.tracking_status,
+    getHasCurrentPeriodData: (row) => {
+      const userCard = takeFirst(row.user_cards);
+      const benefit = takeFirst(row.benefits);
+      if (!userCard || !benefit) return false;
+
+      const periodKey =
+        computeBenefitPeriod({
+          cadence: benefit.cadence,
+          resetTiming: benefit.reset_timing,
+          cardAnniversaryDate: userCard.card_anniversary_date,
+          now,
+        })?.periodKey ?? null;
+
+      return periodKey ? periodStatusMap.has(`${row.benefit_id}:${periodKey}`) : false;
+    },
+    getMetadataScore: (row) => {
+      const benefit = takeFirst(row.benefits);
+      if (!benefit) return 0;
+
+      return [
+        benefit.benefit_value,
+        benefit.cadence,
+        benefit.reset_timing,
+        benefit.source_url,
+        benefit.notes,
+      ].reduce((score, value) => score + (value?.trim() ? 1 : 0), 0);
+    },
+  });
 
   const items = sortBenefitsInventoryItems(
     typedRows

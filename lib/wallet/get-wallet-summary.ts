@@ -1,6 +1,7 @@
 import "server-only";
 
 import { computeBenefitPeriod } from "@/lib/benefits/compute-benefit-period";
+import { dedupeUserBenefitRows } from "@/lib/benefits/dedupe-user-benefit-rows";
 import { getIssuerDisplayName } from "@/lib/format-card";
 import { getServiceRoleSupabaseClient } from "@/lib/supabase/service-role";
 import type { WalletCardSummary } from "@/lib/types/server-data";
@@ -29,15 +30,20 @@ type WalletCardRow = {
 };
 
 type WalletBenefitRow = {
+  benefit_id: string;
   user_card_id: string;
   is_active: boolean;
   is_used_this_period: boolean;
   snoozed_until: string | null;
   benefits: {
+    benefit_code: string | null;
+    benefit_name: string | null;
     cadence: string | null;
     reset_timing: string | null;
     track_in_memento: "yes" | "later" | "no" | null;
   } | {
+    benefit_code: string | null;
+    benefit_name: string | null;
     cadence: string | null;
     reset_timing: string | null;
     track_in_memento: "yes" | "later" | "no" | null;
@@ -79,7 +85,7 @@ export async function getWalletSummary(userId: string): Promise<WalletCardSummar
   const { data: benefitRows, error: benefitsError } = await supabase
     .from("user_benefits")
     .select(
-      "user_card_id, is_active, is_used_this_period, snoozed_until, benefits!inner(cadence, reset_timing, track_in_memento)",
+      "benefit_id, user_card_id, is_active, is_used_this_period, snoozed_until, benefits!inner(benefit_code, benefit_name, cadence, reset_timing, track_in_memento)",
     )
     .in("user_card_id", userCardIds);
 
@@ -87,8 +93,24 @@ export async function getWalletSummary(userId: string): Promise<WalletCardSummar
     throw benefitsError;
   }
 
+  const dedupedBenefitRows = dedupeUserBenefitRows((benefitRows ?? []) as unknown as WalletBenefitRow[], {
+    getUserCardId: (row) => row.user_card_id,
+    getBenefitName: (row) => takeFirst(row.benefits)?.benefit_name,
+    getBenefitCode: (row) => takeFirst(row.benefits)?.benefit_code,
+    getIsActive: (row) => row.is_active,
+    getHasCurrentPeriodData: (row) => row.is_used_this_period,
+    getMetadataScore: (row) => {
+      const benefit = takeFirst(row.benefits);
+      if (!benefit) return 0;
+      return [benefit.cadence, benefit.reset_timing].reduce(
+        (score, value) => score + (value?.trim() ? 1 : 0),
+        0,
+      );
+    },
+  });
+
   const benefitRowsByCardId = new Map<string, WalletBenefitRow[]>();
-  for (const row of (benefitRows ?? []) as unknown as WalletBenefitRow[]) {
+  for (const row of dedupedBenefitRows) {
     const existing = benefitRowsByCardId.get(row.user_card_id) ?? [];
     existing.push(row);
     benefitRowsByCardId.set(row.user_card_id, existing);
