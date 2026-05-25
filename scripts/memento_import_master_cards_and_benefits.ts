@@ -1,8 +1,10 @@
 import crypto from "node:crypto";
 import fs from "node:fs/promises";
+import fsSync from "node:fs";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { Client } from "pg";
+import { createClient as createSupabaseClient, type SupabaseClient } from "@supabase/supabase-js";
 
 type ParsedCsv = {
   headers: string[];
@@ -165,6 +167,8 @@ type ExistingCard = {
   network?: string | null;
 };
 
+type CardMatchStrategy = "code" | "name_match";
+
 type ExistingBenefit = {
   id: string;
   card_id: string;
@@ -186,6 +190,7 @@ type CardCreatePreview = CardPreview;
 type CardUpdatePreview = CardPreview & {
   existing_id: string;
   changed_fields: string[];
+  match_strategy: CardMatchStrategy;
 };
 
 type BenefitCreatePreview = BenefitPreview;
@@ -210,8 +215,10 @@ type PlanResult = {
 
 type DatabaseContext = {
   client: Client | null;
+  connected: boolean;
   cardsHaveCardType: boolean;
   existingCardsByCode: Map<string, ExistingCard>;
+  existingCardsByNameKey: Map<string, ExistingCard>;
   existingBenefitsByCode: Map<string, ExistingBenefit>;
 };
 
@@ -270,6 +277,43 @@ const CADENCE_VALUES = new Set<BenefitCadence>([
 ]);
 const TRACK_VALUES = new Set<TrackInMemento>(["yes", "later", "no"]);
 const BOOLEAN_VALUES = new Set(["yes", "no"]);
+const LEGACY_CARD_CODE_ALIASES = new Map<string, string>([
+  ["amex_amex_business_platinum", "amex_business_platinum"],
+  ["amex_amex_gold", "amex_gold"],
+  ["amex_amex_business_gold", "amex_business_gold"],
+  ["amex_amex_green", "amex_green"],
+  ["amex_amex_everyday", "amex_everyday"],
+  ["amex_amex_everyday_preferred", "amex_everyday_preferred"],
+  ["amex_amex_platinum", "amex_platinum"],
+]);
+
+const loadLocalEnvFile = (filePath: string) => {
+  if (!fsSync.existsSync(filePath)) return;
+
+  const raw = fsSync.readFileSync(filePath, "utf8");
+  for (const line of raw.split(/\r?\n/)) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("#")) continue;
+
+    const separatorIndex = trimmed.indexOf("=");
+    if (separatorIndex === -1) continue;
+
+    const key = trimmed.slice(0, separatorIndex).trim();
+    if (!key || process.env[key] !== undefined) continue;
+
+    let value = trimmed.slice(separatorIndex + 1).trim();
+    if (
+      (value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'"))
+    ) {
+      value = value.slice(1, -1);
+    }
+
+    process.env[key] = value;
+  }
+};
+
+loadLocalEnvFile(path.resolve(process.cwd(), ".env.local"));
 
 const normalizeHeader = (value: string) => value.trim().toLowerCase();
 const normalizeText = (value?: string | null) =>
@@ -303,6 +347,14 @@ const getDatabaseUrl = () =>
   process.env.SUPABASE_DB_URL ??
   process.env.POSTGRES_URL ??
   null;
+
+const getSupabaseUrl = () =>
+  process.env.NEXT_PUBLIC_SUPABASE_URL ??
+  process.env.SUPABASE_URL ??
+  null;
+
+const getSupabaseServiceRoleKey = () =>
+  process.env.SUPABASE_SERVICE_ROLE_KEY ?? null;
 
 const toIssuer = (value: string | null) => {
   switch (normalizeText(value).toLowerCase()) {
@@ -454,6 +506,8 @@ const buildProductKey = (issuer: Issuer, cardName: string) => `${issuer}_${slugi
 const deriveCardCode = (issuer: Issuer, cardName: string) => `${issuer}_${slugify(cardName)}`;
 const deriveBenefitCode = (cardCode: string, benefitName: string) =>
   `${cardCode}_${slugify(benefitName)}`;
+const buildCardNameKey = (issuer: Issuer, cardName: string) =>
+  `${issuer}||${normalizeText(cardName).toLowerCase()}`;
 
 const getCardUrlPriority = (url: string) => {
   const normalized = url.toLowerCase();
@@ -532,6 +586,8 @@ const buildBenefitHash = ({
   );
 
 const valuesEqual = (left: string | null, right: string | null) => (left ?? null) === (right ?? null);
+const isRecognizedLegacyCardCodeAlias = (existingCode: string | null, incomingCode: string) =>
+  existingCode ? LEGACY_CARD_CODE_ALIASES.get(existingCode) === incomingCode : false;
 
 const removeIfExists = async (filePath: string) => {
   await fs.rm(filePath, { force: true });
@@ -566,18 +622,131 @@ const queryColumnExists = async (client: Client, tableName: string, columnName: 
   return result.rows[0]?.exists === true;
 };
 
+const createServiceRoleSupabase = (): SupabaseClient => {
+  const supabaseUrl = getSupabaseUrl();
+  const serviceRoleKey = getSupabaseServiceRoleKey();
+
+  if (!supabaseUrl || !serviceRoleKey) {
+    throw new Error(
+      "Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_URL, and/or SUPABASE_SERVICE_ROLE_KEY. Service-role commit mode requires both.",
+    );
+  }
+
+  return createSupabaseClient(supabaseUrl, serviceRoleKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+};
+
+const addExistingCardToMaps = ({
+  row,
+  existingCardsByCode,
+  existingCardsByNameKey,
+  validationErrors,
+}: {
+  row: ExistingCard;
+  existingCardsByCode: Map<string, ExistingCard>;
+  existingCardsByNameKey: Map<string, ExistingCard>;
+  validationErrors: ValidationError[];
+}) => {
+  const issuer = toIssuer(row.issuer ?? null);
+  const cardName = normalizeOptionalText(row.card_name);
+  const cardCode = normalizeOptionalText(row.card_code)?.toLowerCase();
+
+  if (cardCode) {
+    if (existingCardsByCode.has(cardCode)) {
+      validationErrors.push({
+        type: "duplicate_existing_card_code",
+        message: `Existing database contains duplicate card_code "${cardCode}".`,
+        details: { card_code: cardCode },
+      });
+    } else {
+      existingCardsByCode.set(cardCode, row);
+    }
+  }
+
+  if (issuer && cardName) {
+    const nameKey = buildCardNameKey(issuer, cardName);
+    if (!existingCardsByNameKey.has(nameKey)) {
+      existingCardsByNameKey.set(nameKey, row);
+    }
+  }
+};
+
 const loadDatabaseContext = async (
   cardCodes: string[],
   benefitCodes: string[],
+  cardsByName: Array<{ issuer: Issuer; card_name: string }>,
   validationErrors: ValidationError[],
 ): Promise<DatabaseContext> => {
   const databaseUrl = getDatabaseUrl();
   if (!databaseUrl) {
+    const supabaseUrl = getSupabaseUrl();
+    const serviceRoleKey = getSupabaseServiceRoleKey();
+    if (!supabaseUrl || !serviceRoleKey) {
+      return {
+        client: null,
+        connected: false,
+        cardsHaveCardType: false,
+        existingCardsByCode: new Map(),
+        existingCardsByNameKey: new Map(),
+        existingBenefitsByCode: new Map(),
+      };
+    }
+
+    const supabase = createServiceRoleSupabase();
+    const existingCardsByCode = new Map<string, ExistingCard>();
+    const existingCardsByNameKey = new Map<string, ExistingCard>();
+    const existingBenefitsByCode = new Map<string, ExistingBenefit>();
+
+    const { data: cardsRows, error: cardsError } = await supabase
+      .from("cards")
+      .select("id, card_code, issuer, card_name, display_name, source_url, card_status, card_type, is_business, product_key, network");
+
+    if (cardsError) {
+      throw new Error(`Failed to load existing cards: ${cardsError.message}`);
+    }
+
+    for (const row of (cardsRows ?? []) as ExistingCard[]) {
+      addExistingCardToMaps({
+        row,
+        existingCardsByCode,
+        existingCardsByNameKey,
+        validationErrors,
+      });
+    }
+
+    if (benefitCodes.length > 0) {
+      const { data: benefitsRows, error: benefitsError } = await supabase
+        .from("benefits")
+        .select("id, card_id, benefit_code, benefit_name, benefit_value, cadence, reset_timing, enrollment_required, requires_setup, track_in_memento, source_url, notes, benefit_hash")
+        .in("benefit_code", benefitCodes);
+
+      if (benefitsError) {
+        throw new Error(`Failed to load existing benefits: ${benefitsError.message}`);
+      }
+
+      for (const row of (benefitsRows ?? []) as ExistingBenefit[]) {
+        const benefitCode = normalizeOptionalText(row.benefit_code)?.toLowerCase();
+        if (!benefitCode) continue;
+        if (existingBenefitsByCode.has(benefitCode)) {
+          validationErrors.push({
+            type: "duplicate_existing_benefit_code",
+            message: `Existing database contains duplicate benefit_code "${benefitCode}".`,
+            details: { benefit_code: benefitCode },
+          });
+          continue;
+        }
+        existingBenefitsByCode.set(benefitCode, row);
+      }
+    }
+
     return {
       client: null,
-      cardsHaveCardType: false,
-      existingCardsByCode: new Map(),
-      existingBenefitsByCode: new Map(),
+      connected: true,
+      cardsHaveCardType: true,
+      existingCardsByCode,
+      existingCardsByNameKey,
+      existingBenefitsByCode,
     };
   }
 
@@ -587,7 +756,8 @@ const loadDatabaseContext = async (
   const cardsHaveCardType = await queryColumnExists(client, "cards", "card_type");
 
   const existingCardsByCode = new Map<string, ExistingCard>();
-  if (cardCodes.length > 0) {
+  const existingCardsByNameKey = new Map<string, ExistingCard>();
+  if (cardCodes.length > 0 || cardsByName.length > 0) {
     const cardsResult = await client.query<ExistingCard>(
       `
         select
@@ -603,23 +773,24 @@ const loadDatabaseContext = async (
           product_key,
           network
         from public.cards
-        where card_code = any($1::text[])
+        where (
+          card_code = any($1::text[])
+          or (
+            issuer is not null
+            and lower(trim(card_name)) = any($2::text[])
+          )
+        )
       `,
-      [cardCodes],
+      [cardCodes.length > 0 ? cardCodes : [""], cardsByName.map((card) => normalizeText(card.card_name).toLowerCase())],
     );
 
     for (const row of cardsResult.rows) {
-      const cardCode = normalizeOptionalText(row.card_code)?.toLowerCase();
-      if (!cardCode) continue;
-      if (existingCardsByCode.has(cardCode)) {
-        validationErrors.push({
-          type: "duplicate_existing_card_code",
-          message: `Existing database contains duplicate card_code "${cardCode}".`,
-          details: { card_code: cardCode },
-        });
-        continue;
-      }
-      existingCardsByCode.set(cardCode, row);
+      addExistingCardToMaps({
+        row,
+        existingCardsByCode,
+        existingCardsByNameKey,
+        validationErrors,
+      });
     }
   }
 
@@ -664,8 +835,10 @@ const loadDatabaseContext = async (
 
   return {
     client,
+    connected: true,
     cardsHaveCardType,
     existingCardsByCode,
+    existingCardsByNameKey,
     existingBenefitsByCode,
   };
 };
@@ -971,11 +1144,15 @@ const buildPlan = async ({
   }
 
   const cardCodes = [...cardsByCode.keys()];
+  const cardsByName = [...cardsByCode.values()].map(({ card }) => ({
+    issuer: card.issuer,
+    card_name: card.card_name,
+  }));
   const benefitCodes = [...benefitsByCode.keys()];
   let databaseContext: DatabaseContext | null = null;
 
   try {
-    databaseContext = await loadDatabaseContext(cardCodes, benefitCodes, validationErrors);
+    databaseContext = await loadDatabaseContext(cardCodes, benefitCodes, cardsByName, validationErrors);
   } catch (error) {
     validationWarnings.push({
       type: "offline_preview",
@@ -986,8 +1163,10 @@ const buildPlan = async ({
     });
     databaseContext = {
       client: null,
+      connected: false,
       cardsHaveCardType: false,
       existingCardsByCode: new Map(),
+      existingCardsByNameKey: new Map(),
       existingBenefitsByCode: new Map(),
     };
   }
@@ -1014,16 +1193,50 @@ const buildPlan = async ({
   const benefitsToCreate: BenefitCreatePreview[] = [];
   const benefitsToUpdate: BenefitUpdatePreview[] = [];
   const benefitHistoryToInsert: BenefitHistoryPreview[] = [];
+  const resolvedExistingCardsByIncomingCode = new Map<string, ExistingCard>();
 
   for (const [cardCode, { card }] of cardsByCode) {
-    const existingCard = databaseContext.existingCardsByCode.get(cardCode);
+    const existingCardByCode = databaseContext.existingCardsByCode.get(cardCode);
+    const existingCardByName = databaseContext.existingCardsByNameKey.get(
+      buildCardNameKey(card.issuer, card.card_name),
+    );
+
+    let existingCard: ExistingCard | undefined = existingCardByCode;
+    let matchStrategy: CardMatchStrategy = "code";
+
+    if (!existingCard && existingCardByName) {
+      const existingCode = normalizeOptionalText(existingCardByName.card_code)?.toLowerCase();
+      if (existingCode && existingCode !== cardCode && !isRecognizedLegacyCardCodeAlias(existingCode, cardCode)) {
+        validationErrors.push({
+          type: "conflicting_card_record",
+          message: `Existing card matched by issuer + card_name has conflicting card_code "${existingCode}" for incoming "${cardCode}".`,
+          row_numbers: card.source_row_numbers,
+          details: {
+            existing_id: existingCardByName.id,
+            existing_card_code: existingCode,
+            incoming_card_code: cardCode,
+            issuer: card.issuer,
+            card_name: card.card_name,
+          },
+        });
+        continue;
+      }
+
+      existingCard = existingCardByName;
+      matchStrategy = "name_match";
+    }
 
     if (!existingCard) {
       cardsToCreate.push(card);
       continue;
     }
 
+    resolvedExistingCardsByIncomingCode.set(cardCode, existingCard);
+
     const changedFields: string[] = [];
+    if (matchStrategy === "name_match" && !valuesEqual(normalizeOptionalText(existingCard.card_code)?.toLowerCase() ?? null, card.card_code)) {
+      changedFields.push("card_code");
+    }
     if (!valuesEqual(existingCard.issuer?.toLowerCase() ?? null, card.issuer)) changedFields.push("issuer");
     if (!valuesEqual(existingCard.card_name, card.card_name)) changedFields.push("card_name");
     if (!valuesEqual(existingCard.display_name, card.display_name)) changedFields.push("display_name");
@@ -1047,12 +1260,20 @@ const buildPlan = async ({
       ...card,
       existing_id: existingCard.id,
       changed_fields: changedFields,
+      match_strategy: matchStrategy,
     });
   }
 
   for (const [benefitCode, { benefit }] of benefitsByCode) {
     const existingBenefit = databaseContext.existingBenefitsByCode.get(benefitCode);
-    const existingCard = databaseContext.existingCardsByCode.get(benefit.card_code);
+    const existingCard = resolvedExistingCardsByIncomingCode.get(benefit.card_code)
+      ?? databaseContext.existingCardsByCode.get(benefit.card_code)
+      ?? databaseContext.existingCardsByNameKey.get(
+        buildCardNameKey(
+          cardsByCode.get(benefit.card_code)?.card.issuer ?? "amex",
+          cardsByCode.get(benefit.card_code)?.card.card_name ?? "",
+        ),
+      );
     const cardPlannedForCreate = cardsToCreate.find((card) => card.card_code === benefit.card_code);
     const resolvedExistingCardId = existingCard?.id ?? null;
 
@@ -1124,7 +1345,7 @@ const buildPlan = async ({
         row_number: benefit.source_row_number,
         reason: "unchanged_benefit",
         card_code: benefit.card_code,
-        benefit_code,
+        benefit_code: benefit.benefit_code,
       });
       continue;
     }
@@ -1170,7 +1391,7 @@ const buildPlan = async ({
     validationErrors,
     validationWarnings,
     duplicateCodeWarnings,
-    databaseConnected: databaseContext.client !== null,
+    databaseConnected: databaseContext.connected,
   };
 };
 
@@ -1180,12 +1401,20 @@ const commitPlan = async ({
   plan: PlanResult;
 }) => {
   const databaseUrl = getDatabaseUrl();
-  if (!databaseUrl) {
-    throw new Error(
-      "Missing DATABASE_URL, SUPABASE_DB_URL, or POSTGRES_URL. Commit mode requires a direct Postgres connection string.",
-    );
+  if (databaseUrl) {
+    return commitPlanViaPostgres({ plan, databaseUrl });
   }
 
+  return commitPlanViaSupabase({ plan });
+};
+
+const commitPlanViaPostgres = async ({
+  plan,
+  databaseUrl,
+}: {
+  plan: PlanResult;
+  databaseUrl: string;
+}) => {
   const client = new Client({ connectionString: databaseUrl });
   await client.connect();
 
@@ -1198,7 +1427,6 @@ const commitPlan = async ({
     }
 
     await client.query("begin");
-
     const createdCardIds = new Map<string, string>();
     const existingCardIds = new Map<string, string>();
     for (const card of plan.cardsToUpdate) {
@@ -1559,6 +1787,293 @@ const commitPlan = async ({
   }
 };
 
+const ensureNoSupabaseError = <T>(result: { data: T | null; error: { message: string } | null }, context: string) => {
+  if (result.error) {
+    throw new Error(`${context}: ${result.error.message}`);
+  }
+  return result.data;
+};
+
+const commitPlanViaSupabase = async ({
+  plan,
+}: {
+  plan: PlanResult;
+}) => {
+  const supabase = createServiceRoleSupabase();
+  const cardsToUpdateByCode = plan.cardsToUpdate.filter((card) => card.match_strategy === "code");
+  const cardsToUpdateByNameMatch = plan.cardsToUpdate.filter(
+    (card) => card.match_strategy === "name_match",
+  );
+
+  const cardCodes = Array.from(
+    new Set([
+      ...plan.cardsToCreate.map((card) => card.card_code),
+      ...plan.cardsToUpdate.map((card) => card.card_code),
+    ]),
+  );
+  const benefitCodes = Array.from(
+    new Set([
+      ...plan.benefitsToCreate.map((benefit) => benefit.benefit_code),
+      ...plan.benefitsToUpdate.map((benefit) => benefit.benefit_code),
+      ...plan.benefitHistoryToInsert.map((row) => row.benefit_code),
+    ]),
+  );
+
+  const existingCards = cardCodes.length
+    ? ensureNoSupabaseError(
+        await supabase
+          .from("cards")
+          .select("id, card_code")
+          .in("card_code", cardCodes),
+        "Failed to load existing cards",
+      ) ?? []
+    : [];
+
+  const cardIdByCode = new Map<string, string>();
+  for (const row of existingCards) {
+    const cardCode = normalizeOptionalText(row.card_code)?.toLowerCase();
+    if (cardCode && row.id) {
+      cardIdByCode.set(cardCode, row.id);
+    }
+  }
+
+  const cardsToUpsert = [...plan.cardsToCreate, ...cardsToUpdateByCode].map((card) => ({
+    card_code: card.card_code,
+    issuer: card.issuer,
+    card_name: card.card_name,
+    display_name: card.display_name,
+    product_key: card.product_key,
+    network: card.network,
+    is_business: card.is_business,
+    source_url: card.source_url,
+    card_status: card.card_status,
+    card_type: card.card_type,
+  }));
+
+  if (cardsToUpsert.length > 0) {
+    ensureNoSupabaseError(
+      await supabase.from("cards").upsert(cardsToUpsert, { onConflict: "card_code" }).select("id, card_code"),
+      "Failed to upsert cards",
+    );
+  }
+
+  if (cardCodes.length > 0) {
+    const refreshedCards =
+      ensureNoSupabaseError(
+        await supabase
+          .from("cards")
+          .select("id, card_code")
+          .in("card_code", cardCodes),
+        "Failed to reload cards after upsert",
+      ) ?? [];
+
+    for (const row of refreshedCards) {
+      const cardCode = normalizeOptionalText(row.card_code)?.toLowerCase();
+      if (cardCode && row.id) {
+        cardIdByCode.set(cardCode, row.id);
+      }
+    }
+  }
+
+  for (const card of cardsToUpdateByNameMatch) {
+    ensureNoSupabaseError(
+      await supabase
+        .from("cards")
+        .update({
+          card_code: card.card_code,
+          issuer: card.issuer,
+          card_name: card.card_name,
+          display_name: card.display_name,
+          product_key: card.product_key,
+          network: card.network,
+          is_business: card.is_business,
+          source_url: card.source_url,
+          card_status: card.card_status,
+          card_type: card.card_type,
+        })
+        .eq("id", card.existing_id),
+      `Failed to update card ${card.existing_id} matched by name`,
+    );
+    cardIdByCode.set(card.card_code, card.existing_id);
+  }
+
+  const benefitsToUpsert = [...plan.benefitsToCreate, ...plan.benefitsToUpdate].map((benefit) => {
+    const cardId = cardIdByCode.get(benefit.card_code);
+    if (!cardId) {
+      throw new Error(`Service-role commit aborted: missing card_id mapping for benefit ${benefit.benefit_code}.`);
+    }
+
+    return {
+      benefit_code: benefit.benefit_code,
+      card_id: cardId,
+      benefit_key: benefit.benefit_code,
+      display_name: benefit.benefit_name,
+      category: "other",
+      requires_enrollment: benefit.enrollment_required,
+      benefit_name: benefit.benefit_name,
+      benefit_value: benefit.benefit_value,
+      cadence: benefit.cadence,
+      reset_timing: benefit.reset_timing,
+      enrollment_required: benefit.enrollment_required,
+      requires_setup: benefit.requires_setup,
+      track_in_memento: benefit.track_in_memento,
+      source_url: benefit.source_url,
+      notes: benefit.notes,
+      benefit_hash: benefit.benefit_hash,
+      last_verified_at: benefit.last_verified_at,
+    };
+  });
+
+  if (benefitsToUpsert.length > 0) {
+    ensureNoSupabaseError(
+      await supabase.from("benefits").upsert(benefitsToUpsert, { onConflict: "benefit_code" }),
+      "Failed to upsert benefits",
+    );
+  }
+
+  const existingBenefits = benefitCodes.length
+    ? ensureNoSupabaseError(
+        await supabase
+          .from("benefits")
+          .select("id, card_id, benefit_code, benefit_name, benefit_value, cadence, reset_timing, enrollment_required, requires_setup, track_in_memento, source_url, notes, benefit_hash")
+          .in("benefit_code", benefitCodes),
+        "Failed to load benefits after upsert",
+      ) ?? []
+    : [];
+
+  const benefitByCode = new Map<string, { id: string; card_id: string; benefit_hash: string | null }>();
+  for (const row of existingBenefits) {
+    const benefitCode = normalizeOptionalText(row.benefit_code)?.toLowerCase();
+    if (benefitCode && row.id && row.card_id) {
+      benefitByCode.set(benefitCode, {
+        id: row.id,
+        card_id: row.card_id,
+        benefit_hash: row.benefit_hash ?? null,
+      });
+    }
+  }
+
+  if (plan.benefitHistoryToInsert.length === 0) {
+    return;
+  }
+
+  const candidateHistoryRows = plan.benefitHistoryToInsert.flatMap((row) => {
+    const benefit = benefitByCode.get(row.benefit_code);
+    const cardId = cardIdByCode.get(row.card_code) ?? benefit?.card_id ?? null;
+    if (!benefit || !cardId) {
+      throw new Error(`Service-role commit aborted: missing foreign key mapping for history row ${row.benefit_code}.`);
+    }
+
+    return {
+      benefit_id: benefit.id,
+      card_id: cardId,
+      benefit_code: row.benefit_code,
+      benefit_name: row.benefit_name,
+      benefit_value: row.benefit_value,
+      cadence: row.cadence,
+      reset_timing: row.reset_timing,
+      enrollment_required: row.enrollment_required,
+      requires_setup: row.requires_setup,
+      track_in_memento: row.track_in_memento,
+      source_url: row.source_url,
+      notes: row.notes,
+      benefit_hash: row.benefit_hash,
+      change_type: row.change_type,
+      change_summary: row.change_summary,
+      effective_start_date: row.effective_start_date,
+      effective_end_date: row.effective_end_date,
+      verified_at: row.verified_at,
+      created_at: row.created_at,
+    };
+  });
+
+  const historyBenefitIds = Array.from(new Set(candidateHistoryRows.map((row) => row.benefit_id)));
+  const existingHistory = historyBenefitIds.length
+    ? ensureNoSupabaseError(
+        await supabase
+          .from("benefit_history")
+          .select("benefit_id, benefit_code, benefit_name, benefit_value, cadence, reset_timing, enrollment_required, requires_setup, track_in_memento, source_url, notes, benefit_hash, change_type")
+          .in("benefit_id", historyBenefitIds),
+        "Failed to load existing benefit history",
+      ) ?? []
+    : [];
+
+  const historyFingerprint = (row: {
+    benefit_id: string;
+    benefit_code: string;
+    benefit_name: string;
+    benefit_value: string;
+    cadence: string;
+    reset_timing: string;
+    enrollment_required: boolean;
+    requires_setup: boolean;
+    track_in_memento: string;
+    source_url: string | null;
+    notes: string | null;
+    benefit_hash: string;
+    change_type: string;
+  }) =>
+    JSON.stringify([
+      row.benefit_id,
+      row.benefit_code,
+      row.benefit_name,
+      row.benefit_value,
+      row.cadence,
+      row.reset_timing,
+      row.enrollment_required,
+      row.requires_setup,
+      row.track_in_memento,
+      row.source_url,
+      row.notes,
+      row.benefit_hash,
+      row.change_type,
+    ]);
+
+  const existingHistoryFingerprints = new Set(existingHistory.map((row) => historyFingerprint({
+    benefit_id: row.benefit_id,
+    benefit_code: row.benefit_code,
+    benefit_name: row.benefit_name,
+    benefit_value: row.benefit_value,
+    cadence: String(row.cadence),
+    reset_timing: row.reset_timing,
+    enrollment_required: Boolean(row.enrollment_required),
+    requires_setup: Boolean(row.requires_setup),
+    track_in_memento: String(row.track_in_memento),
+    source_url: row.source_url ?? null,
+    notes: row.notes ?? null,
+    benefit_hash: row.benefit_hash,
+    change_type: String(row.change_type),
+  })));
+
+  const historyRowsToInsert = candidateHistoryRows.filter(
+    (row) =>
+      !existingHistoryFingerprints.has(
+        historyFingerprint({
+          benefit_id: row.benefit_id,
+          benefit_code: row.benefit_code,
+          benefit_name: row.benefit_name,
+          benefit_value: row.benefit_value,
+          cadence: row.cadence,
+          reset_timing: row.reset_timing,
+          enrollment_required: row.enrollment_required,
+          requires_setup: row.requires_setup,
+          track_in_memento: row.track_in_memento,
+          source_url: row.source_url,
+          notes: row.notes,
+          benefit_hash: row.benefit_hash,
+          change_type: row.change_type,
+        }),
+      ),
+  );
+
+  if (historyRowsToInsert.length > 0) {
+    ensureNoSupabaseError(
+      await supabase.from("benefit_history").insert(historyRowsToInsert),
+      "Failed to insert benefit history",
+    );
+  }
+};
+
 const main = async () => {
   const commitMode = hasFlag("--commit");
   const explicitInput = getCliArgValue("--input");
@@ -1619,6 +2134,8 @@ const main = async () => {
       total_rows: 0,
       cards_to_create: 0,
       cards_to_update: 0,
+      cards_to_update_by_code: 0,
+      cards_to_update_by_name_match: 0,
       benefits_to_create: 0,
       benefits_to_update: 0,
       benefit_history_to_insert: 0,
@@ -1631,6 +2148,12 @@ const main = async () => {
   }
 
   const plan = await buildPlan({ rows, importRunAt });
+  const cardsToUpdateByCodeCount = plan.cardsToUpdate.filter(
+    (card) => card.match_strategy === "code",
+  ).length;
+  const cardsToUpdateByNameMatchCount = plan.cardsToUpdate.filter(
+    (card) => card.match_strategy === "name_match",
+  ).length;
 
   await writeJson(path.join(outputDir, "cards_to_create.json"), plan.cardsToCreate);
   await writeJson(path.join(outputDir, "cards_to_update.json"), plan.cardsToUpdate);
@@ -1657,6 +2180,8 @@ const main = async () => {
     total_rows: rows.length,
     cards_to_create: plan.cardsToCreate.length,
     cards_to_update: plan.cardsToUpdate.length,
+    cards_to_update_by_code: cardsToUpdateByCodeCount,
+    cards_to_update_by_name_match: cardsToUpdateByNameMatchCount,
     benefits_to_create: plan.benefitsToCreate.length,
     benefits_to_update: plan.benefitsToUpdate.length,
     benefit_history_to_insert: plan.benefitHistoryToInsert.length,
@@ -1681,6 +2206,8 @@ const main = async () => {
   console.log(`- Output dir: ${outputDir}`);
   console.log(`- Cards to create: ${plan.cardsToCreate.length}`);
   console.log(`- Cards to update: ${plan.cardsToUpdate.length}`);
+  console.log(`- Cards to update by code: ${cardsToUpdateByCodeCount}`);
+  console.log(`- Cards to update by name match: ${cardsToUpdateByNameMatchCount}`);
   console.log(`- Benefits to create: ${plan.benefitsToCreate.length}`);
   console.log(`- Benefits to update: ${plan.benefitsToUpdate.length}`);
   console.log(`- Benefit history to insert: ${plan.benefitHistoryToInsert.length}`);
