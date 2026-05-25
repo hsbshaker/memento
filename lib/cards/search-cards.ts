@@ -8,6 +8,7 @@ import { normalizeCardArtUrl } from "@/lib/benefits/format-benefit-labels";
 type CanonicalCardRow = {
   id: string;
   card_name: string;
+  card_code: string | null;
   display_name: string | null;
   issuer: string | null;
   source_url: string | null;
@@ -15,6 +16,16 @@ type CanonicalCardRow = {
 };
 
 const DEFAULT_LIMIT = 20;
+const ISSUER_QUERY_ALIASES = new Map<string, string>([
+  ["amex", "amex"],
+  ["american express", "amex"],
+  ["americanexpress", "amex"],
+  ["chase", "chase"],
+  ["citi", "citi"],
+  ["capital one", "capital_one"],
+  ["capital-one", "capital_one"],
+  ["capitalone", "capital_one"],
+]);
 
 function escapeIlikeValue(value: string) {
   return value.replace(/\\/g, "\\\\").replace(/[%_]/g, "\\$&");
@@ -24,29 +35,55 @@ function normalizeSearchText(value: string | null | undefined) {
   return (value ?? "").trim().toLowerCase().replace(/\s+/g, " ");
 }
 
-function buildSearchScore(row: CanonicalCardRow, normalizedQuery: string) {
+function resolveIssuerMatches(normalizedQuery: string) {
+  const compactQuery = normalizedQuery.replace(/\s+/g, "");
+  const matches = new Set<string>();
+
+  for (const [alias, issuer] of ISSUER_QUERY_ALIASES) {
+    const compactAlias = alias.replace(/\s+/g, "");
+    if (
+      normalizedQuery === alias ||
+      compactQuery === compactAlias ||
+      normalizedQuery.includes(alias)
+    ) {
+      matches.add(issuer);
+    }
+  }
+
+  return [...matches];
+}
+
+function getSearchableStrings(row: CanonicalCardRow) {
   const cardName = normalizeSearchText(row.card_name);
   const displayName = normalizeSearchText(row.display_name);
+  const cardCode = normalizeSearchText(row.card_code);
   const issuer = normalizeSearchText(row.issuer);
-  const composite = normalizeSearchText(`${issuer} ${displayName || cardName}`);
+  const issuerDisplay = normalizeSearchText(getIssuerDisplayName(row.issuer ?? ""));
+  const primaryName = displayName || cardName;
 
-  if (cardName === normalizedQuery || displayName === normalizedQuery || composite === normalizedQuery) {
+  return [
+    cardName,
+    displayName,
+    cardCode,
+    issuer,
+    issuerDisplay,
+    normalizeSearchText(`${issuer} ${primaryName}`),
+    normalizeSearchText(`${issuerDisplay} ${primaryName}`),
+  ].filter((value) => value.length > 0);
+}
+
+function buildSearchScore(row: CanonicalCardRow, normalizedQuery: string) {
+  const searchable = getSearchableStrings(row);
+
+  if (searchable.some((value) => value === normalizedQuery)) {
     return 300;
   }
 
-  if (
-    cardName.startsWith(normalizedQuery) ||
-    displayName.startsWith(normalizedQuery) ||
-    composite.startsWith(normalizedQuery)
-  ) {
+  if (searchable.some((value) => value.startsWith(normalizedQuery))) {
     return 200;
   }
 
-  if (
-    cardName.includes(normalizedQuery) ||
-    displayName.includes(normalizedQuery) ||
-    composite.includes(normalizedQuery)
-  ) {
+  if (searchable.some((value) => value.includes(normalizedQuery))) {
     return 100;
   }
 
@@ -74,7 +111,7 @@ export async function searchCards(query: string): Promise<CardSearchResult[]> {
 
   let dbQuery = supabase
     .from("cards")
-    .select("id, card_name, display_name, issuer, source_url, card_status")
+    .select("id, card_name, card_code, display_name, issuer, source_url, card_status")
     .in("card_status", ["active", "no_trackable_benefits"])
     .order("display_name", { ascending: true, nullsFirst: false })
     .order("card_name", { ascending: true })
@@ -82,8 +119,15 @@ export async function searchCards(query: string): Promise<CardSearchResult[]> {
 
   if (normalizedQuery.length > 0) {
     const escaped = escapeIlikeValue(normalizedQuery);
+    const issuerMatches = resolveIssuerMatches(normalizedQuery);
+    const filters = [
+      `card_name.ilike.%${escaped}%`,
+      `display_name.ilike.%${escaped}%`,
+      `card_code.ilike.%${escaped}%`,
+      ...issuerMatches.map((issuer) => `issuer.eq.${issuer}`),
+    ];
     dbQuery = dbQuery.or(
-      `card_name.ilike.%${escaped}%,display_name.ilike.%${escaped}%,issuer.ilike.%${escaped}%`,
+      filters.join(","),
     );
   }
 
