@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { formatBenefitDescriptionDisplay, formatBenefitValue, getBenefitPeriodLabel } from "@/lib/benefits/format-benefit-labels";
+import { dedupeCatalogBenefits } from "@/lib/benefits/dedupe-catalog-benefits";
 import { getIssuerDisplayName } from "@/lib/format-card";
 import { benefitRequiresAnniversaryDate } from "@/lib/onboarding/confirm-benefits";
 
@@ -34,6 +35,7 @@ type WalletCardRow = {
 type CanonicalBenefitRow = {
   id: string;
   card_id: string;
+  benefit_code: string | null;
   benefit_name: string | null;
   benefit_value: string | null;
   value_cents: number | null;
@@ -45,6 +47,8 @@ type CanonicalBenefitRow = {
   source_url: string | null;
   notes: string | null;
   display_description: string | null;
+  created_at: string | null;
+  updated_at: string | null;
 };
 
 type UserBenefitPreferenceRow = {
@@ -297,7 +301,7 @@ export async function loadConfirmBenefitsData({
   const { data: benefitRows, error: benefitError } = await supabase
     .from("benefits")
     .select(
-      "id, card_id, benefit_name, benefit_value, value_cents, cadence, reset_timing, enrollment_required, requires_setup, track_in_memento, source_url, notes, display_description",
+      "id, card_id, benefit_code, benefit_name, benefit_value, value_cents, cadence, reset_timing, enrollment_required, requires_setup, track_in_memento, source_url, notes, display_description, created_at, updated_at",
     )
     .in("card_id", cardIds)
     .eq("track_in_memento", "yes");
@@ -306,7 +310,7 @@ export async function loadConfirmBenefitsData({
     throw benefitError;
   }
 
-  const typedBenefitRows = (benefitRows ?? []) as unknown as CanonicalBenefitRow[];
+  const typedBenefitRows = dedupeCatalogBenefits((benefitRows ?? []) as unknown as CanonicalBenefitRow[]);
   const userCardIds = typedWalletRows.map((row) => row.id);
   const benefitIds = typedBenefitRows.map((row) => row.id);
 

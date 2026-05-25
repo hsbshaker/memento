@@ -2,6 +2,7 @@ import "server-only";
 
 import { getIssuerDisplayName } from "@/lib/format-card";
 import { getServiceRoleSupabaseClient } from "@/lib/supabase/service-role";
+import { dedupeCatalogBenefits } from "@/lib/benefits/dedupe-catalog-benefits";
 import type { CardPreviewBenefit, CardPreviewResult } from "@/lib/types/server-data";
 import { getBenefitPeriodLabel, getConfigurationType, normalizeCardArtUrl, formatBenefitValue } from "@/lib/benefits/format-benefit-labels";
 import { sortPreviewBenefits } from "@/lib/benefits/rank-benefits";
@@ -17,6 +18,8 @@ type CanonicalCardRow = {
 
 type CanonicalBenefitRow = {
   id: string;
+  card_id: string;
+  benefit_code: string | null;
   benefit_name: string | null;
   benefit_value: string | null;
   value_cents: number | null;
@@ -26,6 +29,10 @@ type CanonicalBenefitRow = {
   requires_setup: boolean | null;
   requires_selection: boolean | null;
   selection_type: string | null;
+  source_url?: string | null;
+  notes?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
 };
 
 const PREVIEW_VISIBLE_LIMIT = 3;
@@ -65,7 +72,7 @@ export async function getTrackableCardPreviewBenefits(cardId: string): Promise<C
   const { data: benefitRows, error: benefitsError } = await supabase
     .from("benefits")
     .select(
-      "id, benefit_name, benefit_value, value_cents, cadence, reset_timing, enrollment_required, requires_setup, requires_selection, selection_type",
+      "id, card_id, benefit_code, benefit_name, benefit_value, value_cents, cadence, reset_timing, enrollment_required, requires_setup, requires_selection, selection_type, source_url, notes, created_at, updated_at",
     )
     .eq("card_id", cardId)
     .eq("track_in_memento", "yes");
@@ -74,7 +81,8 @@ export async function getTrackableCardPreviewBenefits(cardId: string): Promise<C
     throw benefitsError;
   }
 
-  return sortPreviewBenefits(((benefitRows ?? []) as CanonicalBenefitRow[]).map(mapPreviewBenefit));
+  const dedupedBenefits = dedupeCatalogBenefits((benefitRows ?? []) as CanonicalBenefitRow[]);
+  return sortPreviewBenefits(dedupedBenefits.map(mapPreviewBenefit));
 }
 
 export async function getCardPreview(cardId: string): Promise<CardPreviewResult | null> {

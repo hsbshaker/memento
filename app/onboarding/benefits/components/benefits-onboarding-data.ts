@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { dedupeCatalogBenefits } from "@/lib/benefits/dedupe-catalog-benefits";
 import {
   buildBenefitPeriodStatusMap,
   buildBenefitUsageUpdate,
@@ -48,6 +49,7 @@ type WalletRow = {
 type CanonicalBenefitRecord = {
   card_id: string;
   id: string;
+  benefit_code: string | null;
   benefit_name: string | null;
   benefit_value: string | null;
   cadence: string | null;
@@ -57,6 +59,8 @@ type CanonicalBenefitRecord = {
   track_in_memento: "yes" | "later" | "no" | null;
   source_url: string | null;
   notes: string | null;
+  created_at: string | null;
+  updated_at: string | null;
 };
 
 type UserBenefitRecord = {
@@ -218,7 +222,7 @@ async function loadCanonicalBenefits(
   const cardIds = wallet.map((row) => row.cards.id);
   const { data, error } = await supabase
     .from("benefits")
-    .select("id, card_id, benefit_name, benefit_value, cadence, reset_timing, enrollment_required, requires_setup, track_in_memento, source_url, notes")
+    .select("id, card_id, benefit_code, benefit_name, benefit_value, cadence, reset_timing, enrollment_required, requires_setup, track_in_memento, source_url, notes, created_at, updated_at")
     .in("card_id", cardIds)
     .eq("track_in_memento", "yes");
 
@@ -227,7 +231,7 @@ async function loadCanonicalBenefits(
     return { errorMessage: "Could not load card benefits right now." } as const;
   }
 
-  const benefits = (data ?? []) as unknown as CanonicalBenefitRecord[];
+  const benefits = dedupeCatalogBenefits((data ?? []) as unknown as CanonicalBenefitRecord[]);
 
   if (process.env.NODE_ENV !== "production") {
     const benefitCountByCard = new Map<string, number>();
