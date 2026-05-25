@@ -13,6 +13,7 @@ export interface CanonicalCard {
   card_code: string | null;
   display_name: string | null;
   issuer: string | null;
+  card_type: UserCardType | null;
   card_status: CanonicalCardStatus | null;
   created_at: string;
   updated_at: string;
