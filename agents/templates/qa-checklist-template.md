@@ -38,21 +38,17 @@ Notes:
 
 ## Command Validation
 
-Run when possible:
+Run in this order:
 
-- [ ] `npm run typecheck`
-- [ ] `npm run lint`
 - [ ] `npm test`
-
-If `npm run typecheck` is unavailable:
-
 - [ ] `npx tsc --noEmit`
+- [ ] `npm run lint`
 
 ## Command Results
 
-### `npm run typecheck`
+### `npm test`
 
-Result: Pass / Fail / Not available
+Result: Pass / Fail / Not run
 
 Notes:
 

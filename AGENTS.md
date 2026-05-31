@@ -90,11 +90,13 @@ Agents may improve UX, but should not casually replace established patterns acro
 
 ## Validation Requirements
 
-Before marking work complete, run the relevant checks:
+Before marking work complete, run:
 
-* `npm run typecheck`
+* `npm test`
+* `npx tsc --noEmit`
 * `npm run lint`
-* `npm test` if tests exist or were changed
+
+Run commands in this order. Do not use `npm run typecheck` unless a `typecheck` script is added to `package.json` in the future.
 
 If a command fails because of a pre-existing issue, report it clearly and identify whether the changed files introduced the failure.
 

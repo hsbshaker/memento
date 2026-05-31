@@ -66,15 +66,13 @@ Validate:
 
 ## Validation Commands
 
-Run when possible:
+Run in this order:
 
-- `npm run typecheck`
-- `npm run lint`
 - `npm test`
-
-If `npm run typecheck` is unavailable, run:
-
 - `npx tsc --noEmit`
+- `npm run lint`
+
+Do not use `npm run typecheck` — that script is not defined in this repo. See `docs/engineering/testing-commands.md` for the full validation guide.
 
 If a command fails, report:
 

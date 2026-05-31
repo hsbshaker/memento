@@ -113,10 +113,9 @@ Commands reported by the builder or reviewer:
 
 | Command | Result | Notes |
 |---|---|---|
-| `npm run typecheck` | Pass / Fail / Not available / Not run | [Notes] |
+| `npm test` | Pass / Fail / Not run | [Notes] |
 | `npx tsc --noEmit` | Pass / Fail / Not run | [Notes] |
 | `npm run lint` | Pass / Fail / Not run | [Notes] |
-| `npm test` | Pass / Fail / Not run | [Notes] |
 
 If validation failed, identify whether failures are:
 

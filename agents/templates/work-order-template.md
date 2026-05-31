@@ -74,15 +74,11 @@ The task is complete when:
 
 ## Validation
 
-Run when possible:
+Run in this order:
 
-- `npm run typecheck`
-- `npm run lint`
 - `npm test`
-
-If `npm run typecheck` is unavailable, run:
-
 - `npx tsc --noEmit`
+- `npm run lint`
 
 Manual QA:
 

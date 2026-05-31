@@ -464,10 +464,8 @@ Defines all enum values used across the app:
 ```
 agents/
 ├── active/             Active work orders — agents should check here for assigned tasks
-├── archive/            Retired agent files — do not use as active instructions
-│   └── ux/
-│       ├── agent.md           ARCHIVED — superseded by agents/roles/ux-agent.md
-│       └── ui-patterns.md     ARCHIVED — patterns extracted into AGENTS.md
+├── archive/            Completed or retired agent docs
+│   └── work-orders/    Completed work orders moved here after merge
 ├── roles/              Role instruction files — assign one per work order
 │   ├── builder-agent.md       Implementation tasks
 │   ├── discovery-agent.md     Investigation and audit tasks
@@ -479,6 +477,8 @@ agents/
     ├── qa-checklist-template.md
     └── review-template.md
 ```
+
+> **Note:** Retired UX archive files (`agents/archive/ux/agent.md` and `agents/archive/ux/ui-patterns.md`) were deleted during Phase A cleanup. They granted broad override authority that conflicted with `AGENTS.md`. They no longer exist in the repo.
 
 **Standard agent workflow:**
 
@@ -667,8 +667,7 @@ Some benefits use `card_anniversary_date` instead of calendar year for period bo
 | `docs/landing-page-redlines.md` | Task artifact | Point-in-time deliverable. May be stale. |
 | `docs/replit-preview-extract.md` | Stale | Replit is no longer the development environment. |
 | `docs/replit-style-extract.md` | Stale | Replit is no longer the development environment. |
-| `agents/archive/ux/agent.md` | Archived | Superseded by `agents/roles/ux-agent.md`. Contains override authority that conflicts with `AGENTS.md`. Do not use. |
-| `agents/archive/ux/ui-patterns.md` | Archived | Patterns superseded by `AGENTS.md`. Final rule ("ignore patterns if better UX exists") conflicts with current operating model. |
+| `agents/archive/ux/` | Deleted | Retired UX archive files were deleted during Phase A cleanup. They granted override authority that conflicted with `AGENTS.md`. Do not recreate. |
 
 ---
 

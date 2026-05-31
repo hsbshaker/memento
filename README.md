@@ -1,6 +1,6 @@
 # Memento
 
-Memento is a premium credit card benefits tracker focused on helping people capture "use it or lose it" value from their cards. Users manually add cards, confirm which benefits apply to them, and get reminders before benefits expire.
+Memento is a premium credit card benefits tracker focused on helping people capture "use it or lose it" value from their cards. Users manually add cards, confirm which benefits apply to them, and track time-sensitive benefits before value is lost.
 
 This README is the fastest repo-specific orientation doc for humans and coding agents. It summarizes the product, stack, setup, validation workflow, and the most important deeper docs.
 
