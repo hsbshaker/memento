@@ -191,8 +191,7 @@ All pages use `export const dynamic = "force-dynamic"` — there is no static ge
 
 | Route | Purpose | Risk |
 |---|---|---|
-| `/api/debug/auth-session` | Returns session info: user ID, email, cookie names. | Exposes user identity data. Confirm whether this is protected or should be removed pre-launch. |
-| `/api/debug/env` | Returns masked env var presence info. Protected by `CRON_SECRET`. | Lower risk due to auth, but should be reviewed before public launch. |
+| `/api/debug/env` | Returns masked env var presence info. Protected by `CRON_SECRET`. | Should be reviewed before public launch. |
 
 ---
 
@@ -625,9 +624,9 @@ Use this as a starting point. Always inspect actual files before making changes.
 
 `lib/supabase/service-role.ts` creates a client with the service-role key, which bypasses all row-level security policies. It is marked `server-only`. Confirm any code using `getServiceRoleSupabaseClient()` is restricted to cron routes and cannot be triggered by arbitrary user requests.
 
-### Debug API routes are publicly discoverable
+### Debug API route is publicly discoverable
 
-`/api/debug/auth-session` returns session data including user ID and email. `/api/debug/env` is protected by `CRON_SECRET`. Review both routes before public launch and consider removing or restricting them.
+`/api/debug/env` is protected by `CRON_SECRET` but should still be reviewed before public launch. `/api/debug/auth-session` has been deleted.
 
 ### Duplicate add-card paths
 
