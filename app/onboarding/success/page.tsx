@@ -1,7 +1,9 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { AppShell } from "@/components/ui/AppShell";
 import { Surface } from "@/components/ui/Surface";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { ReminderOptIn } from "@/app/onboarding/success/reminder-opt-in";
 
 export const dynamic = "force-dynamic";
 
@@ -88,7 +90,7 @@ export default async function OnboardingSuccessPage() {
             <div className="space-y-3">
               <h1 className="text-4xl font-semibold tracking-tight text-white md:text-5xl">You&apos;re all set, {firstName}.</h1>
               <p className="mx-auto max-w-[620px] text-sm text-white/72 sm:text-base">
-                We&apos;ll email you before your benefits expire so you never leave money on the table.
+                Your benefits are tracked. Turn on email reminders to get a monthly nudge when you have value to capture.
               </p>
             </div>
           </section>
@@ -104,20 +106,34 @@ export default async function OnboardingSuccessPage() {
               <ul className="space-y-3 text-sm text-white/82 sm:text-[15px]">
                 <li className="flex items-start gap-2.5">
                   <SmallCheckIcon />
-                  <span>Email reminders before credits expire</span>
+                  <span>Monthly digest emails when you have benefits to use</span>
                 </li>
                 <li className="flex items-start gap-2.5">
                   <SmallCheckIcon />
-                  <span>Monthly and quarterly nudges for recurring benefits</span>
+                  <span>Tracks monthly, quarterly, and annual benefits</span>
                 </li>
                 <li className="flex items-start gap-2.5">
                   <SmallCheckIcon />
-                  <span>Update your reminder preferences anytime</span>
+                  <span>Update your reminder preferences anytime in Settings</span>
                 </li>
               </ul>
             </Surface>
-            <p className="pt-3 text-center text-xs text-white/55">You can close this tab - we&apos;ve got it from here.</p>
           </section>
+
+          <div className="mt-6 w-full max-w-[620px] space-y-4">
+            <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-4">
+              <p className="mb-3 text-center text-xs font-semibold uppercase tracking-[0.16em] text-white/60">Email reminders</p>
+              <ReminderOptIn />
+            </div>
+            <div className="text-center">
+              <Link
+                href="/"
+                className="text-sm font-medium text-white/50 hover:text-white/80 transition-colors"
+              >
+                Go to dashboard →
+              </Link>
+            </div>
+          </div>
         </div>
       </div>
     </AppShell>
