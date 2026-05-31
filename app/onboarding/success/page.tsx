@@ -37,8 +37,7 @@ function resolveFirstName(user: AuthUserLike) {
 
 function SuccessCheckBadge() {
   return (
-    <div className="relative inline-flex h-20 w-20 items-center justify-center rounded-full border border-[#BCEBD1]/45 bg-[#86EFAC]/12 text-[#D7FFE8] shadow-[0_0_0_1px_rgba(188,235,209,0.18),0_20px_45px_-28px_rgba(134,239,172,0.6)]">
-      <span aria-hidden className="absolute inset-0 rounded-full bg-[#86EFAC]/20 blur-xl" />
+    <div className="relative inline-flex h-20 w-20 items-center justify-center rounded-full border border-success/40 bg-success-muted text-success">
       <svg viewBox="0 0 24 24" fill="none" className="relative h-10 w-10" aria-hidden="true">
         <path
           d="M6.5 12.5 10 16l7.5-8"
@@ -54,7 +53,7 @@ function SuccessCheckBadge() {
 
 function SmallCheckIcon() {
   return (
-    <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4 shrink-0 text-[#BAF3D2]" aria-hidden="true">
+    <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4 shrink-0 text-success" aria-hidden="true">
       <path d="M5.2 10.2 8 13l6.4-6.6" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
@@ -79,31 +78,26 @@ export default async function OnboardingSuccessPage() {
       containerClassName="flex min-h-[calc(100dvh-4rem)] items-center justify-center px-4 py-6 sm:px-6 sm:py-8"
     >
       <div className="relative w-full max-w-[680px]">
-        <span
-          aria-hidden
-          className="pointer-events-none absolute left-1/2 top-[8%] h-56 w-56 -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(127,182,255,0.28)_0%,rgba(127,182,255,0.09)_45%,transparent_72%)] blur-2xl"
-        />
-
         <div className="relative flex flex-col items-center text-center motion-safe:transition-all motion-safe:duration-[220ms] motion-safe:ease-out motion-safe:starting:translate-y-1.5 motion-safe:starting:opacity-0 motion-reduce:transition-none">
           <section className="w-full space-y-5">
             <SuccessCheckBadge />
             <div className="space-y-3">
-              <h1 className="text-4xl font-semibold tracking-tight text-white md:text-5xl">You&apos;re all set, {firstName}.</h1>
-              <p className="mx-auto max-w-[620px] text-sm text-white/72 sm:text-base">
+              <h1 className="text-4xl font-semibold tracking-tight text-foreground md:text-5xl">You&apos;re all set, {firstName}.</h1>
+              <p className="mx-auto max-w-[620px] text-sm text-muted-foreground sm:text-base">
                 Your benefits are tracked. Turn on email reminders to get a monthly nudge when you have value to capture.
               </p>
             </div>
           </section>
 
-          <div className="my-6 h-px w-full bg-gradient-to-r from-transparent via-white/20 to-transparent" aria-hidden />
+          <div className="my-6 h-px w-full bg-gradient-to-r from-transparent via-border to-transparent" aria-hidden />
 
           <section aria-labelledby="what-happens-next" className="w-full max-w-[620px]">
-            <Surface className="space-y-4 border-white/18 bg-white/[0.09] p-4 text-left sm:p-5">
-              <h2 id="what-happens-next" className="text-xs font-semibold uppercase tracking-[0.16em] text-white/60">
+            <Surface className="space-y-4 p-4 text-left sm:p-5">
+              <h2 id="what-happens-next" className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                 What Happens Next
               </h2>
 
-              <ul className="space-y-3 text-sm text-white/82 sm:text-[15px]">
+              <ul className="space-y-3 text-sm text-muted-foreground sm:text-[15px]">
                 <li className="flex items-start gap-2.5">
                   <SmallCheckIcon />
                   <span>Monthly digest emails when you have benefits to use</span>
@@ -121,14 +115,14 @@ export default async function OnboardingSuccessPage() {
           </section>
 
           <div className="mt-6 w-full max-w-[620px] space-y-4">
-            <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-4">
-              <p className="mb-3 text-center text-xs font-semibold uppercase tracking-[0.16em] text-white/60">Email reminders</p>
+            <div className="rounded-xl border border-border bg-surface px-4 py-4">
+              <p className="mb-3 text-center text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Email reminders</p>
               <ReminderOptIn />
             </div>
             <div className="text-center">
               <Link
                 href="/"
-                className="text-sm font-medium text-white/50 hover:text-white/80 transition-colors"
+                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
               >
                 Go to dashboard →
               </Link>

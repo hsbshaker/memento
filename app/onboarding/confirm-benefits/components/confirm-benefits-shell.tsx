@@ -1,5 +1,4 @@
-import type { CSSProperties, ReactNode } from "react";
-import { PageBackgroundBlobs } from "@/components/ui/PageBackgroundBlobs";
+import type { ReactNode } from "react";
 
 type ConfirmBenefitsShellProps = {
   eyebrow?: string;
@@ -17,45 +16,24 @@ export function ConfirmBenefitsShell({
   children,
 }: ConfirmBenefitsShellProps) {
   return (
-    <div
-      className="relative min-h-[100dvh] overflow-x-hidden bg-background text-foreground dark"
-      style={
-        {
-          "--background": "#0D0D11",
-          "--foreground": "#ffffff",
-        } as CSSProperties
-      }
-    >
-      <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
-        <PageBackgroundBlobs />
-        <div
-          className="absolute inset-0 opacity-[0.025]"
-          style={{
-            backgroundImage:
-              "linear-gradient(rgba(255,255,255,0.4) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.4) 1px, transparent 1px)",
-            backgroundSize: "80px 80px",
-          }}
-        />
-        <div className="absolute inset-x-0 bottom-0 h-64 bg-gradient-to-t from-background to-transparent" />
-      </div>
-
+    <div className="relative min-h-[100dvh] overflow-x-hidden bg-background text-foreground">
       <div className="relative z-10 min-h-[100dvh] px-6 py-6">
         <nav className="mx-auto flex w-full max-w-2xl items-center justify-center px-6 py-6">
-          <div className="flex items-center gap-2 text-xl font-bold tracking-tight text-white">
-            <div className="h-6 w-6 rounded-full bg-gradient-to-tr from-[#4A9EFF] to-[#C8A94B]/80" />
+          <div className="flex items-center gap-2 text-xl font-bold tracking-tight text-foreground">
+            <div className="h-6 w-6 rounded-full bg-accent" />
             Memento
           </div>
         </nav>
         <div className="mx-auto max-w-[52rem]">
           <header className="mb-6 text-center sm:mb-7">
             {eyebrow ? (
-              <p className="mb-3 text-xs font-semibold uppercase tracking-[0.22em] text-white/45">{eyebrow}</p>
+              <p className="mb-3 text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">{eyebrow}</p>
             ) : null}
-            <h1 className="text-3xl font-bold tracking-tight text-white sm:text-[2.4rem]">{title}</h1>
+            <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-[2.4rem]">{title}</h1>
             {description ? (
-              <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-white/58 sm:text-base">{description}</p>
+              <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">{description}</p>
             ) : null}
-            {supportingNote ? <p className="mt-3 text-sm text-white/42">{supportingNote}</p> : null}
+            {supportingNote ? <p className="mt-3 text-sm text-subtle-foreground">{supportingNote}</p> : null}
           </header>
 
           {children}

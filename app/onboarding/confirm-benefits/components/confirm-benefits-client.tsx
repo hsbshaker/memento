@@ -180,7 +180,7 @@ export function ConfirmBenefitsClient({ data }: { data: ConfirmBenefitsPageData 
       <div className="pt-1">
         <Link
           href="/onboarding/build-your-lineup"
-          className="inline-flex items-center gap-2 text-sm font-medium text-white/54 transition hover:text-white/82 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F7C948]/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B1220]"
+          className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         >
           <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" className="h-4 w-4 shrink-0">
             <path
@@ -197,7 +197,7 @@ export function ConfirmBenefitsClient({ data }: { data: ConfirmBenefitsPageData 
 
       {activeCardGroup ? (
         hasMultipleCards ? (
-          <div className="overflow-hidden rounded-xl border border-white/10 bg-white/[0.03]">
+          <div className="overflow-hidden rounded-xl border border-border bg-surface">
             <div className="px-4 py-3 sm:px-5 sm:py-3.5">
               <div className="-mx-4 overflow-x-auto px-4 pb-1 sm:-mx-5 sm:px-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 <div role="tablist" aria-label="Selected cards" className="flex min-w-full gap-2 snap-x snap-mandatory">
@@ -213,10 +213,10 @@ export function ConfirmBenefitsClient({ data }: { data: ConfirmBenefitsPageData 
                         aria-selected={isActive}
                         aria-controls={`card-panel-${cardGroup.userCardId}`}
                         id={`card-tab-${cardGroup.userCardId}`}
-                        className={`shrink-0 snap-start rounded-lg border px-3 py-1.5 text-left text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F7C948]/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B1220] ${
+                        className={`shrink-0 snap-start rounded-lg border px-3 py-1.5 text-left text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
                           isActive
-                            ? "border-white/14 bg-white/[0.06] text-white"
-                            : "border-transparent bg-transparent text-white/50 hover:border-white/10 hover:bg-white/[0.03] hover:text-white/80"
+                            ? "border-border-strong bg-surface-raised text-foreground"
+                            : "border-transparent bg-transparent text-muted-foreground hover:border-border hover:bg-hover hover:text-foreground"
                         }`}
                         tabIndex={isActive ? 0 : -1}
                       >
@@ -230,7 +230,7 @@ export function ConfirmBenefitsClient({ data }: { data: ConfirmBenefitsPageData 
               </div>
             </div>
 
-            <div className="border-t border-white/[0.08]">
+            <div className="border-t border-border">
               <div
                 role="tabpanel"
                 id={`card-panel-${activeCardGroup.userCardId}`}
@@ -271,22 +271,22 @@ export function ConfirmBenefitsClient({ data }: { data: ConfirmBenefitsPageData 
       ) : null}
 
       {saveError ? (
-        <p role="alert" aria-live="polite" className="text-sm text-rose-100/88">
+        <p role="alert" aria-live="polite" className="text-sm text-destructive">
           {saveError}
         </p>
       ) : null}
 
       <div className="sticky bottom-4 z-30 hidden md:block">
-        <div className="rounded-xl border border-white/10 bg-[#0B1220]/94 px-4 py-3">
+        <div className="rounded-xl border border-border bg-surface-raised px-4 py-3">
           <div className="flex items-center justify-between gap-4">
             <div className="min-w-0">
-              <p className="text-sm font-medium text-white/84">{footerCopy.desktop}</p>
+              <p className="text-sm font-medium text-foreground">{footerCopy.desktop}</p>
               {totalSelected === 0 ? (
-                <p className="mt-1 text-xs text-white/46">Select at least one benefit to continue.</p>
+                <p className="mt-1 text-xs text-muted-foreground">Select at least one benefit to continue.</p>
               ) : hasMissingRequiredAnniversaryDate ? (
-                <p className="mt-1 text-xs text-white/46">Add the required card anniversary date to continue.</p>
+                <p className="mt-1 text-xs text-muted-foreground">Add the required card anniversary date to continue.</p>
               ) : (
-                <p className="mt-1 text-xs text-white/42">Ready to save your reminders.</p>
+                <p className="mt-1 text-xs text-muted-foreground">Ready to save your reminders.</p>
               )}
             </div>
             <Button
@@ -300,16 +300,16 @@ export function ConfirmBenefitsClient({ data }: { data: ConfirmBenefitsPageData 
         </div>
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-white/10 bg-[#0B1220]/82 px-4 py-3 pb-[env(safe-area-inset-bottom)] backdrop-blur-sm md:hidden">
+      <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-surface/90 px-4 py-3 pb-[env(safe-area-inset-bottom)] backdrop-blur-sm md:hidden">
         <div className="mx-auto w-full max-w-3xl">
-          <div className="rounded-xl border border-white/10 bg-[#0B1220]/94 px-4 py-3">
+          <div className="rounded-xl border border-border bg-surface-raised px-4 py-3">
             <div className="flex items-center gap-3">
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium text-white/84">{footerCopy.mobile}</p>
+                <p className="truncate text-sm font-medium text-foreground">{footerCopy.mobile}</p>
                 {totalSelected === 0 ? (
-                  <p className="mt-1 text-xs text-white/46">Select at least one benefit to continue.</p>
+                  <p className="mt-1 text-xs text-muted-foreground">Select at least one benefit to continue.</p>
                 ) : hasMissingRequiredAnniversaryDate ? (
-                  <p className="mt-1 text-xs text-white/46">Add the required card anniversary date to continue.</p>
+                  <p className="mt-1 text-xs text-muted-foreground">Add the required card anniversary date to continue.</p>
                 ) : null}
               </div>
               <Button

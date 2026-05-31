@@ -46,15 +46,15 @@ export function ConfirmBenefitsSummary({
 
   return (
     <div className="px-2 py-0.5">
-      <p className="mx-auto max-w-3xl text-center text-lg font-semibold tracking-tight text-white/88 sm:text-xl">
+      <p className="mx-auto max-w-3xl text-center text-lg font-semibold tracking-tight text-foreground sm:text-xl">
         {statement.amount ? (
           <>
             <span>Up to </span>
-            <span className="text-[#F7D774]">{statement.amount}</span>{" "}
+            <span className="text-accent">{statement.amount}</span>{" "}
             <span>{statement.suffix}</span>
           </>
         ) : (
-          <span className="text-white/72">{statement.suffix}</span>
+          <span className="text-muted-foreground">{statement.suffix}</span>
         )}
       </p>
     </div>

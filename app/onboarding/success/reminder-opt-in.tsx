@@ -31,15 +31,15 @@ export function ReminderOptIn() {
   if (state === "done") {
     return (
       <div className="flex flex-col items-center gap-3 text-center">
-        <p className="text-sm font-medium text-[#BAF3D2]">Reminders on ✓</p>
-        <p className="text-xs text-white/50">You&apos;ll get a monthly email when you have benefits worth using.</p>
+        <p className="text-sm font-medium text-success">Reminders on ✓</p>
+        <p className="text-xs text-muted-foreground">You&apos;ll get a monthly email when you have benefits worth using.</p>
       </div>
     );
   }
 
   return (
     <div className="flex flex-col items-center gap-3 text-center">
-      <p className="text-xs text-white/50">
+      <p className="text-xs text-muted-foreground">
         Get a monthly email when you have card benefits worth using. You can turn this off anytime in Settings.
       </p>
       <div className="flex items-center gap-3">
@@ -51,11 +51,11 @@ export function ReminderOptIn() {
         >
           {state === "saving" ? "Saving…" : "Turn on reminders"}
         </Button>
-        <Link href="/" className="text-sm text-white/40 hover:text-white/60 transition-colors">
+        <Link href="/" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
           Skip
         </Link>
       </div>
-      {error && <p className="text-xs text-red-400">{error}</p>}
+      {error && <p className="text-xs text-destructive">{error}</p>}
     </div>
   );
 }

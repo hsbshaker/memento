@@ -52,7 +52,7 @@ type CardsRouteRow = {
 function CardArtPreview({ card }: { card: CardSearchResult }) {
   if (card.cardArtUrl) {
     return (
-      <div className="relative h-11 w-[70px] overflow-hidden rounded-lg border border-white/10 bg-white/5">
+      <div className="relative h-11 w-[70px] overflow-hidden rounded-lg border border-border bg-surface-muted">
         <Image
           src={card.cardArtUrl}
           alt=""
@@ -65,8 +65,8 @@ function CardArtPreview({ card }: { card: CardSearchResult }) {
   }
 
   return (
-    <div className="flex h-11 w-[70px] items-end overflow-hidden rounded-lg border border-white/10 bg-[linear-gradient(135deg,rgba(74,158,255,0.45),rgba(200,169,75,0.28))] px-2 py-1.5">
-      <span className="text-[9px] font-semibold uppercase tracking-[0.18em] text-white/70">
+    <div className="flex h-11 w-[70px] items-end overflow-hidden rounded-lg border border-border bg-surface-muted px-2 py-1.5">
+      <span className="text-[9px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
         {getIssuerShortLabel(card.issuer)}
       </span>
     </div>
@@ -383,7 +383,7 @@ export function LineupCardSearch() {
       <div className="relative mx-auto mb-8 w-full max-w-[40rem]">
         <Search
           aria-hidden="true"
-          className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-white/35"
+          className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
         />
         <input
           ref={inputRef}
@@ -399,13 +399,13 @@ export function LineupCardSearch() {
             setError(null);
           }}
           placeholder="Search cards (e.g. Platinum, Sapphire...)"
-          className="h-11 w-full rounded-lg border border-white/10 bg-white/[0.04] pl-10 pr-4 text-sm text-white outline-none transition-all placeholder:text-white/35 focus:border-[#4A9EFF]/35 focus:bg-white/[0.055] focus:ring-2 focus:ring-[#4A9EFF]/18"
+          className="h-11 w-full rounded-lg border border-border bg-surface pl-10 pr-4 text-sm text-foreground outline-none transition-all placeholder:text-muted-foreground focus:border-border-strong focus:ring-2 focus:ring-focus"
         />
 
         {showResults ? (
-          <Surface className="absolute left-0 right-0 top-[calc(100%+0.6rem)] z-20 overflow-hidden rounded-xl border-white/10 bg-[#11131A]/94 p-1 shadow-[0_20px_60px_-34px_rgba(0,0,0,0.92)] backdrop-blur-0">
-            {error ? <p className="px-3.5 py-3 text-sm text-[#F7C948]">{error}</p> : null}
-            {isLoading ? <p className="px-3.5 py-3 text-sm text-white/55">Searching cards...</p> : null}
+          <Surface className="absolute left-0 right-0 top-[calc(100%+0.6rem)] z-20 overflow-hidden p-1">
+            {error ? <p className="px-3.5 py-3 text-sm text-destructive">{error}</p> : null}
+            {isLoading ? <p className="px-3.5 py-3 text-sm text-muted-foreground">Searching cards...</p> : null}
 
             {!error && !isLoading ? (
               results.length > 0 ? (
@@ -424,7 +424,7 @@ export function LineupCardSearch() {
                           className={`flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors ${
                             isSelected
                               ? "cursor-not-allowed opacity-55"
-                              : "text-white/92 hover:bg-white/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4A9EFF]/30"
+                              : "text-foreground hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
                           }`}
                         >
                           <CardArtPreview card={card} />
@@ -434,7 +434,7 @@ export function LineupCardSearch() {
                             <div className={cn("mt-1 flex items-center gap-2 text-xs", ROW_SECONDARY_TEXT_CLASS, "text-xs")}>
                               <span>{issuerLabel}</span>
                               {card.cardStatus === "no_trackable_benefits" ? (
-                                <span className="rounded-full border border-[#C8A94B]/20 bg-[#C8A94B]/10 px-2 py-0.5 text-[10px] font-medium tracking-[0.06em] text-[#E5CD83]">
+                                <span className="rounded-full border border-border bg-surface-muted px-2 py-0.5 text-[10px] font-medium tracking-[0.06em] text-subtle-foreground">
                                   No trackable benefits yet
                                 </span>
                               ) : null}
@@ -443,9 +443,9 @@ export function LineupCardSearch() {
 
                           <div className="shrink-0">
                             {isSelected ? (
-                              <span className="text-xs text-white/45">Added</span>
+                              <span className="text-xs text-subtle-foreground">Added</span>
                             ) : (
-                              <span className={cn("text-[#9CC8FF]", ROW_ACTION_TEXT_CLASS)}>Add</span>
+                              <span className={cn("text-accent", ROW_ACTION_TEXT_CLASS)}>Add</span>
                             )}
                           </div>
                         </button>
@@ -454,7 +454,7 @@ export function LineupCardSearch() {
                   })}
                 </ul>
               ) : (
-                <p className="px-3.5 py-3 text-sm text-white/55">No cards match that search.</p>
+                <p className="px-3.5 py-3 text-sm text-muted-foreground">No cards match that search.</p>
               )
             ) : null}
           </Surface>
@@ -463,7 +463,7 @@ export function LineupCardSearch() {
 
       {toast ? (
         <div className="pointer-events-none fixed bottom-6 left-1/2 z-30 w-[min(calc(100vw-2rem),32rem)] -translate-x-1/2">
-          <div className="rounded-xl border border-[#C8A94B]/20 bg-[#18150E]/92 px-4 py-3 text-sm leading-relaxed text-[#F1E2B0] shadow-[0_22px_60px_-36px_rgba(0,0,0,0.95)] backdrop-blur-md">
+          <div className="rounded-xl border border-accent-border bg-surface-raised px-4 py-3 text-sm leading-relaxed text-foreground shadow-lg backdrop-blur-md">
             {toast.message}
           </div>
         </div>
@@ -472,19 +472,19 @@ export function LineupCardSearch() {
       <section className="mx-auto mt-auto w-full max-w-[40rem] pt-2">
         <div className="mb-3 flex items-center justify-between gap-4">
           <h2 className={ROW_MICRO_TEXT_CLASS}>YOUR WALLET</h2>
-          <span className="rounded-md border border-white/10 bg-white/[0.04] px-2 py-0.5 text-[11px] font-medium text-white/72">
+          <span className="rounded-md border border-border bg-surface-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
             {formatCardCount(selectedCards.length)}
           </span>
         </div>
 
-        <div className="overflow-hidden rounded-xl border border-white/8 bg-white/[0.025]">
+        <div className="overflow-hidden rounded-xl border border-border bg-surface">
           {isWalletLoading ? (
             <div className="flex min-h-[160px] items-center justify-center px-5 py-10">
-              <p className="text-sm text-white/40">Loading your saved cards…</p>
+              <p className="text-sm text-muted-foreground">Loading your saved cards…</p>
             </div>
           ) : selectedCards.length === 0 ? (
             <div className="flex min-h-[160px] items-center justify-center px-5 py-10">
-              <p className="text-sm text-white/40">No cards added yet.</p>
+              <p className="text-sm text-muted-foreground">No cards added yet.</p>
             </div>
           ) : (
             <div className="px-4 sm:px-5">
@@ -496,21 +496,21 @@ export function LineupCardSearch() {
                   <div
                     key={card.cardId}
                     className={`flex items-center justify-between gap-4 py-3 ${
-                      index === 0 ? "" : "border-t border-white/8"
+                      index === 0 ? "" : "border-t border-border-muted"
                     }`}
                   >
                     <div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden pr-4">
                       <p className={cn("truncate leading-none", ROW_PRIMARY_TEXT_CLASS)}>{cardLabel}</p>
-                      <span aria-hidden className="shrink-0 text-[10px] leading-none text-white/22">
+                      <span aria-hidden className="shrink-0 text-[10px] leading-none text-subtle-foreground">
                         •
                       </span>
-                      <p className={cn("truncate text-xs leading-none text-white/42", ROW_SECONDARY_TEXT_CLASS, "text-xs leading-none")}>{issuerLabel}</p>
+                      <p className={cn("truncate text-xs leading-none text-subtle-foreground", ROW_SECONDARY_TEXT_CLASS, "text-xs leading-none")}>{issuerLabel}</p>
                     </div>
 
                     <button
                       type="button"
                       onClick={() => void handleRemoveCard(card.cardId)}
-                      className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-rose-300/62 transition-colors hover:text-rose-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-300/30"
+                      className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
                       aria-label={`Remove ${cardLabel}`}
                     >
                       <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
@@ -522,14 +522,14 @@ export function LineupCardSearch() {
           )}
         </div>
 
-        {saveError ? <p className="mb-4 text-sm text-rose-100/88">{saveError}</p> : null}
+        {saveError ? <p className="mb-4 text-sm text-destructive">{saveError}</p> : null}
 
         <div className="mt-6 flex justify-end">
           <button
             type="button"
             disabled={selectedCards.length === 0 || isContinuing}
             onClick={() => void handleContinue()}
-            className="inline-flex min-w-[240px] items-center justify-center gap-2 rounded-xl bg-white px-6 py-3 text-sm font-medium text-black transition-colors hover:bg-white/92 disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex min-w-[240px] items-center justify-center gap-2 rounded-xl bg-accent px-6 py-3 text-sm font-medium text-accent-foreground transition-colors hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isContinuing ? "Saving..." : "Continue to reminders"}
             <ChevronRight className="h-4 w-4" aria-hidden="true" />

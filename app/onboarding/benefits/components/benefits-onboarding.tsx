@@ -36,7 +36,7 @@ import {
 } from "./benefits-onboarding-persistence";
 
 const CADENCE_ORDER: Cadence[] = ["monthly", "quarterly", "semiannual", "annual", "multi_year", "one_time", "per_booking"];
-const BENEFIT_AMOUNT_ACCENT_CLASS = "text-[#F7C948]";
+const BENEFIT_AMOUNT_ACCENT_CLASS = "text-accent";
 const BELL_COLUMN_WIDTH_CLASS = "w-16";
 const ENROLLMENT_URL_BY_BENEFIT_NAME: Record<string, string> = {
   "hilton honors gold status": "https://www.americanexpress.com/icc/cards/benefits/travel/hilton-honors-elite-gold-status.html",
@@ -204,22 +204,22 @@ const BenefitItem = memo(function BenefitItem({ benefit, onToggleRemindMe, onTog
         onKeyDown={handleCardKeyDown}
         className={cn(
           "w-full px-4 py-3.5 text-left transition-colors",
-          canExpand ? "cursor-pointer hover:bg-white/[0.025] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/70 focus-visible:ring-inset" : "",
+          canExpand ? "cursor-pointer hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-inset" : "",
         )}
       >
         {isEnrollmentBenefit ? (
           <div className="min-w-0 flex flex-col gap-3">
             <div className="min-w-0">
-              <p className="min-w-0 truncate text-sm font-medium leading-tight text-white/95">{benefit.display_name}</p>
+              <p className="min-w-0 truncate text-sm font-medium leading-tight text-foreground">{benefit.display_name}</p>
               {currentPeriodLabel ? (
-                <p className="mt-1 text-xs text-white/55">Current period: {currentPeriodLabel}</p>
+                <p className="mt-1 text-xs text-muted-foreground">Current period: {currentPeriodLabel}</p>
               ) : null}
-              {urgency ? <p className="mt-1 text-xs text-[#F7C948]">{urgency.urgency_label}</p> : null}
+              {urgency ? <p className="mt-1 text-xs text-warning">{urgency.urgency_label}</p> : null}
             </div>
             {formattedAmount ? (
               <span
                 className={cn(
-                  "inline-flex w-fit shrink-0 items-center whitespace-nowrap rounded-full border border-[#F7C948]/35 bg-[#F7C948]/15 px-3 py-1 text-sm font-medium leading-none",
+                  "inline-flex w-fit shrink-0 items-center whitespace-nowrap rounded-full border border-accent-border bg-accent-muted px-3 py-1 text-sm font-medium leading-none",
                   BENEFIT_AMOUNT_ACCENT_CLASS,
                 )}
               >
@@ -230,10 +230,10 @@ const BenefitItem = memo(function BenefitItem({ benefit, onToggleRemindMe, onTog
               <button
                 type="button"
                 className={cn(
-                  "inline-flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-lg border px-4 text-sm font-medium leading-none transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B1020]",
+                  "inline-flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-lg border px-4 text-sm font-medium leading-none transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 focus-visible:ring-offset-background",
                   benefit.current_period_used
-                    ? "border-[#86EFAC]/35 bg-[#86EFAC]/10 text-[#BBF7D0]"
-                    : "border-white/12 bg-white/[0.03] text-white/70 hover:bg-white/[0.08] hover:text-white",
+                    ? "border-success/40 bg-success-muted text-success"
+                    : "border-border bg-surface-muted text-muted-foreground hover:bg-hover hover:text-foreground",
                 )}
                 onClick={(event) => {
                   event.stopPropagation();
@@ -249,7 +249,7 @@ const BenefitItem = memo(function BenefitItem({ benefit, onToggleRemindMe, onTog
                   href={enrollmentUrl ?? "#"}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex h-10 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-[#86EFAC]/35 bg-emerald-400/12 px-4 text-sm font-medium leading-none text-emerald-100 transition-colors hover:bg-emerald-400/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B1020]"
+                  className="inline-flex h-10 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-success/40 bg-success-muted px-4 text-sm font-medium leading-none text-success transition-colors hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                   onClick={(event) => {
                     event.stopPropagation();
                   }}
@@ -265,19 +265,19 @@ const BenefitItem = memo(function BenefitItem({ benefit, onToggleRemindMe, onTog
           <div className="grid grid-cols-[1fr_auto] items-start gap-2">
             <div className="min-w-0 flex flex-col gap-2">
               <div className="flex min-w-0 items-center gap-1">
-                <p className="min-w-0 flex-1 truncate text-sm font-medium leading-tight text-white/95">{benefit.display_name}</p>
+                <p className="min-w-0 flex-1 truncate text-sm font-medium leading-tight text-foreground">{benefit.display_name}</p>
               </div>
               {currentPeriodLabel ? (
-                <p className="text-xs text-white/55">Current period: {currentPeriodLabel}</p>
+                <p className="text-xs text-muted-foreground">Current period: {currentPeriodLabel}</p>
               ) : null}
-              {urgency ? <p className="text-xs text-[#F7C948]">{urgency.urgency_label}</p> : null}
+              {urgency ? <p className="text-xs text-warning">{urgency.urgency_label}</p> : null}
 
               {formattedAmount || canExpand ? (
                 <div className="flex items-center gap-2">
                   {formattedAmount ? (
                     <span
                       className={cn(
-                        "inline-flex w-fit shrink-0 items-center whitespace-nowrap rounded-full border border-[#F7C948]/35 bg-[#F7C948]/15 px-3 py-1 text-sm font-medium leading-none",
+                        "inline-flex w-fit shrink-0 items-center whitespace-nowrap rounded-full border border-accent-border bg-accent-muted px-3 py-1 text-sm font-medium leading-none",
                         BENEFIT_AMOUNT_ACCENT_CLASS,
                       )}
                     >
@@ -287,7 +287,7 @@ const BenefitItem = memo(function BenefitItem({ benefit, onToggleRemindMe, onTog
                   {canExpand ? (
                     <button
                       type="button"
-                      className="relative inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-white/50 transition hover:bg-white/[0.08] hover:text-white/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B1020] after:absolute after:-inset-[10px] after:content-['']"
+                      className="relative inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-muted-foreground transition hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 focus-visible:ring-offset-background after:absolute after:-inset-[10px] after:content-['']"
                       onClick={(event) => {
                         event.stopPropagation();
                         handleToggleExpand();
@@ -307,12 +307,12 @@ const BenefitItem = memo(function BenefitItem({ benefit, onToggleRemindMe, onTog
               <button
                 type="button"
                 className={cn(
-                  "inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B1020]",
+                  "inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 focus-visible:ring-offset-background",
                   remindMeDisabled
-                    ? "cursor-not-allowed border-white/10 bg-white/[0.03] text-white/35"
+                    ? "cursor-not-allowed border-border bg-surface-muted text-subtle-foreground"
                     : benefit.remind_me
-                      ? "border-emerald-300/35 bg-emerald-400/12 text-emerald-100"
-                      : "border-white/12 bg-white/[0.03] text-white/60 hover:bg-white/[0.08] hover:text-white/85",
+                      ? "border-success/40 bg-success-muted text-success"
+                      : "border-border bg-surface-muted text-muted-foreground hover:bg-hover hover:text-foreground",
                 )}
                 onClick={(event) => {
                   event.stopPropagation();
@@ -337,7 +337,7 @@ const BenefitItem = memo(function BenefitItem({ benefit, onToggleRemindMe, onTog
         >
           {descriptionText ? (
             <div className="space-y-2">
-              <p className="text-xs leading-relaxed text-white/70">{descriptionText}</p>
+              <p className="text-xs leading-relaxed text-muted-foreground">{descriptionText}</p>
             </div>
           ) : null}
         </div>
@@ -409,11 +409,11 @@ const CardPanel = memo(function CardPanel({
             event.preventDefault();
             onToggleExpand(card.cardId);
           }}
-          className="grid w-full grid-cols-[1fr_auto] items-center gap-3 px-4 pt-3 pb-4 text-left transition-colors hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/70 focus-visible:ring-inset"
+          className="grid w-full grid-cols-[1fr_auto] items-center gap-3 px-4 pt-3 pb-4 text-left transition-colors hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-inset"
         >
           <div className="min-w-0 flex flex-col gap-1">
-            <p className="min-w-0 line-clamp-2 text-xl font-semibold leading-tight text-white">{headerDisplayName}</p>
-            <p className="min-w-0 truncate text-sm leading-snug text-white/55">
+            <p className="min-w-0 line-clamp-2 text-xl font-semibold leading-tight text-foreground">{headerDisplayName}</p>
+            <p className="min-w-0 truncate text-sm leading-snug text-muted-foreground">
               {card.benefits.length > 0
                 ? `${issuerShortLabel} • ${card.benefits.length} benefits`
                 : card.cardStatus === "no_trackable_benefits"
@@ -424,7 +424,7 @@ const CardPanel = memo(function CardPanel({
           <div className="flex shrink-0 items-center gap-2">
             <button
               type="button"
-              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-500/10 text-red-200 transition hover:bg-red-500/15 hover:text-red-100 sm:h-9 sm:w-9 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B1020]"
+              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-destructive-muted text-destructive transition hover:brightness-110 sm:h-9 sm:w-9 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               onClick={(event) => {
                 event.stopPropagation();
                 onRequestRemove(card);
@@ -435,7 +435,7 @@ const CardPanel = memo(function CardPanel({
             </button>
             <button
               type="button"
-              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-white/65 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B1020]"
+              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               onClick={(event) => {
                 event.stopPropagation();
                 onToggleExpand(card.cardId);
@@ -450,9 +450,9 @@ const CardPanel = memo(function CardPanel({
       </div>
 
       {isExpanded ? (
-        <div className="space-y-2 border-t border-white/10 px-4 py-3">
+        <div className="space-y-2 border-t border-border px-4 py-3">
           {card.benefits.length === 0 ? (
-            <p className="rounded-xl border border-white/10 bg-white/[0.04] px-3 py-3 text-sm text-white/65">
+            <p className="rounded-xl border border-border bg-surface-muted px-3 py-3 text-sm text-muted-foreground">
               {card.cardStatus === "no_trackable_benefits"
                 ? "This card is in our catalog, but it doesn’t have any benefits we track in Memento yet."
                 : "This card doesn’t have any benefits with tracking enabled in Memento yet."}
@@ -461,7 +461,7 @@ const CardPanel = memo(function CardPanel({
             <>
               <div className="flex min-w-0 items-center gap-2">
                 <div className="min-w-0 flex-1 overflow-x-auto whitespace-nowrap [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-                  <div role="tablist" aria-label={`${card.cardName} benefit cadence`} className="inline-flex min-w-max gap-1 rounded-lg border border-white/10 bg-white/[0.03] p-1">
+                  <div role="tablist" aria-label={`${card.cardName} benefit cadence`} className="inline-flex min-w-max gap-1 rounded-lg border border-border bg-surface-muted p-1">
                     {CADENCE_ORDER.map((cadence) => {
                       const count = cadenceCountByType[cadence];
                       const isActive = cadence === activeCadence;
@@ -476,7 +476,7 @@ const CardPanel = memo(function CardPanel({
                           tabIndex={isActive ? 0 : -1}
                           className={cn(
                             "whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-medium transition-colors",
-                            isActive ? "bg-white/16 text-white" : "text-white/70 hover:bg-white/10 hover:text-white/90",
+                            isActive ? "bg-surface-raised text-foreground" : "text-muted-foreground hover:bg-hover hover:text-foreground",
                           )}
                           onClick={() => onCadenceChange(card.cardId, cadence)}
                           onKeyDown={(event) => onTabKeyDown(event, card.cardId, cadence)}
@@ -491,16 +491,16 @@ const CardPanel = memo(function CardPanel({
 
               <div id={`panel-${card.cardId}-${activeCadence}`} role="tabpanel" aria-labelledby={`tab-${card.cardId}-${activeCadence}`} className="space-y-1.5">
                 <div className="flex items-center justify-between gap-2">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-white/50">{formatCadenceLabel(activeCadence)}</p>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{formatCadenceLabel(activeCadence)}</p>
                   <div className={cn("flex shrink-0 justify-end", BELL_COLUMN_WIDTH_CLASS)}>
-                    <p className="whitespace-nowrap text-right text-xs font-semibold uppercase tracking-wide leading-none text-white/50">Remind Me</p>
+                    <p className="whitespace-nowrap text-right text-xs font-semibold uppercase tracking-wide leading-none text-muted-foreground">Remind Me</p>
                   </div>
                 </div>
 
                 {activeCadenceBenefits.length === 0 ? (
-                  <p className="rounded-xl border border-white/10 bg-white/[0.04] px-3 py-3 text-sm text-white/65">No benefits in this cadence.</p>
+                  <p className="rounded-xl border border-border bg-surface-muted px-3 py-3 text-sm text-muted-foreground">No benefits in this cadence.</p>
                 ) : (
-                  <ul className="divide-y divide-white/10">
+                  <ul className="divide-y divide-border">
                     {activeCadenceBenefits.map((benefit) => (
                       <BenefitItem
                         key={benefit.id}
@@ -881,7 +881,7 @@ export function BenefitsOnboarding({ variant = "onboarding" }: BenefitsOnboardin
     return (
       <AppShell className="min-h-dvh overflow-x-hidden" containerClassName="px-0 py-8 sm:py-10 md:px-6">
         <MobilePageContainer className="px-2 md:px-0">
-          <Surface className="p-6 text-sm text-white/75">Loading your benefits setup…</Surface>
+          <Surface className="p-6 text-sm text-muted-foreground">Loading your benefits setup…</Surface>
         </MobilePageContainer>
       </AppShell>
     );
@@ -892,7 +892,7 @@ export function BenefitsOnboarding({ variant = "onboarding" }: BenefitsOnboardin
       <AppShell className="min-h-dvh overflow-x-hidden" containerClassName="px-0 py-8 sm:py-10 md:px-6">
         <MobilePageContainer className="px-2 md:px-0">
           <Surface className="space-y-4 p-6">
-            <p className="text-sm text-white/80">{error}</p>
+            <p className="text-sm text-foreground">{error}</p>
             <Button onClick={() => void loadWalletBenefits()}>Try again</Button>
           </Surface>
         </MobilePageContainer>
@@ -906,15 +906,15 @@ export function BenefitsOnboarding({ variant = "onboarding" }: BenefitsOnboardin
         <div className="w-full min-w-0">
         <div className="mb-6 min-w-0">
           {!isDashboardVariant ? (
-            <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-white/50">Step 2 of 2 · Benefits Setup</p>
+            <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">Step 2 of 2 · Benefits Setup</p>
           ) : null}
           <div className="mt-2 flex items-start gap-3">
-            <span className="mt-1 h-8 w-1 rounded-full bg-[#F7C948]" aria-hidden />
+            <span className="mt-1 h-8 w-1 rounded-full bg-accent" aria-hidden />
             <div>
               <h1 className="text-3xl font-semibold tracking-tight text-white transition md:text-4xl motion-safe:duration-200 motion-safe:ease-out motion-safe:starting:translate-y-1 motion-safe:starting:opacity-0">
                 {isDashboardVariant ? "Your Benefits" : "Fine-Tune Your Benefits"}
               </h1>
-              <p className="mt-2 max-w-2xl text-sm leading-relaxed text-white/70 transition md:text-base motion-safe:duration-200 motion-safe:ease-out motion-safe:starting:translate-y-1 motion-safe:starting:opacity-0">
+              <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground transition md:text-base motion-safe:duration-200 motion-safe:ease-out motion-safe:starting:translate-y-1 motion-safe:starting:opacity-0">
                 {isDashboardVariant
                   ? "Review your current benefits, mark what you’ve used, and update reminders anytime."
                   : "Turn on reminders for the benefits you want to keep top of mind."}
@@ -922,14 +922,14 @@ export function BenefitsOnboarding({ variant = "onboarding" }: BenefitsOnboardin
             </div>
           </div>
           <div
-            className="mx-auto mt-4 h-px w-3/4 bg-gradient-to-r from-transparent via-[#F7C948]/60 to-transparent blur-[0.5px]"
+            className="mx-auto mt-4 h-px w-3/4 bg-gradient-to-r from-transparent via-accent-border to-transparent"
             aria-hidden
           />
           {!isDashboardVariant ? (
             <button
               type="button"
               onClick={() => router.push("/onboarding/build-your-lineup")}
-              className="mt-3 inline-flex items-center rounded-lg px-2 py-1 text-sm text-white/60 transition hover:text-white/85 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F7C948]/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B1220]"
+              className="mt-3 inline-flex items-center rounded-lg px-2 py-1 text-sm text-muted-foreground transition hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             >
               ← Back to Wallet Builder
             </button>
@@ -939,7 +939,7 @@ export function BenefitsOnboarding({ variant = "onboarding" }: BenefitsOnboardin
         <div className="space-y-4 pb-28 md:pb-0">
           {cards.length === 0 ? (
             <Surface className="p-6">
-              <p className="text-sm text-white/75">No cards in your wallet yet. Add cards first to configure benefits.</p>
+              <p className="text-sm text-muted-foreground">No cards in your wallet yet. Add cards first to configure benefits.</p>
             </Surface>
           ) : (
             <Profiler id="benefits-card-list" onRender={profileOnRender}>
@@ -967,7 +967,7 @@ export function BenefitsOnboarding({ variant = "onboarding" }: BenefitsOnboardin
 
           {!isDashboardVariant ? (
             <>
-              {completeError ? <p className="text-right text-xs text-[#F4B4B4]">{completeError}</p> : null}
+              {completeError ? <p className="text-right text-xs text-destructive">{completeError}</p> : null}
 
               <div className="sticky bottom-3 z-30 hidden items-center justify-end md:flex">
                 <Button onClick={() => void handleComplete()} disabled={!hasActiveCards || isCompleting}>
@@ -977,12 +977,12 @@ export function BenefitsOnboarding({ variant = "onboarding" }: BenefitsOnboardin
             </>
           ) : null}
 
-          {activeCard ? <p className="text-center text-xs text-white/45">Currently editing: {activeCard.cardName}</p> : null}
+          {activeCard ? <p className="text-center text-xs text-subtle-foreground">Currently editing: {activeCard.cardName}</p> : null}
         </div>
         </div>
 
       {!isDashboardVariant ? (
-        <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-white/10 bg-[#0B1220]/75 px-4 py-3 pb-[env(safe-area-inset-bottom)] backdrop-blur-md md:hidden">
+        <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-surface/90 px-4 py-3 pb-[env(safe-area-inset-bottom)] backdrop-blur-md md:hidden">
           <div className="mx-auto w-full max-w-6xl">
             <Button onClick={() => void handleComplete()} disabled={!hasActiveCards || isCompleting} className="w-full">
               {isCompleting ? "Saving..." : "Complete"}
@@ -992,22 +992,22 @@ export function BenefitsOnboarding({ variant = "onboarding" }: BenefitsOnboardin
       ) : null}
 
       {removeToast ? (
-        <div className="pointer-events-none fixed left-1/2 top-4 z-[80] -translate-x-1/2 rounded-lg border border-white/15 bg-[#0F172A]/90 px-3 py-2 text-sm text-white/85 shadow-[0_10px_24px_rgba(0,0,0,0.35)] backdrop-blur-sm">
+        <div className="pointer-events-none fixed left-1/2 top-4 z-[80] -translate-x-1/2 rounded-lg border border-border bg-surface-raised px-3 py-2 text-sm text-foreground shadow-lg backdrop-blur-sm">
           {removeToast}
         </div>
       ) : null}
 
       {removeTargetCard ? (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-[#030712]/70 px-4">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-scrim px-4">
           <Surface className="w-full max-w-md space-y-4 p-5">
             <div ref={removeModalRef} className="space-y-2">
               <h2 className="text-lg font-semibold text-white">Remove card from wallet?</h2>
-              <p className="text-sm text-white/70">
+              <p className="text-sm text-muted-foreground">
                 This will remove this card and its benefits from your wallet. You can add it again later.
               </p>
             </div>
 
-            {removeCardError ? <p className="text-sm text-[#F4B4B4]">{removeCardError}</p> : null}
+            {removeCardError ? <p className="text-sm text-destructive">{removeCardError}</p> : null}
 
             <div className="flex items-center justify-end gap-2">
               <Button variant="secondary" onClick={handleCancelRemove} disabled={isRemovingCard}>
@@ -1015,7 +1015,7 @@ export function BenefitsOnboarding({ variant = "onboarding" }: BenefitsOnboardin
               </Button>
               <button
                 type="button"
-                className="inline-flex items-center justify-center rounded-xl border border-[#E87979]/35 bg-[#B04646]/25 px-5 py-2.5 text-sm font-semibold text-[#F9D1D1] transition-colors hover:bg-[#B04646]/40 disabled:cursor-not-allowed disabled:border-[#E87979]/15 disabled:bg-[#B04646]/12 disabled:text-[#F9D1D1]/60"
+                className="inline-flex items-center justify-center rounded-xl border border-destructive/30 bg-destructive-muted px-5 py-2.5 text-sm font-semibold text-destructive transition-colors hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
                 onClick={() => void handleConfirmRemove()}
                 disabled={isRemovingCard}
               >

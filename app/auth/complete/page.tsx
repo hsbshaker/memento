@@ -58,23 +58,23 @@ function AuthCompleteContent() {
   }, [fallbackPath, nextPath, router]);
 
   return (
-    <main className="flex min-h-screen items-center justify-center p-6">
+    <main className="flex min-h-screen items-center justify-center bg-background p-6">
       <div className="max-w-md space-y-3 text-center">
-        <h1 className="text-xl font-semibold text-white">Signing you in</h1>
-        <p className="text-sm text-white/70">{message}</p>
+        <h1 className="text-xl font-semibold text-foreground">Signing you in</h1>
+        <p className="text-sm text-muted-foreground">{message}</p>
         {showRecovery ? (
           <div className="flex justify-center gap-3 pt-2">
             <button
               type="button"
               onClick={() => window.location.replace(fallbackPath)}
-              className="rounded-lg border border-white/15 px-3 py-2 text-white transition hover:border-white/30"
+              className="rounded-lg border border-border bg-surface px-3 py-2 text-foreground transition hover:border-border-strong hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
             >
               Back to login
             </button>
             <button
               type="button"
               onClick={() => window.location.replace(nextPath)}
-              className="rounded-lg border border-white/15 px-3 py-2 text-white transition hover:border-white/30"
+              className="rounded-lg border border-border bg-surface px-3 py-2 text-foreground transition hover:border-border-strong hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
             >
               Continue
             </button>
@@ -89,10 +89,10 @@ export default function AuthCompletePage() {
   return (
     <Suspense
       fallback={
-        <main className="flex min-h-screen items-center justify-center p-6">
+        <main className="flex min-h-screen items-center justify-center bg-background p-6">
           <div className="max-w-md space-y-3 text-center">
-            <h1 className="text-xl font-semibold text-white">Signing you in</h1>
-            <p className="text-sm text-white/70">Finishing sign-in...</p>
+            <h1 className="text-xl font-semibold text-foreground">Signing you in</h1>
+            <p className="text-sm text-muted-foreground">Finishing sign-in...</p>
           </div>
         </main>
       }
