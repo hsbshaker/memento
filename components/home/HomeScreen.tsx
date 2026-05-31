@@ -305,13 +305,13 @@ export function HomeScreen({ initialFeed }: HomeScreenProps) {
       <MobilePageContainer className="pb-20">
         <div className="space-y-6 pt-5">
           {errorMessage ? (
-            <div className="rounded-lg border border-amber-300/20 bg-amber-300/10 p-4 text-sm text-amber-100 shadow-none backdrop-blur-0">
+            <div className="rounded-lg border border-warning/30 bg-warning-muted p-4 text-sm text-foreground">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <p>{errorMessage}</p>
                 <button
                   type="button"
                   onClick={() => setErrorMessage(null)}
-                  className="text-left font-semibold underline decoration-amber-100/40 underline-offset-4"
+                  className="text-left font-semibold text-warning underline decoration-warning/40 underline-offset-4"
                 >
                   Dismiss
                 </button>
@@ -343,13 +343,13 @@ export function HomeScreen({ initialFeed }: HomeScreenProps) {
                 <div
                   aria-hidden={isNotTrackedTab}
                   className={cn(
-                    "relative grid w-full grid-cols-5 rounded-lg border border-white/[0.08] bg-white/[0.02] p-0.5 transition-opacity duration-150 sm:w-[17rem]",
+                    "relative grid w-full grid-cols-5 rounded-lg border border-border bg-surface p-0.5 transition-opacity duration-150 sm:w-[17rem]",
                     isNotTrackedTab ? "pointer-events-none opacity-0" : "",
                   )}
                 >
                   <div
                     aria-hidden
-                    className="absolute inset-y-0 left-0 m-0.5 rounded-md bg-white/[0.08] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)] transition-transform duration-300 ease-out"
+                    className="absolute inset-y-0 left-0 m-0.5 rounded-md bg-surface-raised transition-transform duration-300 ease-out"
                     style={{
                       width: "calc((100% - 4px) / 5)",
                       transform: `translateX(${Math.max(activeTimeframeIndex, 0) * 100}%)`,
@@ -369,8 +369,8 @@ export function HomeScreen({ initialFeed }: HomeScreenProps) {
                         onClick={() => void changeTimeframe(option.key)}
                         className={
                           isActive
-                            ? "relative z-10 rounded-md px-2 py-1.5 text-[12px] font-semibold tracking-[0.14em] text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7FB6FF]/70"
-                            : "relative z-10 rounded-md px-2 py-1.5 text-[12px] font-semibold tracking-[0.14em] text-white/42 transition-colors hover:text-white/68 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7FB6FF]/70"
+                            ? "relative z-10 rounded-md px-2 py-1.5 text-[12px] font-semibold tracking-[0.14em] text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+                            : "relative z-10 rounded-md px-2 py-1.5 text-[12px] font-semibold tracking-[0.14em] text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
                         }
                       >
                         {option.compactLabel}
@@ -384,7 +384,7 @@ export function HomeScreen({ initialFeed }: HomeScreenProps) {
                   role="tablist"
                   aria-label="Choose benefit view"
                   aria-busy={isRefreshingTimeframe}
-                  className="inline-flex w-full rounded-lg border border-white/[0.08] bg-white/[0.015] p-0.5 sm:w-auto"
+                  className="inline-flex w-full rounded-lg border border-border bg-surface p-0.5 sm:w-auto"
                 >
                   {benefitTabs.map((tab) => (
                     <button
@@ -395,8 +395,8 @@ export function HomeScreen({ initialFeed }: HomeScreenProps) {
                       onClick={() => setActiveBenefitTab(tab.id)}
                       className={
                         tab.id === activeBenefitTab
-                          ? "rounded-md bg-white/[0.07] px-2.5 py-1 text-[13px] font-medium text-white transition-colors"
-                          : "rounded-md px-2.5 py-1 text-[13px] font-medium text-white/42 transition-colors hover:text-white/68"
+                          ? "rounded-md bg-surface-raised px-2.5 py-1 text-[13px] font-medium text-foreground transition-colors"
+                          : "rounded-md px-2.5 py-1 text-[13px] font-medium text-muted-foreground transition-colors hover:text-foreground"
                       }
                     >
                       {tab.label}
@@ -405,8 +405,8 @@ export function HomeScreen({ initialFeed }: HomeScreenProps) {
                           className={cn(
                             "ml-1.5 rounded-full px-1.5 py-0.5 text-[11px] font-medium leading-none tabular-nums",
                             tab.id === activeBenefitTab
-                              ? "bg-white/[0.1] text-white/80"
-                              : "bg-white/[0.06] text-white/38",
+                              ? "bg-surface-muted text-foreground"
+                              : "bg-surface-muted text-subtle-foreground",
                           )}
                         >
                           {tab.count}

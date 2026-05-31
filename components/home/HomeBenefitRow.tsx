@@ -35,15 +35,9 @@ function simplifyTimingLabel(label: string) {
   return label;
 }
 
-function buildMarker(item: HomeFeedItem) {
-  const name = `${item.cardName} ${item.issuer}`.toLowerCase();
-  if (name.includes("platinum")) return { accentClassName: "bg-slate-300/80" };
-  if (name.includes("gold")) return { accentClassName: "bg-amber-300/80" };
-  if (name.includes("reserve")) return { accentClassName: "bg-sky-300/75" };
-  if (name.includes("sapphire")) return { accentClassName: "bg-blue-300/75" };
-  if (name.includes("business")) return { accentClassName: "bg-white/42" };
-  return { accentClassName: item.issuer === "American Express" ? "bg-white/48" : "bg-white/36" };
-}
+// Resting marker bar is a single restrained neutral. A structured per-card
+// color palette is introduced in WO6 (Wallet); keep it token-based here.
+const REST_MARKER_CLASS = "bg-border-strong";
 
 export function HomeBenefitRow({
   item,
@@ -58,26 +52,28 @@ export function HomeBenefitRow({
   const [exitAction, setExitAction] = useState<ExitAction | null>(null);
   const [fading, setFading] = useState(false);
 
-  const marker = buildMarker(item);
   const isUrgent = variant === "urgent";
   const isUsed = variant === "used";
   const timingLabel = simplifyTimingLabel(item.timingLabel);
   const actionsDisabled = pendingUsage || pendingTracking || exitAction !== null;
 
-  const nameOpacity = isUrgent ? "text-white/90" : isUsed ? "text-white/78" : "text-white/68";
-  const secondaryOpacity = isUrgent ? "text-white/48" : isUsed ? "text-white/40" : "text-white/38";
-  const valueOpacity = isUrgent ? "text-white/90" : isUsed ? "text-white/72" : "text-white/60";
-  const metaOpacity = isUrgent ? "text-white/50" : isUsed ? "text-white/46" : "text-white/38";
+  // Variant dimming, expressed through semantic text tokens. Urgent rows use the
+  // row-typography defaults (foreground/muted); used and not-tracked rows step
+  // down a tier so they read as de-emphasized.
+  const nameClass = isUrgent ? "" : "text-muted-foreground";
+  const secondaryClass = isUrgent ? "" : "text-subtle-foreground";
+  const valueClass = isUrgent ? "" : isUsed ? "text-muted-foreground" : "text-subtle-foreground";
+  const metaClass = isUrgent ? "" : "text-subtle-foreground";
 
-  // Accent bar during exit
+  // Accent bar during exit — semantic flash, then the row fades out.
   const accentBarClass =
     exitAction === "used" || exitAction === "start-tracking"
-      ? "bg-[#86EFAC]"
+      ? "bg-success"
       : exitAction === "not_tracked"
-        ? "bg-red-400/80"
+        ? "bg-destructive"
         : exitAction === "mark-unused"
-          ? "bg-white/40"
-          : marker.accentClassName;
+          ? "bg-muted-foreground"
+          : REST_MARKER_CLASS;
 
   const triggerExit = (action: ExitAction, handler: () => void) => {
     if (actionsDisabled) return;
@@ -111,7 +107,7 @@ export function HomeBenefitRow({
       className={cn(
         "px-3.5 py-3 sm:px-4 transition-opacity duration-[280ms] ease-out",
         fading ? "opacity-0" : "opacity-100",
-        isUrgent ? "text-white" : "text-white/78",
+        isUrgent ? "text-foreground" : "text-muted-foreground",
       )}
     >
       <div className="flex items-center gap-3">
@@ -132,15 +128,15 @@ export function HomeBenefitRow({
                 aria-hidden="true"
               />
               <div className="min-w-0">
-                <h3 className={cn(ROW_PRIMARY_TEXT_CLASS, nameOpacity)}>{item.benefitName}</h3>
+                <h3 className={cn(ROW_PRIMARY_TEXT_CLASS, nameClass)}>{item.benefitName}</h3>
                 <div className="mt-1 flex items-center gap-2">
-                  <p className={cn(ROW_SECONDARY_TEXT_CLASS, secondaryOpacity)}>{item.cardName}</p>
+                  <p className={cn(ROW_SECONDARY_TEXT_CLASS, secondaryClass)}>{item.cardName}</p>
                   {isUrgent && item.urgencyTier === "high" ? (
-                    <span className="shrink-0 rounded-full bg-[#F7C948]/15 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-[#F7C948]/80">
+                    <span className="shrink-0 rounded-full bg-warning-muted px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-warning">
                       {item.daysRemaining <= 0 ? "Due today" : "Due soon"}
                     </span>
                   ) : isUrgent && item.urgencyTier === "soon" ? (
-                    <span className="shrink-0 rounded-full bg-white/[0.06] px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-white/38">
+                    <span className="shrink-0 rounded-full bg-surface-muted px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-subtle-foreground">
                       Due soon
                     </span>
                   ) : null}
@@ -151,17 +147,17 @@ export function HomeBenefitRow({
             <div className="grid min-w-0 grid-cols-3 gap-3 md:gap-3.5">
               <div className="min-w-0">
                 <p className={ROW_MICRO_TEXT_CLASS}>Value</p>
-                <p className={cn("mt-1", ROW_NUMERIC_TEXT_CLASS, valueOpacity)}>
+                <p className={cn("mt-1", ROW_NUMERIC_TEXT_CLASS, valueClass)}>
                   {item.currentPeriodValueLabel ?? "Tracked"}
                 </p>
               </div>
               <div className="min-w-0">
                 <p className={ROW_MICRO_TEXT_CLASS}>Resets</p>
-                <p className={cn("mt-1", ROW_SECONDARY_TEXT_CLASS, metaOpacity)}>{timingLabel}</p>
+                <p className={cn("mt-1", ROW_SECONDARY_TEXT_CLASS, metaClass)}>{timingLabel}</p>
               </div>
               <div className="min-w-0">
                 <p className={ROW_MICRO_TEXT_CLASS}>Cadence</p>
-                <p className={cn("mt-1", ROW_SECONDARY_TEXT_CLASS, metaOpacity)}>
+                <p className={cn("mt-1", ROW_SECONDARY_TEXT_CLASS, metaClass)}>
                   {item.cadence === "semiannual"
                     ? "Semiannual"
                     : item.cadence === "anniversary"
@@ -185,15 +181,15 @@ export function HomeBenefitRow({
                 onClick={handleMarkUsed}
                 className={cn(
                   "flex h-6 w-6 items-center justify-center rounded-full border transition-all duration-150",
-                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#BAF3D2]/40 focus-visible:ring-offset-2 focus-visible:ring-offset-black",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 focus-visible:ring-offset-background",
                   exitAction === "used"
-                    ? "border-[#86EFAC] bg-[#86EFAC]/20"
+                    ? "border-success bg-success-muted"
                     : actionsDisabled
-                      ? "cursor-not-allowed border-white/15 opacity-40"
-                      : "border-white/25 hover:border-[#BAF3D2]/60 hover:bg-[#BAF3D2]/10",
+                      ? "cursor-not-allowed border-border opacity-40"
+                      : "border-border-strong hover:border-success/60 hover:bg-success-muted",
                 )}
               >
-                <svg viewBox="0 0 12 12" fill="none" className={cn("h-3 w-3 transition-colors duration-150", exitAction === "used" ? "text-[#86EFAC]" : "text-white/35")} aria-hidden>
+                <svg viewBox="0 0 12 12" fill="none" className={cn("h-3 w-3 transition-colors duration-150", exitAction === "used" ? "text-success" : "text-muted-foreground")} aria-hidden>
                   <path d="M2.5 6.5 5 9l4.5-5.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </button>
@@ -208,15 +204,15 @@ export function HomeBenefitRow({
                 onClick={handleDoNotTrack}
                 className={cn(
                   "flex h-6 w-6 items-center justify-center rounded-full border transition-all duration-150",
-                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400/40 focus-visible:ring-offset-2 focus-visible:ring-offset-black",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 focus-visible:ring-offset-background",
                   exitAction === "not_tracked"
-                    ? "border-red-400/80 bg-red-400/20"
+                    ? "border-destructive bg-destructive-muted"
                     : actionsDisabled
-                      ? "cursor-not-allowed border-white/15 opacity-40"
-                      : "border-white/25 hover:border-red-400/60 hover:bg-red-400/10",
+                      ? "cursor-not-allowed border-border opacity-40"
+                      : "border-border-strong hover:border-destructive/55 hover:bg-destructive-muted",
                 )}
               >
-                <svg viewBox="0 0 12 12" fill="none" className={cn("h-3 w-3 transition-colors duration-150", exitAction === "not_tracked" ? "text-red-400" : "text-white/35")} aria-hidden>
+                <svg viewBox="0 0 12 12" fill="none" className={cn("h-3 w-3 transition-colors duration-150", exitAction === "not_tracked" ? "text-destructive" : "text-muted-foreground")} aria-hidden>
                   <path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
                 </svg>
               </button>
@@ -232,15 +228,15 @@ export function HomeBenefitRow({
             onClick={handleMarkNotUsed}
             className={cn(
               "flex h-6 w-6 shrink-0 items-center justify-center rounded-full border transition-all duration-150",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#BAF3D2]/40 focus-visible:ring-offset-2 focus-visible:ring-offset-black",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 focus-visible:ring-offset-background",
               exitAction === "mark-unused"
-                ? "border-white/20 bg-white/10"
+                ? "border-border bg-surface-muted"
                 : actionsDisabled
-                  ? "cursor-not-allowed border-white/15 opacity-40"
-                  : "border-[#BAF3D2]/40 bg-[#BAF3D2]/15 hover:border-white/30 hover:bg-white/10",
+                  ? "cursor-not-allowed border-border opacity-40"
+                  : "border-success/40 bg-success-muted hover:border-border-strong hover:bg-surface-muted",
             )}
           >
-            <svg viewBox="0 0 12 12" fill="none" className={cn("h-3 w-3 transition-colors duration-150", exitAction === "mark-unused" ? "text-white/30" : "text-[#BAF3D2]/70")} aria-hidden>
+            <svg viewBox="0 0 12 12" fill="none" className={cn("h-3 w-3 transition-colors duration-150", exitAction === "mark-unused" ? "text-muted-foreground" : "text-success")} aria-hidden>
               <path d="M2.5 6.5 5 9l4.5-5.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </button>
@@ -254,15 +250,15 @@ export function HomeBenefitRow({
             onClick={handleStartTracking}
             className={cn(
               "flex h-6 w-6 shrink-0 items-center justify-center rounded-full border transition-all duration-150",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7FB6FF]/40 focus-visible:ring-offset-2 focus-visible:ring-offset-black",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 focus-visible:ring-offset-background",
               exitAction === "start-tracking"
-                ? "border-[#86EFAC] bg-[#86EFAC]/20"
+                ? "border-success bg-success-muted"
                 : actionsDisabled
-                  ? "cursor-not-allowed border-white/15 opacity-40"
-                  : "border-white/20 hover:border-[#7FB6FF]/50 hover:bg-[#7FB6FF]/10",
+                  ? "cursor-not-allowed border-border opacity-40"
+                  : "border-border-strong hover:border-success/55 hover:bg-success-muted",
             )}
           >
-            <svg viewBox="0 0 12 12" fill="none" className={cn("h-3 w-3 transition-colors duration-150", exitAction === "start-tracking" ? "text-[#86EFAC]" : "text-white/35")} aria-hidden>
+            <svg viewBox="0 0 12 12" fill="none" className={cn("h-3 w-3 transition-colors duration-150", exitAction === "start-tracking" ? "text-success" : "text-muted-foreground")} aria-hidden>
               <path d="M6 2.5v7M2.5 6h7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
             </svg>
           </button>

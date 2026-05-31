@@ -211,11 +211,9 @@ Components are UI-only. Data fetching happens in pages and API routes; component
 
 | File | Purpose |
 |---|---|
-| `HomeScreen.tsx` | Top-level home screen. Manages feed state, timeframe selection, and action dialogs. |
+| `HomeScreen.tsx` | Top-level home screen. Manages feed state and timeframe selection. |
 | `HomeBenefitRows.tsx` | Renders the list of expiring benefits. |
-| `HomeBenefitRow.tsx` | Single row in the home feed. |
-| `HomeBenefitRowMenu.tsx` | Row action menu (mark used, snooze, toggle tracking). |
-| `HomeBenefitActionDialog.tsx` | Confirmation dialogs for home benefit actions. |
+| `HomeBenefitRow.tsx` | Single row in the home feed. Includes inline check/X/plus row actions. |
 | `EmptyHomeState.tsx` | Shown when user has no wallet cards. Contains the primary CTA to add a card. **Active work order targets this file.** |
 | `HomeAllCaughtUpState.tsx` | Shown when all benefits in the selected timeframe are used. |
 | `WalletHero.tsx` | Summary metrics at the top of the home feed. |

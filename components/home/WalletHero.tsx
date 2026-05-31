@@ -69,7 +69,7 @@ export function WalletHero({ metrics, timeframe }: WalletHeroProps) {
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ ...heroTransition, delay: 0.05 }}
-          className="text-[11px] font-medium tracking-[0.24em] text-white/38 uppercase"
+          className="text-xs font-medium tracking-[0.24em] text-subtle-foreground uppercase"
         >
           Dashboard
         </motion.p>
@@ -85,43 +85,33 @@ export function WalletHero({ metrics, timeframe }: WalletHeroProps) {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ ...heroTransition, delay: 0.11 + index * 0.05 }}
-                className={cn(
-                  "rounded-xl border px-5 py-5",
-                  card.accent
-                    ? "border-[#7FB6FF]/12 bg-[#7FB6FF]/[0.04]"
-                    : "border-white/10 bg-white/[0.03]",
-                )}
+                className="rounded-xl border border-border bg-surface px-5 py-5"
               >
                 <div className="flex items-start justify-between gap-3">
-                  <p
-                    className={cn(
-                      "text-xs font-medium tracking-[0.18em] uppercase",
-                      card.accent ? "text-[#7FB6FF]/70" : "text-white/42",
-                    )}
-                  >
+                  <p className="text-xs font-medium tracking-[0.18em] uppercase text-muted-foreground">
                     {card.label}
                   </p>
                   <div
                     className={cn(
                       "flex h-9 w-9 shrink-0 items-center justify-center rounded-full",
-                      card.accent ? "bg-[#7FB6FF]/10" : "bg-white/8",
+                      card.accent ? "bg-accent-muted" : "bg-surface-muted",
                     )}
                   >
                     <Icon
                       className={cn(
                         "h-4 w-4",
-                        card.accent ? "text-[#7FB6FF]/65" : "text-white/42",
+                        card.accent ? "text-accent" : "text-muted-foreground",
                       )}
                     />
                   </div>
                 </div>
 
-                <p className="mt-4 text-[1.85rem] leading-none font-semibold tracking-tight text-white">
+                <p className="mt-4 text-3xl leading-none font-semibold tracking-tight text-foreground">
                   {metric.valueLabel}
                 </p>
 
                 {card.helperText ? (
-                  <p className="mt-2 text-sm text-white/42">{card.helperText}</p>
+                  <p className="mt-2 text-sm text-subtle-foreground">{card.helperText}</p>
                 ) : null}
               </motion.div>
             );

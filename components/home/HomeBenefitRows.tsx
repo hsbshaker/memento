@@ -51,21 +51,21 @@ export function HomeBenefitRows({
       <div>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div className="space-y-1.5">
-            <h2 className="text-lg font-semibold tracking-tight text-white sm:text-xl">{title}</h2>
-            {helperText ? <p className="text-sm leading-6 text-white/58">{helperText}</p> : null}
+            <h2 className="text-lg font-semibold tracking-tight text-foreground sm:text-xl">{title}</h2>
+            {helperText ? <p className="text-sm leading-6 text-muted-foreground">{helperText}</p> : null}
           </div>
           {headerAccessory}
         </div>
 
         {toolbar ? <div className="mt-4">{toolbar}</div> : null}
-        <div className="mt-4 border-b border-white/8" />
+        <div className="mt-4 border-b border-border" />
 
         {items.length > 0 ? (
-          <div className="mt-0 overflow-hidden rounded-xl border border-white/[0.05] bg-white/[0.015]">
+          <div className="mt-0 overflow-hidden rounded-xl border border-border bg-surface">
             <div
               className={cn(
                 items.length > 6
-                  ? "max-h-[31rem] overflow-y-auto [scrollbar-color:rgba(255,255,255,0.18)_transparent] [scrollbar-width:thin] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-white/14 [&::-webkit-scrollbar-track]:bg-transparent"
+                  ? "max-h-[31rem] overflow-y-auto [scrollbar-color:var(--border-strong)_transparent] [scrollbar-width:thin] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-border-strong [&::-webkit-scrollbar-track]:bg-transparent"
                   : "",
               )}
             >
@@ -77,7 +77,7 @@ export function HomeBenefitRows({
                 const pendingTracking = pendingTrackingById?.[item.userBenefitId] === true;
 
                 return (
-                  <div key={item.userBenefitId} className={cn(index > 0 ? "border-t border-white/[0.045]" : undefined)}>
+                  <div key={item.userBenefitId} className={cn(index > 0 ? "border-t border-border-muted" : undefined)}>
                     <HomeBenefitRow
                       item={item}
                       variant={variant}
@@ -94,12 +94,12 @@ export function HomeBenefitRows({
             </div>
           </div>
         ) : emptyState ? (
-          <div className="mt-0 border-b border-white/8 py-6">
+          <div className="mt-0 border-b border-border py-6">
             <HomeAllCaughtUpState title={emptyState.title} description={emptyState.description} compact />
           </div>
         ) : null}
 
-        {footnote ? <p className="mt-3 text-sm text-white/42">{footnote}</p> : null}
+        {footnote ? <p className="mt-3 text-sm text-subtle-foreground">{footnote}</p> : null}
       </div>
     </section>
   );

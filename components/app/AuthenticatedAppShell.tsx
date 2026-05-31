@@ -30,10 +30,10 @@ function AppSidebarNavigation({ activeItem, onNavigate }: NavigationProps) {
             aria-current={isActive ? "page" : undefined}
             onClick={onNavigate}
             className={cn(
-              "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7FB6FF]/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0D0D11]",
+              "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 focus-visible:ring-offset-background",
               isActive
-                ? "bg-[#7FB6FF]/10 font-medium text-[#7FB6FF] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)]"
-                : "text-white/55 hover:bg-white/5 hover:text-white",
+                ? "bg-accent-muted font-medium text-accent"
+                : "text-muted-foreground hover:bg-hover hover:text-foreground",
             )}
           >
             <Icon className="h-4 w-4 shrink-0" />
@@ -74,8 +74,8 @@ export function AuthenticatedAppShell({ children }: AuthenticatedAppShellProps) 
   }, [mobileMenuOpen]);
 
   return (
-    <div className="min-h-screen bg-background text-white">
-      <div className="border-b border-white/10 bg-[#101418]/40 backdrop-blur-xl md:hidden">
+    <div className="min-h-screen bg-background text-foreground">
+      <div className="border-b border-border bg-surface/80 backdrop-blur-xl md:hidden">
         <div className="flex h-14 items-center gap-3 px-4">
           <button
             type="button"
@@ -83,11 +83,11 @@ export function AuthenticatedAppShell({ children }: AuthenticatedAppShellProps) 
             aria-controls="authenticated-mobile-nav"
             aria-label="Open navigation menu"
             onClick={() => setMobileMenuOpen(true)}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 bg-white/[0.03] text-white/88 transition-colors hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7FB6FF]/70"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-surface text-foreground transition-colors hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
           >
             <Menu className="h-4 w-4" />
           </button>
-          <p className="min-w-0 truncate text-sm font-semibold tracking-tight text-white">{activeLabel}</p>
+          <p className="min-w-0 truncate text-sm font-semibold tracking-tight text-foreground">{activeLabel}</p>
         </div>
       </div>
 
@@ -101,24 +101,24 @@ export function AuthenticatedAppShell({ children }: AuthenticatedAppShellProps) 
         <button
           type="button"
           aria-label="Close menu overlay"
-          className="absolute inset-0 bg-black/55"
+          className="absolute inset-0 bg-scrim"
           onClick={() => setMobileMenuOpen(false)}
         />
-        <div className="absolute inset-y-0 left-0 w-full max-w-64 border-r border-white/10 bg-[#101418]/92 backdrop-blur-xl">
+        <div className="absolute inset-y-0 left-0 w-full max-w-64 border-r border-border bg-surface-raised backdrop-blur-xl">
           <div className="flex items-center justify-between p-6">
             <Link
               href="/home"
               onClick={() => setMobileMenuOpen(false)}
-              className="flex items-center gap-2 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7FB6FF]/70"
+              className="flex items-center gap-2 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
             >
-              <span className="h-6 w-6 rounded-full bg-gradient-to-tr from-[#7FB6FF] to-[#F7C948]/80" />
-              <span className="text-xl font-bold tracking-tight text-white">Memento</span>
+              <span className="h-6 w-6 rounded-full bg-accent" />
+              <span className="text-xl font-bold tracking-tight text-foreground">Memento</span>
             </Link>
             <button
               type="button"
               aria-label="Close navigation menu"
               onClick={() => setMobileMenuOpen(false)}
-              className="inline-flex h-8 w-8 items-center justify-center rounded-md text-white/70 transition-colors hover:bg-white/5 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7FB6FF]/70"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
             >
               <X className="h-4 w-4" />
             </button>
@@ -128,13 +128,13 @@ export function AuthenticatedAppShell({ children }: AuthenticatedAppShellProps) 
         </div>
       </div>
 
-      <aside className="fixed inset-y-0 left-0 z-10 hidden w-64 flex-col border-r border-white/10 bg-[#101418]/30 backdrop-blur-xl md:flex">
+      <aside className="fixed inset-y-0 left-0 z-10 hidden w-64 flex-col border-r border-border bg-surface/40 backdrop-blur-xl md:flex">
         <div className="p-6">
           <Link
             href="/home"
-            className="flex items-center gap-2 rounded-md text-xl font-bold tracking-tight text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7FB6FF]/70"
+            className="flex items-center gap-2 rounded-md text-xl font-bold tracking-tight text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
           >
-            <span className="h-6 w-6 rounded-full bg-gradient-to-tr from-[#7FB6FF] to-[#F7C948]/80" />
+            <span className="h-6 w-6 rounded-full bg-accent" />
             <span>Memento</span>
           </Link>
         </div>
