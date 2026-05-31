@@ -4,34 +4,193 @@ html {
   scroll-behavior: smooth;
 }
 
+/* ─── Semantic Token Foundation ────────────────────────────────────────────
+   Light mode values (default). Dark mode overrides follow via media query.
+   All components should reference these tokens — never hardcode raw colors.
+   ────────────────────────────────────────────────────────────────────────── */
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Core */
+  --background:   #f8f7f5;
+  --foreground:   #171717;
+
+  /* Surfaces — three elevation levels above background */
+  --surface:        #ffffff;
+  --surface-raised: #f2f1ef;
+  --surface-muted:  #eeece9;
+  --surface-subtle: #f5f4f2;
+
+  /* Borders */
+  --border:       rgba(0, 0, 0, 0.08);
+  --border-strong: rgba(0, 0, 0, 0.16);
+  --border-muted:  rgba(0, 0, 0, 0.05);
+
+  /* Text hierarchy */
+  --muted-foreground:  rgba(23, 23, 23, 0.55);
+  --subtle-foreground: rgba(23, 23, 23, 0.36);
+  --inverse-foreground: #f8f7f5;
+
+  /* Brand accent — Memento gold, canonical value */
+  --accent:            #c9920a;
+  --accent-foreground: #ffffff;
+  --accent-muted:      rgba(201, 146, 10, 0.10);
+  --accent-border:     rgba(201, 146, 10, 0.28);
+
+  /* Status: success */
+  --success:            #16a34a;
+  --success-foreground: #ffffff;
+  --success-muted:      rgba(22, 163, 74, 0.10);
+
+  /* Status: warning */
+  --warning:            #ea580c;
+  --warning-foreground: #ffffff;
+  --warning-muted:      rgba(234, 88, 12, 0.10);
+
+  /* Status: destructive */
+  --destructive:            #dc2626;
+  --destructive-foreground: #ffffff;
+  --destructive-muted:      rgba(220, 38, 38, 0.10);
+
+  /* Interaction */
+  --focus:       #3b82f6;
+  --focus-muted: rgba(59, 130, 246, 0.15);
+  --hover:       rgba(0, 0, 0, 0.03);
+  --active:      rgba(0, 0, 0, 0.06);
+
+  /* Overlays */
+  --overlay:      rgba(0, 0, 0, 0.30);
+  --scrim:        rgba(0, 0, 0, 0.40);
+  --shadow-color: rgba(0, 0, 0, 0.10);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-  --font-inter: var(--font-inter);
-}
+/* ─── Dark Mode ─────────────────────────────────────────────────────────────
+   Near-black, calm, lightly dimensional. Premium restraint.
+   ────────────────────────────────────────────────────────────────────────── */
 
 @media (prefers-color-scheme: dark) {
   :root {
+    /* Core */
     --background: #0d0d11;
     --foreground: #ededed;
+
+    /* Surfaces */
+    --surface:        #13131a;
+    --surface-raised: #1a1a24;
+    --surface-muted:  #0f0f14;
+    --surface-subtle: #0b0b0f;
+
+    /* Borders */
+    --border:        rgba(255, 255, 255, 0.08);
+    --border-strong: rgba(255, 255, 255, 0.15);
+    --border-muted:  rgba(255, 255, 255, 0.04);
+
+    /* Text hierarchy */
+    --muted-foreground:   rgba(237, 237, 237, 0.52);
+    --subtle-foreground:  rgba(237, 237, 237, 0.34);
+    --inverse-foreground: #0d0d11;
+
+    /* Brand accent — brighter on dark for contrast */
+    --accent:            #f0b429;
+    --accent-foreground: #0d0d11;
+    --accent-muted:      rgba(240, 180, 41, 0.12);
+    --accent-border:     rgba(240, 180, 41, 0.28);
+
+    /* Status: success */
+    --success:            #4ade80;
+    --success-foreground: #0d0d11;
+    --success-muted:      rgba(74, 222, 128, 0.12);
+
+    /* Status: warning */
+    --warning:            #fb923c;
+    --warning-foreground: #0d0d11;
+    --warning-muted:      rgba(251, 146, 60, 0.12);
+
+    /* Status: destructive */
+    --destructive:            #f87171;
+    --destructive-foreground: #0d0d11;
+    --destructive-muted:      rgba(248, 113, 113, 0.12);
+
+    /* Interaction */
+    --focus:       #7bb4ff;
+    --focus-muted: rgba(123, 180, 255, 0.18);
+    --hover:       rgba(255, 255, 255, 0.04);
+    --active:      rgba(255, 255, 255, 0.07);
+
+    /* Overlays */
+    --overlay:      rgba(0, 0, 0, 0.50);
+    --scrim:        rgba(0, 0, 0, 0.62);
+    --shadow-color: rgba(0, 0, 0, 0.28);
   }
 }
+
+/* ─── Tailwind v4 Theme Mapping ─────────────────────────────────────────────
+   Exposes semantic tokens as Tailwind utility classes.
+   Usage: bg-background, text-foreground, bg-surface, border-border, etc.
+   ────────────────────────────────────────────────────────────────────────── */
+
+@theme inline {
+  /* Core */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  /* Surfaces */
+  --color-surface:        var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-surface-muted:  var(--surface-muted);
+  --color-surface-subtle: var(--surface-subtle);
+
+  /* Borders */
+  --color-border:        var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-border-muted:  var(--border-muted);
+
+  /* Text */
+  --color-muted-foreground:   var(--muted-foreground);
+  --color-subtle-foreground:  var(--subtle-foreground);
+  --color-inverse-foreground: var(--inverse-foreground);
+
+  /* Accent */
+  --color-accent:            var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent-muted:      var(--accent-muted);
+  --color-accent-border:     var(--accent-border);
+
+  /* Status */
+  --color-success:              var(--success);
+  --color-success-foreground:   var(--success-foreground);
+  --color-success-muted:        var(--success-muted);
+  --color-warning:              var(--warning);
+  --color-warning-foreground:   var(--warning-foreground);
+  --color-warning-muted:        var(--warning-muted);
+  --color-destructive:          var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-destructive-muted:    var(--destructive-muted);
+
+  /* Interaction */
+  --color-focus:      var(--focus);
+  --color-focus-muted: var(--focus-muted);
+  --color-hover:      var(--hover);
+  --color-active:     var(--active);
+
+  /* Overlays */
+  --color-overlay:      var(--overlay);
+  --color-scrim:        var(--scrim);
+  --color-shadow-color: var(--shadow-color);
+
+  /* Fonts */
+  --font-sans:  var(--font-geist-sans);
+  --font-mono:  var(--font-geist-mono);
+  --font-inter: var(--font-inter);
+}
+
+/* ─── Base Styles ────────────────────────────────────────────────────────── */
 
 html,
 body {
   background: var(--background);
+  color: var(--foreground);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
