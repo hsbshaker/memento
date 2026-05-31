@@ -9,8 +9,8 @@ type SurfaceProps<T extends ElementType> = {
 } & ComponentPropsWithoutRef<T>;
 
 const surfaceVariants: Record<SurfaceVariant, string> = {
-  panel: "rounded-2xl border border-white/15 bg-white/8 shadow-[0_16px_40px_-28px_rgba(0,0,0,0.95)] backdrop-blur-md",
-  card: "rounded-3xl border border-white/15 bg-white/8 shadow-[0_16px_40px_-28px_rgba(0,0,0,0.95)] backdrop-blur-md transition-all duration-300 ease-out hover:border-[#F7C948]/40 hover:bg-[#F7C948]/10 hover:shadow-[0_24px_60px_-34px_rgba(247,201,72,0.5)]",
+  panel: "rounded-2xl border border-border bg-surface shadow-sm backdrop-blur-md",
+  card: "rounded-2xl border border-border bg-surface shadow-sm backdrop-blur-md transition-colors duration-200 ease-out hover:border-accent-border hover:bg-accent-muted",
 };
 
 export function Surface<T extends ElementType = "div">({

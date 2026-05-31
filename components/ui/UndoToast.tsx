@@ -44,17 +44,17 @@ function UndoToast({ toast, onDismiss }: { toast: UndoToastItem; onDismiss: (id:
   return (
     <div
       className={cn(
-        "flex items-center gap-2.5 rounded-full border border-white/[0.08] bg-[#0F1823]/90 px-4 py-1.5 shadow-[0_8px_24px_-8px_rgba(0,0,0,0.7)] backdrop-blur-md",
+        "flex items-center gap-2.5 rounded-full border border-border bg-surface-raised px-4 py-1.5 shadow-lg backdrop-blur-md",
         "transition-all duration-250 ease-out",
         visible ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0",
       )}
     >
-      <p className="text-[13px] text-white/70">{toast.message}</p>
-      <span className="text-white/20" aria-hidden>·</span>
+      <p className="text-[13px] text-muted-foreground">{toast.message}</p>
+      <span className="text-subtle-foreground" aria-hidden>·</span>
       <button
         type="button"
         onClick={handleUndo}
-        className="text-[13px] font-medium text-[#F7C948]/90 transition-opacity hover:opacity-75 focus-visible:outline-none"
+        className="text-[13px] font-medium text-accent transition-opacity hover:opacity-75 focus-visible:outline-none"
       >
         Undo
       </button>
