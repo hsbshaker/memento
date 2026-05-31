@@ -12,6 +12,26 @@ Users should quickly understand:
 2. What is expiring
 3. What to do next
 
+## Tech Stack
+
+- **Framework:** Next.js App Router
+- **Language:** TypeScript
+- **Styling:** Tailwind CSS
+- **Database and Auth:** Supabase, including PostgreSQL, Supabase Auth, and Row Level Security
+- **Deployment:** Vercel
+- **Package Manager:** npm
+
+Key project areas:
+
+- `app/` contains routes, layouts, pages, and API routes.
+- `components/` contains reusable UI and feature components.
+- `lib/` contains server/client utilities, data access, business logic, and shared types.
+- `supabase/` contains migrations and Supabase-related project files.
+- `docs/` contains product, engineering, deployment, and testing notes.
+- `agents/` contains agent roles, templates, active work orders, and archived agent docs.
+
+Agents should treat this stack as fixed. Do not change frameworks, styling systems, database providers, auth providers, deployment targets, or package managers unless explicitly authorized by the user.
+
 ## Core Product Constraints
 
 Memento does **not** use:
