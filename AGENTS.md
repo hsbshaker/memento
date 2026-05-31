@@ -2,50 +2,98 @@
 
 ## Product: Memento
 
-Memento is a premium credit card benefits tracker focused on “use it or lose it” value.
+Memento is a premium credit card benefits tracker focused on helping users capture “use it or lose it” value from their credit cards.
 
-Core constraints:
-- No bank login
-- No Plaid
-- No card numbers
-- Users manually add cards
-- System preloads benefits, user confirms
+Memento should make benefit tracking feel effortless, fast, premium, and obvious.
 
-## Product Goal
+Users should quickly understand:
 
-Make benefit tracking feel:
-- effortless
-- fast
-- premium
-- obvious
-
-Users should instantly understand:
 1. What value they have
 2. What is expiring
 3. What to do next
 
-## UX Mandate (CRITICAL)
+## Core Product Constraints
 
-Do NOT preserve existing UI or flows.
+Memento does **not** use:
 
-Always:
-- prefer better UX over incremental changes
-- reduce steps
-- reduce decisions
-- reduce cognitive load
+* Bank login
+* Plaid
+* Card numbers
+* Transaction scraping
+
+Users manually add cards. The system preloads known benefits, and users confirm which benefits apply to them.
+
+## Product Principles
+
+* Show value immediately
+* Prioritize expiring and high-value benefits
+* Reduce steps
+* Reduce decisions
+* Reduce cognitive load
+* Use strong defaults
+* Hide complexity through progressive disclosure
+* Make the next action obvious
+* Prefer clear, practical UX over clever UI
 
 Target experience:
-“Wow this was incredibly easy”
 
-## Design Principles
+> “Wow, this was incredibly easy.”
 
-- Show value immediately
-- Prioritize expiring benefits
-- Keep interfaces calm
-- Use strong defaults
-- Hide complexity (progressive disclosure)
-- One clear action per step
+## UX and Design Mandate
+
+Preserve Memento’s existing visual direction unless the task explicitly asks for a redesign.
+
+Do **not** introduce a disconnected visual system.
+
+When improving UI:
+
+* Keep interfaces calm, premium, and simple
+* Prefer elegant tables/lists when displaying structured data
+* Avoid chunky layouts unless cards clearly improve comprehension
+* Keep spacing tight but readable
+* Avoid unnecessary decorative elements
+* Use one clear primary action per screen or step
+* Improve existing flows when they create friction, confusion, or unnecessary work
+
+Agents may improve UX, but should not casually replace established patterns across the app without a clear reason.
+
+## Engineering Rules
+
+* Never work directly on `main`
+* Use a task-specific branch
+* Keep changes scoped to the assigned task
+* Do not modify unrelated files
+* Do not introduce new dependencies unless clearly justified
+* Do not change database schema or Supabase migrations unless the task explicitly requires it
+* Do not rewrite large components when a smaller targeted change will solve the issue
+* Prefer maintainable, readable code over clever abstractions
+
+## Validation Requirements
+
+Before marking work complete, run the relevant checks:
+
+* `npm run typecheck`
+* `npm run lint`
+* `npm test` if tests exist or were changed
+
+If a command fails because of a pre-existing issue, report it clearly and identify whether the changed files introduced the failure.
+
+## Agent Output Requirements
+
+Every completed task must include:
+
+* Status: Complete, Partial, or Blocked
+* Summary of what changed
+* Files changed
+* Validation commands run
+* Any failed checks or known issues
+* Risks or follow-up recommendations
+* Manual QA steps for the user to verify
 
 ## Final Standard
 
-Powerful + effortless + premium
+Memento should feel:
+
+Powerful + effortless + premium.
+
+The best solution is usually the one that helps the user understand their benefits faster with less effort.
