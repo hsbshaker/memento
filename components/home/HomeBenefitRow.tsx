@@ -133,7 +133,18 @@ export function HomeBenefitRow({
               />
               <div className="min-w-0">
                 <h3 className={cn(ROW_PRIMARY_TEXT_CLASS, nameOpacity)}>{item.benefitName}</h3>
-                <p className={cn("mt-1", ROW_SECONDARY_TEXT_CLASS, secondaryOpacity)}>{item.cardName}</p>
+                <div className="mt-1 flex items-center gap-2">
+                  <p className={cn(ROW_SECONDARY_TEXT_CLASS, secondaryOpacity)}>{item.cardName}</p>
+                  {isUrgent && item.urgencyTier === "high" ? (
+                    <span className="shrink-0 rounded-full bg-[#F7C948]/15 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-[#F7C948]/80">
+                      {item.daysRemaining <= 0 ? "Due today" : "Due soon"}
+                    </span>
+                  ) : isUrgent && item.urgencyTier === "soon" ? (
+                    <span className="shrink-0 rounded-full bg-white/[0.06] px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-white/38">
+                      Due soon
+                    </span>
+                  ) : null}
+                </div>
               </div>
             </div>
 
