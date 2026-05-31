@@ -259,12 +259,6 @@ const CARD_STATUS_VALUES = new Set<CardStatus>([
   "no_trackable_benefits",
   "retired",
 ]);
-const ISSUER_VALUES = new Set<Issuer>([
-  "amex",
-  "chase",
-  "citi",
-  "capital_one",
-]);
 const CARD_TYPE_VALUES = new Set<CardType>(["personal", "business"]);
 const CADENCE_VALUES = new Set<BenefitCadence>([
   "monthly",

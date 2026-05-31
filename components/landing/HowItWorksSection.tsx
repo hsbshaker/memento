@@ -44,7 +44,7 @@ export function HowItWorksSection() {
         </div>
 
         <div className="grid gap-px overflow-hidden rounded-2xl bg-white/[0.04] md:grid-cols-3">
-            {steps.map((step, index) => (
+            {steps.map((step) => (
               <section
                 key={step.number}
                 className="relative space-y-5 bg-[#0D0D11] px-10 pb-12 pt-10"
