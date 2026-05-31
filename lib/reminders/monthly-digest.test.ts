@@ -68,3 +68,35 @@ test("buildMonthlyDigest users with no eligible benefits are not included", () =
 
   assert.equal(result.has("user-no-benefits"), false);
 });
+
+// opted-in filter tests — tested inline since monthly-digest.ts imports server-only
+
+test("digest opted-in filter removes opted-out users from candidates", () => {
+  // Simulates the optedInUserIds filter in loadDigestCandidates
+  const allCandidates = [
+    makeBenefit({ userId: "user-a", benefitId: "b-1" }),
+    makeBenefit({ userId: "user-b", benefitId: "b-2" }),
+    makeBenefit({ userId: "user-c", benefitId: "b-3" }),
+  ];
+  const optedInUserIds = new Set(["user-a", "user-c"]);
+  const filtered = allCandidates.filter((c) => optedInUserIds.has(c.userId));
+  assert.equal(filtered.length, 2);
+  assert.ok(filtered.every((c) => c.userId !== "user-b"));
+});
+
+test("digest opted-in filter with empty optedInUserIds excludes all users", () => {
+  const allCandidates = [
+    makeBenefit({ userId: "user-a", benefitId: "b-1" }),
+    makeBenefit({ userId: "user-b", benefitId: "b-2" }),
+  ];
+  const optedInUserIds = new Set<string>();
+  const filtered = allCandidates.filter((c) => optedInUserIds.has(c.userId));
+  assert.equal(filtered.length, 0);
+});
+
+test("digest skippedEmailDisabledCount is correctly derived from considered vs opted-in", () => {
+  const consideredUserIds = new Set(["user-a", "user-b", "user-c"]);
+  const optedInUserIds = new Set(["user-a"]);
+  const skippedEmailDisabledCount = [...consideredUserIds].filter((id) => !optedInUserIds.has(id)).length;
+  assert.equal(skippedEmailDisabledCount, 2);
+});

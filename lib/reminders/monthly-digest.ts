@@ -44,6 +44,7 @@ type PeriodStatusRow = {
 type GetDigestBenefitsParams = {
   monthStart?: Date;
   supabase?: ReturnType<typeof getServiceRoleSupabaseClient>;
+  optedInUserIds?: Set<string>;
 };
 
 const DIGEST_CADENCES: Array<BenefitCadence> = ["monthly", "quarterly", "semi_annual", "semiannual", "annual"];
@@ -53,6 +54,7 @@ const toCompositeUsedKey = (userId: string, benefitId: string, periodKey: string
 async function loadDigestCandidates({
   monthStart = new Date(),
   supabase = getServiceRoleSupabaseClient(),
+  optedInUserIds,
 }: GetDigestBenefitsParams = {}): Promise<DigestEligibleBenefit[]> {
   const normalizedMonthStart = toUtcMonthStart(monthStart);
   const selectExpr =
@@ -100,7 +102,11 @@ async function loadDigestCandidates({
     }
   }
 
-  return candidates.sort(sortDigestBenefits);
+  const filtered = optedInUserIds
+    ? candidates.filter((c) => optedInUserIds.has(c.userId))
+    : candidates;
+
+  return filtered.sort(sortDigestBenefits);
 }
 
 async function fetchUsedStatusKeys(
@@ -152,6 +158,21 @@ export function filterDigestEligibleBenefits(
   return filterDigestEligibleBenefitsByUsedStatus(candidates, usedStatusKeys).sort(sortDigestBenefits);
 }
 
+export async function getOptedInUserIds({
+  supabase = getServiceRoleSupabaseClient(),
+}: { supabase?: ReturnType<typeof getServiceRoleSupabaseClient> } = {}): Promise<Set<string>> {
+  const { data, error } = await supabase
+    .from("user_profiles")
+    .select("user_id")
+    .eq("notifications_enabled", true);
+
+  if (error) {
+    throw error;
+  }
+
+  return new Set((data ?? []).map((row) => row.user_id));
+}
+
 export async function getDigestConsideredBenefits({
   monthStart = new Date(),
   supabase = getServiceRoleSupabaseClient(),
@@ -162,8 +183,9 @@ export async function getDigestConsideredBenefits({
 export async function getDigestEligibleBenefits({
   monthStart = new Date(),
   supabase = getServiceRoleSupabaseClient(),
+  optedInUserIds,
 }: GetDigestBenefitsParams = {}): Promise<DigestEligibleBenefit[]> {
-  const candidates = await loadDigestCandidates({ monthStart, supabase });
+  const candidates = await loadDigestCandidates({ monthStart, supabase, optedInUserIds });
   const usedStatusKeys = await fetchUsedStatusKeys(candidates, supabase);
   return filterDigestEligibleBenefits(candidates, usedStatusKeys);
 }

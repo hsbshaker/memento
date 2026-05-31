@@ -7,6 +7,7 @@ import {
   getDigestConsideredBenefits,
   getDigestEligibleBenefits,
   getDigestSectionsForMonth,
+  getOptedInUserIds,
   type DigestSection,
   type MonthlyDigest,
 } from "@/lib/reminders/monthly-digest";
@@ -244,11 +245,24 @@ export async function GET(request: Request) {
     );
   }
 
+  let optedInUserIds: Set<string>;
+  try {
+    optedInUserIds = await getOptedInUserIds({ supabase });
+  } catch (error) {
+    const errorMessage = safeErrorMessage(error);
+    console.error("Failed to fetch opted-in user IDs", { error: errorMessage, runId, monthKey });
+    return NextResponse.json(
+      { version: "cron-digest-v3", vercelEnv, todayParam, error: "Failed to fetch notification preferences", runId, monthKey },
+      { status: 500 },
+    );
+  }
+
   let eligibleBenefits;
   try {
     eligibleBenefits = await getDigestEligibleBenefits({
       monthStart,
       supabase,
+      optedInUserIds,
     });
   } catch (error) {
     const errorMessage = safeErrorMessage(error);
@@ -259,7 +273,10 @@ export async function GET(request: Request) {
     );
   }
 
-  const usersConsidered = new Set(consideredBenefits.map((benefit) => benefit.userId)).size;
+  const consideredUserIds = new Set(consideredBenefits.map((b) => b.userId));
+  const skippedEmailDisabledCount = [...consideredUserIds].filter((id) => !optedInUserIds.has(id)).length;
+
+  const usersConsidered = consideredUserIds.size;
   const digestsByUser = buildMonthlyDigest(eligibleBenefits, monthStart);
 
   let sentCount = 0;
@@ -431,7 +448,10 @@ export async function GET(request: Request) {
     attemptedSends,
     // Standardized summary fields
     usersConsidered,
-    usersSkipped: skippedCount + dedupedCount,
+    usersSkipped: skippedCount + dedupedCount + skippedEmailDisabledCount,
+    skippedEmailDisabled: skippedEmailDisabledCount,
+    skippedNoBenefits: skippedCount,
+    skippedDedupe: dedupedCount,
     emailsAttempted: attemptedCount,
     emailsSent: sentCount,
     emailsFailed: failedCount,

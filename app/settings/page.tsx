@@ -14,5 +14,16 @@ export default async function SettingsPage() {
     redirect("/login");
   }
 
-  return <SettingsScreen email={user.email ?? null} />;
+  const { data: profile } = await supabase
+    .from("user_profiles")
+    .select("notifications_enabled")
+    .eq("user_id", user.id)
+    .single();
+
+  return (
+    <SettingsScreen
+      email={user.email ?? null}
+      emailRemindersEnabled={profile?.notifications_enabled ?? false}
+    />
+  );
 }
