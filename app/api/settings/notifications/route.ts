@@ -49,8 +49,10 @@ export async function PATCH(request: Request) {
 
   const { error } = await supabase
     .from("user_profiles")
-    .update({ notifications_enabled: emailRemindersEnabled, updated_at: new Date().toISOString() })
-    .eq("user_id", user.id);
+    .upsert(
+      { user_id: user.id, notifications_enabled: emailRemindersEnabled, updated_at: new Date().toISOString() },
+      { onConflict: "user_id" },
+    );
 
   if (error) {
     return NextResponse.json({ error: "Failed to update notification preferences." }, { status: 500 });

@@ -121,7 +121,7 @@ export function ConfirmBenefitsClient({ data }: { data: ConfirmBenefitsPageData 
         throw new Error(payload.error ?? "We couldn’t save your reminders. Please try again.");
       }
 
-      router.push("/home");
+      router.push("/onboarding/success");
     } catch (error) {
       setSaveError(error instanceof Error ? error.message : "We couldn’t save your reminders. Please try again.");
     } finally {

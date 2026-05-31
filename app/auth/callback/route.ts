@@ -1,5 +1,4 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { isNewAuthUser } from "@/lib/auth/is-new-auth-user";
 import { createSupabaseRouteHandlerClient } from "@/lib/supabase/route-handler";
 
 const ERROR_REDIRECT = "/auth/error?reason=oauth_callback_failed&detail=exchange_failed";
@@ -54,7 +53,12 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(new URL(ERROR_REDIRECT, origin));
     }
 
-    const successRedirect = isNewAuthUser(user) ? NEW_USER_REDIRECT : RETURNING_USER_REDIRECT;
+    const { count } = await supabase
+      .from("user_cards")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user.id);
+
+    const successRedirect = (count ?? 0) > 0 ? RETURNING_USER_REDIRECT : NEW_USER_REDIRECT;
     const handoffRedirect = new URL("/auth/complete", origin);
     handoffRedirect.searchParams.set("next", successRedirect);
     return auth.finalize(NextResponse.redirect(handoffRedirect));
