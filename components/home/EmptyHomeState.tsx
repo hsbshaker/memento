@@ -11,7 +11,7 @@ export function EmptyHomeState() {
           Add cards and confirm the benefits you want Memento to track.
         </p>
         <div className="mt-6">
-          <Link href="/wallet/add">
+          <Link href="/wallet?addCard=1">
             <Button size="lg">Add card</Button>
           </Link>
         </div>

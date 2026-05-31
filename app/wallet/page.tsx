@@ -5,7 +5,14 @@ import { getWalletCards } from "@/lib/wallet/get-wallet-cards";
 
 export const dynamic = "force-dynamic";
 
-export default async function WalletPage() {
+type WalletPageProps = {
+  searchParams: Promise<{
+    addCard?: string;
+  }>;
+};
+
+export default async function WalletPage({ searchParams }: WalletPageProps) {
+  const { addCard } = await searchParams;
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },
@@ -17,5 +24,5 @@ export default async function WalletPage() {
 
   const cards = await getWalletCards(user.id);
 
-  return <WalletScreen cards={cards} />;
+  return <WalletScreen cards={cards} initialAddModalOpen={addCard === "1"} />;
 }

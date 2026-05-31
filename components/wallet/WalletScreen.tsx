@@ -16,6 +16,7 @@ type WalletSortOption = "recently_added" | "card_name" | "opened_date";
 
 type WalletScreenProps = {
   cards: WalletCardListItem[];
+  initialAddModalOpen?: boolean;
 };
 
 function getSearchableText(card: WalletCardListItem): string {
@@ -43,14 +44,14 @@ function sortCards(cards: WalletCardListItem[], sort: WalletSortOption): WalletC
   return sorted;
 }
 
-export function WalletScreen({ cards }: WalletScreenProps) {
+export function WalletScreen({ cards, initialAddModalOpen = false }: WalletScreenProps) {
   const [walletCards, setWalletCards] = useState(cards);
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<WalletSortOption>("recently_added");
   const [issuerFilter, setIssuerFilter] = useState("All issuers");
   const [selectedCardId, setSelectedCardId] = useState<string | null>(cards[0]?.userCardId ?? null);
   const [cardModalOpen, setCardModalOpen] = useState(false);
-  const [addModalOpen, setAddModalOpen] = useState(false);
+  const [addModalOpen, setAddModalOpen] = useState(initialAddModalOpen);
   const deferredQuery = useDeferredValue(query);
 
   const issuers = useMemo(() => {
