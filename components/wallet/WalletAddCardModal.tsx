@@ -178,7 +178,7 @@ export function WalletAddCardModal({ open, onClose, onAdded }: WalletAddCardModa
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[120] flex items-end justify-center bg-black/60 p-3 sm:items-center sm:p-6"
+          className="fixed inset-0 z-[120] flex items-end justify-center bg-scrim p-3 sm:items-center sm:p-6"
           onClick={onClose}
         >
           <motion.div
@@ -189,12 +189,12 @@ export function WalletAddCardModal({ open, onClose, onAdded }: WalletAddCardModa
             className="w-full max-w-[30rem]"
             onClick={(event) => event.stopPropagation()}
           >
-            <Surface className="max-h-[92vh] overflow-y-auto rounded-xl border-white/10 bg-white/[0.06] p-5 shadow-[0_20px_60px_-32px_rgba(0,0,0,0.92)]">
+            <Surface className="max-h-[92vh] overflow-y-auto p-5">
 
               {/* Header */}
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <h2 className="text-xl font-semibold tracking-tight text-white">Add card</h2>
+                  <h2 className="text-xl font-semibold tracking-tight text-foreground">Add card</h2>
                   <p className={cn("mt-1", ROW_SECONDARY_TEXT_CLASS)}>
                     Search for a card, then add any details you want to keep.
                   </p>
@@ -202,7 +202,7 @@ export function WalletAddCardModal({ open, onClose, onAdded }: WalletAddCardModa
                 <button
                   type="button"
                   onClick={onClose}
-                  className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-white/10 bg-white/[0.04] text-white/68 transition hover:bg-white/[0.08]"
+                  className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border bg-surface-muted text-muted-foreground transition hover:bg-hover"
                   aria-label="Close add card modal"
                 >
                   <X className="h-4 w-4" />
@@ -215,37 +215,37 @@ export function WalletAddCardModal({ open, onClose, onAdded }: WalletAddCardModa
                 <label className="block">
                   <span className={ROW_MICRO_TEXT_CLASS}>Search</span>
                   <div className="relative mt-2">
-                    <Search className="pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-white/32" />
+                    <Search className="pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                     <input
                       autoFocus
                       value={query}
                       onChange={(event) => setQuery(event.target.value)}
                       placeholder="Search by card name or issuer"
-                      className="h-10 w-full rounded-lg border border-white/10 bg-white/[0.05] pr-4 pl-10 text-sm text-white placeholder:text-white/28 focus:border-[#7FB6FF]/35 focus:outline-none"
+                      className="h-10 w-full rounded-lg border border-border bg-surface-muted pr-4 pl-10 text-sm text-foreground placeholder:text-muted-foreground focus:border-border-strong focus:outline-none"
                     />
                   </div>
                 </label>
 
                 {/* Results */}
                 {loading ? (
-                  <div className="overflow-hidden rounded-lg border border-white/10">
+                  <div className="overflow-hidden rounded-lg border border-border">
                     {Array.from({ length: 3 }).map((_, index) => (
                       <div
                         key={index}
-                        className="h-[52px] animate-pulse border-b border-white/8 bg-white/[0.03] last:border-b-0"
+                        className="h-[52px] animate-pulse border-b border-border-muted bg-surface-muted last:border-b-0"
                       />
                     ))}
                   </div>
                 ) : showSearchError ? (
-                  <div className="rounded-lg border border-rose-300/20 bg-rose-300/[0.08] px-3.5 py-3 text-sm text-rose-100/88">
+                  <div className="rounded-lg border border-destructive/30 bg-destructive-muted px-3.5 py-3 text-sm text-destructive">
                     {searchError}
                   </div>
                 ) : results.length === 0 ? (
-                  <div className="rounded-lg border border-white/10 bg-white/[0.02] px-3.5 py-3 text-sm text-white/45">
+                  <div className="rounded-lg border border-border bg-surface-muted px-3.5 py-3 text-sm text-muted-foreground">
                     {query.trim() ? "No cards found." : "Start typing to search for a card."}
                   </div>
                 ) : (
-                  <div className="max-h-52 overflow-y-auto rounded-lg border border-white/10 bg-white/[0.02]">
+                  <div className="max-h-52 overflow-y-auto rounded-lg border border-border bg-surface-muted">
                     {results.map((card) => {
                       const isSelected = selectedCard?.cardId === card.cardId;
                       return (
@@ -254,8 +254,8 @@ export function WalletAddCardModal({ open, onClose, onAdded }: WalletAddCardModa
                           type="button"
                           onClick={() => setSelectedCard(card)}
                           className={cn(
-                            "flex w-full items-center gap-3 border-b border-white/8 px-3.5 py-2.5 text-left last:border-b-0 transition-colors focus-visible:outline-none",
-                            isSelected ? "bg-[#7FB6FF]/[0.07]" : "hover:bg-white/[0.04]",
+                            "flex w-full items-center gap-3 border-b border-border-muted px-3.5 py-2.5 text-left last:border-b-0 transition-colors focus-visible:outline-none",
+                            isSelected ? "bg-accent-muted" : "hover:bg-hover",
                           )}
                         >
                           <div className="min-w-0 flex-1">
@@ -265,7 +265,7 @@ export function WalletAddCardModal({ open, onClose, onAdded }: WalletAddCardModa
                             </p>
                           </div>
                           {isSelected ? (
-                            <Check className="h-4 w-4 shrink-0 text-[#7FB6FF]" />
+                            <Check className="h-4 w-4 shrink-0 text-accent" />
                           ) : null}
                         </button>
                       );
@@ -275,7 +275,7 @@ export function WalletAddCardModal({ open, onClose, onAdded }: WalletAddCardModa
 
                 {/* Optional details form — shown after a card is selected */}
                 {selectedCard ? (
-                  <div className="space-y-4 border-t border-white/8 pt-4">
+                  <div className="space-y-4 border-t border-border pt-4">
                     <div>
                       <p className={ROW_MICRO_TEXT_CLASS}>Selected card</p>
                       <p className={cn("mt-1", ROW_PRIMARY_TEXT_CLASS)}>
@@ -291,7 +291,7 @@ export function WalletAddCardModal({ open, onClose, onAdded }: WalletAddCardModa
                           value={nickname}
                           onChange={(event) => setNickname(event.target.value)}
                           placeholder="Optional"
-                          className="h-10 rounded-lg border border-white/10 bg-white/[0.05] px-3.5 text-sm text-white placeholder:text-white/28 focus:border-[#7FB6FF]/35 focus:outline-none"
+                          className="h-10 rounded-lg border border-border bg-surface-muted px-3.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-border-strong focus:outline-none"
                         />
                       </label>
 
@@ -304,7 +304,7 @@ export function WalletAddCardModal({ open, onClose, onAdded }: WalletAddCardModa
                             setLastFour(normalizeLastFourInput(event.target.value))
                           }
                           placeholder="Optional"
-                          className="h-10 rounded-lg border border-white/10 bg-white/[0.05] px-3.5 text-sm text-white placeholder:text-white/28 focus:border-[#7FB6FF]/35 focus:outline-none"
+                          className="h-10 rounded-lg border border-border bg-surface-muted px-3.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-border-strong focus:outline-none"
                         />
                       </label>
                     </div>
@@ -321,11 +321,11 @@ export function WalletAddCardModal({ open, onClose, onAdded }: WalletAddCardModa
                 ) : null}
 
                 {submitError ? (
-                  <p className="text-sm text-rose-200/88">{submitError}</p>
+                  <p className="text-sm text-destructive">{submitError}</p>
                 ) : null}
 
                 {/* Footer */}
-                <div className="flex items-center justify-end gap-2 border-t border-white/8 pt-4">
+                <div className="flex items-center justify-end gap-2 border-t border-border pt-4">
                   <Button variant="secondary" size="sm" onClick={onClose} disabled={submitting}>
                     Cancel
                   </Button>

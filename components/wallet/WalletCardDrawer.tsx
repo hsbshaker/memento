@@ -204,16 +204,16 @@ function WalletCardModalPanel({
       className="w-full max-w-[40rem]"
       onClick={(event) => event.stopPropagation()}
     >
-      <Surface className="max-h-[88vh] overflow-y-auto rounded-xl border-white/10 bg-white/[0.06] p-5 shadow-[0_20px_60px_-32px_rgba(0,0,0,0.92)]">
+      <Surface className="max-h-[88vh] overflow-y-auto p-5">
         {/* Header */}
-        <div className="flex items-start justify-between gap-4 border-b border-white/8 pb-4">
+        <div className="flex items-start justify-between gap-4 border-b border-border pb-4">
           <div className="flex min-w-0 items-center gap-3">
-            <div className="flex h-10 w-10 shrink-0 flex-col items-center justify-center rounded-lg border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.07),rgba(255,255,255,0.02))] text-white/70">
+            <div className="flex h-10 w-10 shrink-0 flex-col items-center justify-center rounded-lg border border-border bg-surface-muted text-muted-foreground">
               <CreditCard className="h-4 w-4" />
               <span className="mt-0.5 text-[9px] font-semibold tracking-[0.16em]">{getCardTileLabel(card.cardName)}</span>
             </div>
             <div className="min-w-0">
-              <h2 className="truncate text-lg font-semibold tracking-tight text-white">{card.cardName}</h2>
+              <h2 className="truncate text-lg font-semibold tracking-tight text-foreground">{card.cardName}</h2>
               <p className={cn("mt-0.5", ROW_SECONDARY_TEXT_CLASS)}>{card.issuer}</p>
             </div>
           </div>
@@ -221,7 +221,7 @@ function WalletCardModalPanel({
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-white/10 bg-white/[0.04] text-white/68 transition hover:bg-white/[0.08]"
+            className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border bg-surface-muted text-muted-foreground transition hover:bg-hover"
             aria-label="Close card details"
           >
             <X className="h-4 w-4" />
@@ -237,7 +237,7 @@ function WalletCardModalPanel({
                 value={nickname}
                 onChange={(event) => handleDraftChange(setNickname, event.target.value)}
                 placeholder="Optional"
-                className="mt-2 h-10 w-full rounded-lg border border-white/10 bg-white/[0.05] px-3.5 text-sm text-white placeholder:text-white/28 focus:border-[#7FB6FF]/35 focus:outline-none"
+                className="mt-2 h-10 w-full rounded-lg border border-border bg-surface-muted px-3.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-border-strong focus:outline-none"
               />
             </label>
 
@@ -248,7 +248,7 @@ function WalletCardModalPanel({
                 inputMode="numeric"
                 onChange={(event) => handleDraftChange(setLastFour, normalizeLastFourInput(event.target.value))}
                 placeholder="Optional"
-                className="mt-2 h-10 w-full rounded-lg border border-white/10 bg-white/[0.05] px-3.5 text-sm text-white placeholder:text-white/28 focus:border-[#7FB6FF]/35 focus:outline-none"
+                className="mt-2 h-10 w-full rounded-lg border border-border bg-surface-muted px-3.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-border-strong focus:outline-none"
               />
             </label>
 
@@ -266,14 +266,14 @@ function WalletCardModalPanel({
         </div>
 
         {/* Footer */}
-        <div className="mt-6 border-t border-white/8 pt-4">
+        <div className="mt-6 border-t border-border pt-4">
           {saveMessage ? (
-            <p className={cn("mb-3 text-xs", saveState.state === "error" || normalizedDraft.error ? "text-rose-200/88" : "text-white/42")}>
+            <p className={cn("mb-3 text-xs", saveState.state === "error" || normalizedDraft.error ? "text-destructive" : "text-muted-foreground")}>
               {saveMessage}
             </p>
           ) : null}
           {removeError ? (
-            <p className="mb-3 text-xs text-rose-100/72">{removeError}</p>
+            <p className="mb-3 text-xs text-destructive">{removeError}</p>
           ) : null}
 
           <div className="flex items-center gap-2">
@@ -283,7 +283,7 @@ function WalletCardModalPanel({
                   type="button"
                   disabled={removing}
                   onClick={() => setConfirmingRemove(false)}
-                  className="inline-flex items-center justify-center rounded-xl bg-white/5 px-4 py-2 text-sm font-semibold text-white/80 ring-1 ring-white/10 transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="inline-flex items-center justify-center rounded-xl bg-surface-muted px-4 py-2 text-sm font-semibold text-foreground ring-1 ring-border transition hover:bg-surface-raised disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   Cancel
                 </button>
@@ -291,7 +291,7 @@ function WalletCardModalPanel({
                   type="button"
                   disabled={removing}
                   onClick={() => void handleRemove()}
-                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-rose-300/10 px-4 py-2 text-sm font-semibold text-rose-200/85 ring-1 ring-rose-300/20 transition hover:bg-rose-300/15 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-destructive-muted px-4 py-2 text-sm font-semibold text-destructive ring-1 ring-destructive/30 transition hover:bg-destructive/15 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {removing ? <LoaderCircle className="h-4 w-4 animate-spin" /> : null}
                   {removing ? "Removing..." : "Confirm remove"}
@@ -305,14 +305,14 @@ function WalletCardModalPanel({
                     onClose();
                     router.push(`/benefits?userCardId=${card.userCardId}`);
                   }}
-                  className="inline-flex items-center justify-center rounded-xl bg-white/5 px-4 py-2 text-sm font-semibold text-white/80 ring-1 ring-white/10 transition hover:bg-white/10"
+                  className="inline-flex items-center justify-center rounded-xl bg-surface-muted px-4 py-2 text-sm font-semibold text-foreground ring-1 ring-border transition hover:bg-surface-raised"
                 >
                   View benefits
                 </button>
                 <button
                   type="button"
                   onClick={() => setConfirmingRemove(true)}
-                  className="inline-flex items-center justify-center rounded-xl bg-rose-300/10 px-4 py-2 text-sm font-semibold text-rose-200/85 ring-1 ring-rose-300/20 transition hover:bg-rose-300/15"
+                  className="inline-flex items-center justify-center rounded-xl bg-destructive-muted px-4 py-2 text-sm font-semibold text-destructive ring-1 ring-destructive/30 transition hover:bg-destructive/15"
                 >
                   Remove card
                 </button>
@@ -325,7 +325,7 @@ function WalletCardModalPanel({
               type="button"
               disabled={saveDisabled}
               onClick={() => void handleSave()}
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#7FB6FF] px-4 py-2 text-sm font-semibold text-[#08111F] transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {saveState.state === "saving" ? <LoaderCircle className="h-4 w-4 animate-spin" /> : null}
               {saveState.state === "saving" ? "Saving..." : "Save"}
@@ -362,7 +362,7 @@ export function WalletCardModal({ card, open, onClose, onCardUpdated, onCardRemo
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[120] flex items-end justify-center bg-black/60 p-3 sm:items-center sm:p-6"
+          className="fixed inset-0 z-[120] flex items-end justify-center bg-scrim p-3 sm:items-center sm:p-6"
           onClick={onClose}
         >
           <WalletCardModalPanel

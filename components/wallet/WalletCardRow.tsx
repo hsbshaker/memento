@@ -48,19 +48,19 @@ export function WalletCardRow({ card, isSelected, onSelect }: WalletCardRowProps
       aria-pressed={isSelected}
       onClick={() => onSelect(card.userCardId)}
       className={cn(
-        "group relative block w-full rounded-xl text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7FB6FF]/45 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B1220]",
-        isSelected ? "bg-white/[0.06]" : "hover:bg-white/[0.035]",
+        "group relative block w-full rounded-xl text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+        isSelected ? "bg-surface-raised" : "hover:bg-hover",
       )}
     >
       <div className="flex items-center gap-3 px-3 py-3.5 sm:px-4">
         <span
           className={cn(
             "absolute inset-y-2 left-0 w-0.5 rounded-full bg-transparent transition-colors",
-            isSelected && "bg-[#7FB6FF]/80",
+            isSelected && "bg-accent",
           )}
           aria-hidden="true"
         />
-        <div className="flex h-10 w-10 shrink-0 flex-col items-center justify-center rounded-lg border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.07),rgba(255,255,255,0.02))] text-white/70">
+        <div className="flex h-10 w-10 shrink-0 flex-col items-center justify-center rounded-lg border border-border bg-surface-muted text-muted-foreground">
           <CreditCard className="h-3.5 w-3.5" />
           <span className="mt-0.5 text-[9px] font-semibold tracking-[0.16em]">{getCardTileLabel(card.cardName)}</span>
         </div>
@@ -73,7 +73,7 @@ export function WalletCardRow({ card, isSelected, onSelect }: WalletCardRowProps
           </p>
         </div>
 
-        <ChevronRight className="h-4 w-4 shrink-0 text-white/24 transition-colors group-hover:text-white/38" />
+        <ChevronRight className="h-4 w-4 shrink-0 text-subtle-foreground transition-colors group-hover:text-muted-foreground" />
       </div>
     </button>
   );

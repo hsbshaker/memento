@@ -17,19 +17,9 @@ type BenefitsInventoryRowProps = {
   onStartTracking?: (item: BenefitsInventoryItem) => void;
 };
 
-function buildMarker(item: BenefitsInventoryItem) {
-  const name = `${item.cardName} ${item.issuer}`.toLowerCase();
-
-  if (name.includes("platinum")) return { accentClassName: "bg-slate-300/80" };
-  if (name.includes("gold")) return { accentClassName: "bg-amber-300/80" };
-  if (name.includes("reserve")) return { accentClassName: "bg-sky-300/75" };
-  if (name.includes("sapphire")) return { accentClassName: "bg-blue-300/75" };
-  if (name.includes("business")) return { accentClassName: "bg-white/42" };
-
-  return {
-    accentClassName: item.issuer === "American Express" ? "bg-white/48" : "bg-white/36",
-  };
-}
+// Resting marker bar is a single restrained neutral, consistent with Home.
+// A structured per-card color palette is a deferred follow-up (see WO6 notes).
+const REST_MARKER_CLASS = "bg-border-strong";
 
 function formatCadence(cadence: string): string {
   if (cadence === "semiannual") return "Semiannual";
@@ -43,15 +33,15 @@ const STATUS_PILL: Record<
 > = {
   unused: {
     label: "Unused",
-    className: "bg-[#7FB6FF]/10 text-[#7FB6FF]/80",
+    className: "bg-accent-muted text-accent",
   },
   used: {
     label: "Used",
-    className: "bg-white/[0.06] text-white/50",
+    className: "bg-surface-muted text-muted-foreground",
   },
   not_tracked: {
     label: "Not Tracked",
-    className: "bg-white/[0.04] text-white/38",
+    className: "bg-surface-muted text-subtle-foreground",
   },
 };
 
@@ -64,15 +54,15 @@ export function BenefitsInventoryRow({
   onDoNotTrack,
   onStartTracking,
 }: BenefitsInventoryRowProps) {
-  const marker = buildMarker(item);
   const menuDisabled = pendingUsage || pendingTracking;
   const pill = STATUS_PILL[item.inventoryStatus];
 
   const isUsed = item.inventoryStatus === "used";
   const isNotTracked = item.inventoryStatus === "not_tracked";
 
-  const nameOpacity = isNotTracked ? "text-white/50" : isUsed ? "text-white/72" : "text-white/90";
-  const secondaryOpacity = isNotTracked ? "text-white/32" : isUsed ? "text-white/40" : "text-white/48";
+  // Status-driven dimming via semantic text tiers (unused reads brightest).
+  const nameClass = isNotTracked ? "text-subtle-foreground" : isUsed ? "text-muted-foreground" : "";
+  const secondaryClass = isNotTracked || isUsed ? "text-subtle-foreground" : "";
 
   const menuVariant =
     item.inventoryStatus === "used"
@@ -87,7 +77,7 @@ export function BenefitsInventoryRow({
     <div className="flex items-center gap-3 px-3.5 py-3 sm:px-4">
       {/* Accent bar */}
       <span
-        className={cn("mt-0 h-9 w-1 shrink-0 rounded-full self-center", marker.accentClassName)}
+        className={cn("mt-0 h-9 w-1 shrink-0 rounded-full self-center", REST_MARKER_CLASS)}
         aria-hidden="true"
       />
 
@@ -97,7 +87,7 @@ export function BenefitsInventoryRow({
           {/* Left: name + card */}
           <div className="min-w-0">
             <div className="flex min-w-0 items-center gap-2">
-              <h3 className={cn(ROW_PRIMARY_TEXT_CLASS, nameOpacity, "truncate")}>{item.benefitName}</h3>
+              <h3 className={cn(ROW_PRIMARY_TEXT_CLASS, nameClass, "truncate")}>{item.benefitName}</h3>
               <span
                 className={cn(
                   "shrink-0 rounded-full px-1.5 py-0.5 text-[11px] font-medium leading-none",
@@ -107,7 +97,7 @@ export function BenefitsInventoryRow({
                 {pill.label}
               </span>
             </div>
-            <p className={cn("mt-0.5 truncate", ROW_SECONDARY_TEXT_CLASS, secondaryOpacity)}>
+            <p className={cn("mt-0.5 truncate", ROW_SECONDARY_TEXT_CLASS, secondaryClass)}>
               {item.cardName}
               {item.issuer ? ` · ${item.issuer}` : ""}
             </p>
@@ -117,17 +107,17 @@ export function BenefitsInventoryRow({
           <div className="grid min-w-0 grid-cols-3 gap-3">
             <div className="min-w-0">
               <p className={ROW_MICRO_TEXT_CLASS}>Value</p>
-              <p className={cn("mt-1 text-sm font-medium leading-5", nameOpacity)}>{valueDisplay}</p>
+              <p className={cn("mt-1", ROW_PRIMARY_TEXT_CLASS, nameClass)}>{valueDisplay}</p>
             </div>
             <div className="min-w-0">
               <p className={ROW_MICRO_TEXT_CLASS}>Resets</p>
-              <p className={cn("mt-1 truncate", ROW_SECONDARY_TEXT_CLASS, secondaryOpacity)}>
+              <p className={cn("mt-1 truncate", ROW_SECONDARY_TEXT_CLASS, secondaryClass)}>
                 {item.resetsLabel}
               </p>
             </div>
             <div className="min-w-0">
               <p className={ROW_MICRO_TEXT_CLASS}>Cadence</p>
-              <p className={cn("mt-1", ROW_SECONDARY_TEXT_CLASS, secondaryOpacity)}>
+              <p className={cn("mt-1", ROW_SECONDARY_TEXT_CLASS, secondaryClass)}>
                 {formatCadence(item.cadence)}
               </p>
             </div>

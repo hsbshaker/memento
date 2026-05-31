@@ -59,9 +59,9 @@ export function BenefitsInventoryRowMenu({
           disabled={disabled}
           className={cn(
             "flex h-7 w-7 shrink-0 items-center justify-center rounded-md",
-            "text-white/28 transition-colors",
-            "hover:bg-white/[0.06] hover:text-white/65",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7FB6FF]/70",
+            "text-muted-foreground transition-colors",
+            "hover:bg-hover hover:text-foreground",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus",
             "disabled:cursor-not-allowed disabled:opacity-40",
           )}
         >
@@ -74,7 +74,7 @@ export function BenefitsInventoryRowMenu({
           align="end"
           sideOffset={6}
           onCloseAutoFocus={(e) => e.preventDefault()}
-          className="z-[130] w-44 rounded-[9px] border border-white/[0.12] bg-[#0F1823]/96 p-1 shadow-[0_16px_40px_-20px_rgba(0,0,0,0.88)] backdrop-blur-md outline-none"
+          className="z-[130] w-44 rounded-lg border border-border bg-surface-raised p-1 shadow-lg backdrop-blur-md outline-none"
         >
           {menuItems.map((menuItem) => (
             <button
@@ -85,11 +85,11 @@ export function BenefitsInventoryRowMenu({
                 setOpen(false);
               }}
               className={cn(
-                "w-full rounded-[6px] px-3 py-2 text-left text-sm transition-colors",
-                "focus-visible:outline-none focus-visible:bg-white/[0.06]",
+                "w-full rounded-md px-3 py-2 text-left text-sm transition-colors",
+                "focus-visible:outline-none focus-visible:bg-hover",
                 menuItem.muted
-                  ? "text-white/50 hover:bg-white/[0.05] hover:text-white/68"
-                  : "text-white/82 hover:bg-white/[0.07] hover:text-white/96",
+                  ? "text-muted-foreground hover:bg-hover hover:text-foreground"
+                  : "text-foreground hover:bg-hover",
               )}
             >
               {menuItem.label}

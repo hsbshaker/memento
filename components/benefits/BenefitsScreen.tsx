@@ -329,13 +329,13 @@ export function BenefitsScreen({ initialFeed }: BenefitsScreenProps) {
         <div className="space-y-6 pt-5">
           {/* Error banner */}
           {errorMessage ? (
-            <div className="rounded-lg border border-amber-300/20 bg-amber-300/10 p-4 text-sm text-amber-100">
+            <div className="rounded-lg border border-warning/30 bg-warning-muted p-4 text-sm text-foreground">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <p>{errorMessage}</p>
                 <button
                   type="button"
                   onClick={() => setErrorMessage(null)}
-                  className="text-left font-semibold underline decoration-amber-100/40 underline-offset-4"
+                  className="text-left font-semibold text-warning underline decoration-warning/40 underline-offset-4"
                 >
                   Dismiss
                 </button>
@@ -344,7 +344,7 @@ export function BenefitsScreen({ initialFeed }: BenefitsScreenProps) {
           ) : null}
 
           {/* Page header */}
-          <p className="text-xs font-medium tracking-[0.24em] text-[#F7C948] uppercase">Benefits</p>
+          <p className="text-xs font-medium tracking-[0.24em] text-accent uppercase">Benefits</p>
 
           {/* Tabs + filters row */}
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -352,7 +352,7 @@ export function BenefitsScreen({ initialFeed }: BenefitsScreenProps) {
             <div
               role="tablist"
               aria-label="Filter benefits by status"
-              className="inline-flex w-full rounded-lg border border-white/[0.08] bg-white/[0.015] p-0.5 sm:w-auto"
+              className="inline-flex w-full rounded-lg border border-border bg-surface p-0.5 sm:w-auto"
             >
               {tabs.map((tab) => (
                 <button
@@ -364,8 +364,8 @@ export function BenefitsScreen({ initialFeed }: BenefitsScreenProps) {
                   className={cn(
                     "rounded-md px-2.5 py-1 text-[13px] font-medium transition-colors",
                     tab.id === activeTab
-                      ? "bg-white/[0.07] text-white"
-                      : "text-white/42 hover:text-white/68",
+                      ? "bg-surface-raised text-foreground"
+                      : "text-muted-foreground hover:text-foreground",
                   )}
                 >
                   {tab.label}
@@ -374,8 +374,8 @@ export function BenefitsScreen({ initialFeed }: BenefitsScreenProps) {
                       className={cn(
                         "ml-1.5 rounded-full px-1.5 py-0.5 text-[11px] font-medium leading-none tabular-nums",
                         tab.id === activeTab
-                          ? "bg-white/[0.1] text-white/80"
-                          : "bg-white/[0.06] text-white/38",
+                          ? "bg-surface-muted text-foreground"
+                          : "bg-surface-muted text-subtle-foreground",
                       )}
                     >
                       {tab.count}
@@ -394,8 +394,8 @@ export function BenefitsScreen({ initialFeed }: BenefitsScreenProps) {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className={cn(
-                  "h-9 w-full rounded-lg border border-white/8 bg-transparent px-3 text-sm text-white/60 placeholder:text-white/30",
-                  "focus:border-white/20 focus:outline-none focus:ring-0",
+                  "h-9 w-full rounded-lg border border-border bg-surface px-3 text-sm text-foreground placeholder:text-muted-foreground",
+                  "focus:border-border-strong focus:outline-none focus:ring-0",
                   "sm:w-48",
                 )}
               />
@@ -406,8 +406,8 @@ export function BenefitsScreen({ initialFeed }: BenefitsScreenProps) {
                   value={issuerFilter}
                   onChange={(e) => setIssuerFilter(e.target.value)}
                   className={cn(
-                    "h-9 rounded-lg border border-white/8 bg-[#101418] px-3 text-sm text-white/60",
-                    "focus:border-white/20 focus:outline-none focus:ring-0",
+                    "h-9 rounded-lg border border-border bg-surface px-3 text-sm text-foreground",
+                    "focus:border-border-strong focus:outline-none focus:ring-0",
                     "min-w-[8rem]",
                   )}
                 >
@@ -426,8 +426,8 @@ export function BenefitsScreen({ initialFeed }: BenefitsScreenProps) {
                   value={cadenceFilter}
                   onChange={(e) => setCadenceFilter(e.target.value)}
                   className={cn(
-                    "h-9 rounded-lg border border-white/8 bg-[#101418] px-3 text-sm text-white/60",
-                    "focus:border-white/20 focus:outline-none focus:ring-0",
+                    "h-9 rounded-lg border border-border bg-surface px-3 text-sm text-foreground",
+                    "focus:border-border-strong focus:outline-none focus:ring-0",
                     "min-w-[8rem]",
                   )}
                 >
@@ -444,16 +444,16 @@ export function BenefitsScreen({ initialFeed }: BenefitsScreenProps) {
 
           {/* Active card filter indicator */}
           {cardFilterId ? (
-            <div className="flex items-center gap-2 rounded-lg border border-white/[0.07] bg-white/[0.03] px-3 py-2 text-sm">
-              <span className="text-white/55">Showing benefits for</span>
-              <span className="font-medium text-white/80">
+            <div className="flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-sm">
+              <span className="text-muted-foreground">Showing benefits for</span>
+              <span className="font-medium text-foreground">
                 {cardDisplayName ?? "this card"}
               </span>
               <button
                 type="button"
                 onClick={handleClearCardFilter}
                 aria-label="Clear card filter"
-                className="ml-auto text-white/38 transition-colors hover:text-white/65"
+                className="ml-auto text-muted-foreground transition-colors hover:text-foreground"
               >
                 ×
               </button>

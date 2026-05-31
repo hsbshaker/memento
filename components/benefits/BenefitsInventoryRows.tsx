@@ -25,8 +25,8 @@ export function BenefitsInventoryRows({
 }: BenefitsInventoryRowsProps) {
   if (items.length === 0) {
     return (
-      <div className="rounded-xl border border-white/[0.05] bg-white/[0.015] px-4 py-8 text-center">
-        <p className="text-sm text-white/42">{emptyMessage}</p>
+      <div className="rounded-xl border border-border bg-surface px-4 py-8 text-center">
+        <p className="text-sm text-muted-foreground">{emptyMessage}</p>
       </div>
     );
   }
@@ -34,9 +34,9 @@ export function BenefitsInventoryRows({
   return (
     <div
       className={cn(
-        "overflow-hidden rounded-xl border border-white/[0.05] bg-white/[0.015]",
+        "overflow-hidden rounded-xl border border-border bg-surface",
         items.length > 8
-          ? "max-h-[40rem] overflow-y-auto [scrollbar-color:rgba(255,255,255,0.18)_transparent] [scrollbar-width:thin] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-white/14 [&::-webkit-scrollbar-track]:bg-transparent"
+          ? "max-h-[40rem] overflow-y-auto [scrollbar-color:var(--border-strong)_transparent] [scrollbar-width:thin] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-border-strong [&::-webkit-scrollbar-track]:bg-transparent"
           : "",
       )}
     >
@@ -48,7 +48,7 @@ export function BenefitsInventoryRows({
         const pendingTracking = pendingTrackingById?.[item.userBenefitId] === true;
 
         return (
-          <div key={item.userBenefitId} className={cn(index > 0 ? "border-t border-white/[0.045]" : undefined)}>
+          <div key={item.userBenefitId} className={cn(index > 0 ? "border-t border-border-muted" : undefined)}>
             <BenefitsInventoryRow
               item={item}
               pendingUsage={pendingUsage}
