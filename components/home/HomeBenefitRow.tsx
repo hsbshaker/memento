@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import type { HomeFeedItem } from "@/lib/types/server-data";
 import { HomeBenefitRowMenu } from "@/components/home/HomeBenefitRowMenu";
 import { cn } from "@/lib/cn";
@@ -9,6 +12,7 @@ import {
 } from "@/components/ui/row-typography";
 
 type HomeBenefitRowVariant = "urgent" | "upcoming" | "used" | "not_tracked";
+type ExitAction = "used" | "not_tracked";
 
 type HomeBenefitRowProps = {
   item: HomeFeedItem;
@@ -21,44 +25,25 @@ type HomeBenefitRowProps = {
   onStartTracking?: (item: HomeFeedItem) => void;
 };
 
+// Flash duration before fade starts (ms)
+const FLASH_MS = 380;
+// Fade-out duration (ms) — must match the Tailwind duration class below
+const FADE_MS = 280;
+
 function simplifyTimingLabel(label: string) {
-  if (label === "Resets today") {
-    return "Today";
-  }
-
-  if (label.startsWith("Resets in ")) {
-    return label.replace("Resets in ", "In ");
-  }
-
+  if (label === "Resets today") return "Today";
+  if (label.startsWith("Resets in ")) return label.replace("Resets in ", "In ");
   return label;
 }
 
 function buildMarker(item: HomeFeedItem) {
   const name = `${item.cardName} ${item.issuer}`.toLowerCase();
-
-  if (name.includes("platinum")) {
-    return { accentClassName: "bg-slate-300/80" };
-  }
-
-  if (name.includes("gold")) {
-    return { accentClassName: "bg-amber-300/80" };
-  }
-
-  if (name.includes("reserve")) {
-    return { accentClassName: "bg-sky-300/75" };
-  }
-
-  if (name.includes("sapphire")) {
-    return { accentClassName: "bg-blue-300/75" };
-  }
-
-  if (name.includes("business")) {
-    return { accentClassName: "bg-white/42" };
-  }
-
-  return {
-    accentClassName: item.issuer === "American Express" ? "bg-white/48" : "bg-white/36",
-  };
+  if (name.includes("platinum")) return { accentClassName: "bg-slate-300/80" };
+  if (name.includes("gold")) return { accentClassName: "bg-amber-300/80" };
+  if (name.includes("reserve")) return { accentClassName: "bg-sky-300/75" };
+  if (name.includes("sapphire")) return { accentClassName: "bg-blue-300/75" };
+  if (name.includes("business")) return { accentClassName: "bg-white/42" };
+  return { accentClassName: item.issuer === "American Express" ? "bg-white/48" : "bg-white/36" };
 }
 
 function toMenuVariant(variant: HomeBenefitRowVariant): "unused" | "used" | "not_tracked" {
@@ -77,25 +62,72 @@ export function HomeBenefitRow({
   onDoNotTrack,
   onStartTracking,
 }: HomeBenefitRowProps) {
+  const [exitAction, setExitAction] = useState<ExitAction | null>(null);
+  const [fading, setFading] = useState(false);
+
   const marker = buildMarker(item);
   const isUrgent = variant === "urgent";
   const isUsed = variant === "used";
   const timingLabel = simplifyTimingLabel(item.timingLabel);
-  const menuDisabled = pendingUsage || pendingTracking;
+  const actionsDisabled = pendingUsage || pendingTracking || exitAction !== null;
 
   const nameOpacity = isUrgent ? "text-white/90" : isUsed ? "text-white/78" : "text-white/68";
   const secondaryOpacity = isUrgent ? "text-white/48" : isUsed ? "text-white/40" : "text-white/38";
   const valueOpacity = isUrgent ? "text-white/90" : isUsed ? "text-white/72" : "text-white/60";
   const metaOpacity = isUrgent ? "text-white/50" : isUsed ? "text-white/46" : "text-white/38";
 
+  // Accent bar during exit: flash green (used) or red (not_tracked)
+  const accentBarClass =
+    exitAction === "used"
+      ? "bg-[#86EFAC]"
+      : exitAction === "not_tracked"
+        ? "bg-red-400/80"
+        : marker.accentClassName;
+
+  const triggerExit = (action: ExitAction, handler: () => void) => {
+    if (actionsDisabled) return;
+    setExitAction(action);
+    setTimeout(() => {
+      setFading(true);
+      setTimeout(() => {
+        handler();
+      }, FADE_MS);
+    }, FLASH_MS);
+  };
+
+  const handleMarkUsed = () => {
+    if (onMarkUsed) triggerExit("used", () => onMarkUsed(item));
+  };
+
+  const handleDoNotTrack = () => {
+    if (onDoNotTrack) triggerExit("not_tracked", () => onDoNotTrack(item));
+  };
+
   return (
-    <div className={cn("px-3.5 py-3 sm:px-4", isUrgent ? "text-white" : "text-white/78")}>
+    <div
+      className={cn(
+        "px-3.5 py-3 sm:px-4 transition-opacity duration-[280ms] ease-out",
+        fading ? "opacity-0" : "opacity-100",
+        isUrgent ? "text-white" : "text-white/78",
+      )}
+    >
       <div className="flex items-center gap-3">
-        {/* Benefit name + card — takes remaining space */}
-        <div className="min-w-0 flex-1">
+        {/* Benefit name + card */}
+        <div
+          className={cn(
+            "min-w-0 flex-1 transition-opacity duration-200",
+            exitAction ? "opacity-30" : "opacity-100",
+          )}
+        >
           <div className="grid gap-3 lg:grid-cols-[minmax(0,2.55fr)_minmax(0,1.35fr)] lg:items-center lg:gap-4">
             <div className="flex items-start gap-3 min-w-0">
-              <span className={cn("mt-0.5 h-10 w-1 shrink-0 rounded-full", marker.accentClassName)} aria-hidden="true" />
+              <span
+                className={cn(
+                  "mt-0.5 h-10 w-1 shrink-0 rounded-full transition-colors duration-200",
+                  accentBarClass,
+                )}
+                aria-hidden="true"
+              />
               <div className="min-w-0">
                 <h3 className={cn(ROW_PRIMARY_TEXT_CLASS, nameOpacity)}>{item.benefitName}</h3>
                 <p className={cn("mt-1", ROW_SECONDARY_TEXT_CLASS, secondaryOpacity)}>{item.cardName}</p>
@@ -127,13 +159,60 @@ export function HomeBenefitRow({
           </div>
         </div>
 
-        {/* 3-dot menu — always right-aligned */}
-        {(onMarkUsed ?? onMarkNotUsed ?? onDoNotTrack ?? onStartTracking) ? (
+        {/* Urgent row actions: check + X */}
+        {isUrgent ? (
+          <div className="flex shrink-0 items-center gap-1.5">
+            {onMarkUsed ? (
+              <button
+                type="button"
+                title="Mark as used"
+                aria-label="Mark as used"
+                disabled={actionsDisabled}
+                onClick={handleMarkUsed}
+                className={cn(
+                  "flex h-6 w-6 items-center justify-center rounded-full border transition-all duration-150",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#BAF3D2]/40 focus-visible:ring-offset-2 focus-visible:ring-offset-black",
+                  exitAction === "used"
+                    ? "border-[#86EFAC] bg-[#86EFAC]/20"
+                    : actionsDisabled
+                      ? "cursor-not-allowed border-white/15 opacity-40"
+                      : "border-white/25 hover:border-[#BAF3D2]/60 hover:bg-[#BAF3D2]/10",
+                )}
+              >
+                <svg viewBox="0 0 12 12" fill="none" className={cn("h-3 w-3 transition-colors duration-150", exitAction === "used" ? "text-[#86EFAC]" : "text-white/35")} aria-hidden>
+                  <path d="M2.5 6.5 5 9l4.5-5.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
+            ) : null}
+
+            {onDoNotTrack ? (
+              <button
+                type="button"
+                title="Do not track"
+                aria-label="Do not track"
+                disabled={actionsDisabled}
+                onClick={handleDoNotTrack}
+                className={cn(
+                  "flex h-6 w-6 items-center justify-center rounded-full border transition-all duration-150",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400/40 focus-visible:ring-offset-2 focus-visible:ring-offset-black",
+                  exitAction === "not_tracked"
+                    ? "border-red-400/80 bg-red-400/20"
+                    : actionsDisabled
+                      ? "cursor-not-allowed border-white/15 opacity-40"
+                      : "border-white/25 hover:border-red-400/60 hover:bg-red-400/10",
+                )}
+              >
+                <svg viewBox="0 0 12 12" fill="none" className={cn("h-3 w-3 transition-colors duration-150", exitAction === "not_tracked" ? "text-red-400" : "text-white/35")} aria-hidden>
+                  <path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                </svg>
+              </button>
+            ) : null}
+          </div>
+        ) : (onMarkNotUsed ?? onDoNotTrack ?? onStartTracking) ? (
           <HomeBenefitRowMenu
             item={item}
             variant={toMenuVariant(variant)}
-            disabled={menuDisabled}
-            onMarkUsed={onMarkUsed ?? (() => undefined)}
+            disabled={actionsDisabled}
             onMarkNotUsed={onMarkNotUsed ?? (() => undefined)}
             onDoNotTrack={onDoNotTrack ?? (() => undefined)}
             onStartTracking={onStartTracking ?? (() => undefined)}

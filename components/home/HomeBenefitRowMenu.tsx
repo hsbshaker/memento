@@ -13,7 +13,6 @@ type HomeBenefitRowMenuProps = {
   item: HomeFeedItem;
   variant: BenefitMenuVariant;
   disabled?: boolean;
-  onMarkUsed: (item: HomeFeedItem) => void;
   onMarkNotUsed: (item: HomeFeedItem) => void;
   onDoNotTrack: (item: HomeFeedItem) => void;
   onStartTracking: (item: HomeFeedItem) => void;
@@ -29,7 +28,6 @@ export function HomeBenefitRowMenu({
   item,
   variant,
   disabled = false,
-  onMarkUsed,
   onMarkNotUsed,
   onDoNotTrack,
   onStartTracking,
@@ -44,10 +42,7 @@ export function HomeBenefitRowMenu({
             { label: "Mark as Unused", onSelect: () => onMarkNotUsed(item) },
             { label: "Do Not Track", onSelect: () => onDoNotTrack(item), muted: true },
           ]
-        : [
-            { label: "Mark as Used", onSelect: () => onMarkUsed(item) },
-            { label: "Do Not Track", onSelect: () => onDoNotTrack(item), muted: true },
-          ];
+        : [{ label: "Do Not Track", onSelect: () => onDoNotTrack(item), muted: true }];
 
   return (
     <Popover open={open} onOpenChange={setOpen}>

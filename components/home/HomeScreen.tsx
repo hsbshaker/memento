@@ -9,6 +9,7 @@ import {
 } from "@/lib/home/optimistic-home-feed";
 import { AppShell } from "@/components/ui/AppShell";
 import { MobilePageContainer } from "@/components/ui/MobilePageContainer";
+import { UndoToastContainer, type UndoToastItem } from "@/components/ui/UndoToast";
 import { HomeBenefitRows } from "@/components/home/HomeBenefitRows";
 import { EmptyHomeState } from "@/components/home/EmptyHomeState";
 import { WalletHero } from "@/components/home/WalletHero";
@@ -34,9 +35,18 @@ export function HomeScreen({ initialFeed }: HomeScreenProps) {
   const [activeBenefitTab, setActiveBenefitTab] = useState<BenefitTab>("unused");
   const [selectedTimeframe, setSelectedTimeframe] = useState(initialFeed.timeframe.key);
   const [isRefreshingTimeframe, setIsRefreshingTimeframe] = useState(false);
+  const [toasts, setToasts] = useState<UndoToastItem[]>([]);
   const feedCacheRef = useRef(new Map<HomeTimeframeKey, HomeFeedResult>([[initialFeed.timeframe.key, initialFeed]]));
   const inFlightRequestsRef = useRef(new Map<HomeTimeframeKey, Promise<HomeFeedResult>>());
   const latestRequestedTimeframeRef = useRef<HomeTimeframeKey>(initialFeed.timeframe.key);
+
+  const addToast = (toast: UndoToastItem) => {
+    setToasts((prev) => [...prev, toast]);
+  };
+
+  const dismissToast = (id: string) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  };
 
   const fetchFeedForTimeframe = async (timeframe: HomeTimeframeKey, force = false) => {
     if (!force) {
@@ -104,89 +114,103 @@ export function HomeScreen({ initialFeed }: HomeScreenProps) {
     }
   }, [selectedTimeframe]);
 
-  // Mark as Used / Mark as Unused — fully optimistic, no confirmation dialog.
-  const runUsageMutation = async (item: HomeFeedItem, nextUsed: boolean) => {
+  // Mark as Used / Mark as Unused — optimistic with undo toast.
+  const runUsageMutation = (item: HomeFeedItem, nextUsed: boolean) => {
     const previousFeed = feed;
-    const action = nextUsed ? "mark-used" : "mark-not-used";
+    const toastId = crypto.randomUUID();
+    const toastMessage = nextUsed ? "Marked as used" : "Marked as unused";
 
-    // Optimistic update: move row immediately
-    setPendingById((current) => ({ ...current, [item.userBenefitId]: action }));
     setErrorMessage(null);
     setFeed(applyUrgentBenefitUsageMutation(feed, item, nextUsed));
 
-    try {
-      const response = await fetch("/api/home/mark-used", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userBenefitId: item.userBenefitId,
-          isUsedThisPeriod: nextUsed,
-        }),
-      });
-      const payload = (await response.json()) as { error?: string };
-
-      if (!response.ok) {
-        throw new Error(payload.error ?? "Failed to save.");
+    const fireApi = async () => {
+      const action = nextUsed ? "mark-used" : "mark-not-used";
+      setPendingById((current) => ({ ...current, [item.userBenefitId]: action }));
+      try {
+        const response = await fetch("/api/home/mark-used", {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userBenefitId: item.userBenefitId,
+            isUsedThisPeriod: nextUsed,
+          }),
+        });
+        const payload = (await response.json()) as { error?: string };
+        if (!response.ok) throw new Error(payload.error ?? "Failed to save.");
+        invalidateFeedCache();
+        latestRequestedTimeframeRef.current = selectedTimeframe;
+        void refreshFeed(selectedTimeframe, true);
+      } catch {
+        setErrorMessage(MUTATION_ERROR);
+        setFeed(previousFeed);
+        invalidateFeedCache();
+        latestRequestedTimeframeRef.current = selectedTimeframe;
+        void refreshFeed(selectedTimeframe, true);
+      } finally {
+        setPendingById((current) => ({ ...current, [item.userBenefitId]: null }));
       }
+    };
 
-      // Success: background refresh to reconcile server truth
-      invalidateFeedCache();
-      latestRequestedTimeframeRef.current = selectedTimeframe;
-      void refreshFeed(selectedTimeframe, true);
-    } catch {
-      // Rollback to previous state
-      setErrorMessage(MUTATION_ERROR);
-      setFeed(previousFeed);
-      invalidateFeedCache();
-      latestRequestedTimeframeRef.current = selectedTimeframe;
-      void refreshFeed(selectedTimeframe, true);
-    } finally {
-      setPendingById((current) => ({ ...current, [item.userBenefitId]: null }));
-    }
+    addToast({
+      id: toastId,
+      message: toastMessage,
+      onUndo: () => {
+        setFeed(previousFeed);
+        setErrorMessage(null);
+      },
+      onExpire: () => { void fireApi(); },
+    });
   };
 
-  // Do Not Track / Start Tracking — fully optimistic.
-  const runTrackingMutation = async (item: HomeFeedItem, nextStatus: "tracked" | "not_tracked") => {
+  // Do Not Track / Start Tracking — optimistic with undo toast.
+  const runTrackingMutation = (item: HomeFeedItem, nextStatus: "tracked" | "not_tracked") => {
     const previousFeed = feed;
     const now = new Date();
     const timeframeEnd = getHomeTimeframeEndDate(now, selectedTimeframe);
+    const toastId = crypto.randomUUID();
+    const toastMessage = nextStatus === "not_tracked" ? "Removed from tracking" : "Added to tracking";
 
-    // Optimistic update: move row immediately
-    setPendingTrackingById((current) => ({ ...current, [item.userBenefitId]: true }));
     setErrorMessage(null);
     setFeed(applyTrackingStatusMutation(feed, item, nextStatus, timeframeEnd, now));
 
-    try {
-      const response = await fetch("/api/home/tracking-status", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
+    const fireApi = async () => {
+      setPendingTrackingById((current) => ({ ...current, [item.userBenefitId]: true }));
+      try {
+        const response = await fetch("/api/home/tracking-status", {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           userBenefitId: item.userBenefitId,
           trackingStatus: nextStatus,
         }),
       });
       const payload = (await response.json()) as { error?: string };
-
-      if (!response.ok) {
-        throw new Error(payload.error ?? "Failed to save.");
+        if (!response.ok) throw new Error(payload.error ?? "Failed to save.");
+        invalidateFeedCache();
+        latestRequestedTimeframeRef.current = selectedTimeframe;
+        void refreshFeed(selectedTimeframe, true);
+      } catch {
+        setErrorMessage(MUTATION_ERROR);
+        setFeed(previousFeed);
+        invalidateFeedCache();
+        latestRequestedTimeframeRef.current = selectedTimeframe;
+        void refreshFeed(selectedTimeframe, true);
+      } finally {
+        setPendingTrackingById((current) => ({ ...current, [item.userBenefitId]: false }));
       }
+    };
 
-      // Success: background refresh to reconcile server truth
-      invalidateFeedCache();
-      latestRequestedTimeframeRef.current = selectedTimeframe;
-      void refreshFeed(selectedTimeframe, true);
-    } catch {
-      // Rollback to previous state
-      setErrorMessage(MUTATION_ERROR);
-      setFeed(previousFeed);
-      invalidateFeedCache();
-      latestRequestedTimeframeRef.current = selectedTimeframe;
-      void refreshFeed(selectedTimeframe, true);
-    } finally {
-      setPendingTrackingById((current) => ({ ...current, [item.userBenefitId]: false }));
-    }
+    addToast({
+      id: toastId,
+      message: toastMessage,
+      onUndo: () => {
+        setFeed(previousFeed);
+        setErrorMessage(null);
+      },
+      onExpire: () => { void fireApi(); },
+    });
   };
 
   const changeTimeframe = async (nextTimeframe: HomeTimeframeKey) => {
@@ -276,6 +300,7 @@ export function HomeScreen({ initialFeed }: HomeScreenProps) {
   };
 
   return (
+    <>
     <AppShell containerClassName="max-w-6xl px-0 md:px-6">
       <MobilePageContainer className="pb-20">
         <div className="space-y-6 pt-5">
@@ -397,5 +422,8 @@ export function HomeScreen({ initialFeed }: HomeScreenProps) {
         </div>
       </MobilePageContainer>
     </AppShell>
+
+    <UndoToastContainer toasts={toasts} onDismiss={dismissToast} />
+    </>
   );
 }
