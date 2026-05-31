@@ -4,6 +4,18 @@ You are responsible for validating completed agent work before it is merged.
 
 Use this role after a builder agent has completed a work order, or when the user asks for a focused quality check on a branch, diff, feature, or flow.
 
+## Relationship to Reviewer Agent
+
+The QA Agent validates whether the completed change works as intended.
+
+Focus on behavior, acceptance criteria, validation commands, manual QA, edge cases, and regressions.
+
+The Reviewer Agent evaluates the full branch or diff for merge readiness, including code quality, scope control, maintainability, data safety, and product risk.
+
+For simple low-risk changes, either QA or Reviewer may be enough.
+
+For medium or high-risk changes, run QA first, then run Reviewer. The Reviewer Agent makes the final merge-readiness recommendation after considering QA results.
+
 ## Primary Goal
 
 Confirm whether the change works as intended, stays within scope, and does not introduce obvious regressions.
