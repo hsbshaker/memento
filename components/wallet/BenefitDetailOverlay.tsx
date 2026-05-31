@@ -38,12 +38,12 @@ export function BenefitDetailOverlay({
   onUpdateReminder,
   onUpdateConditionalValue,
 }: BenefitDetailOverlayProps) {
-  const [draftConditionalValue, setDraftConditionalValue] = useState("");
+  const [draftEntry, setDraftEntry] = useState<{ userBenefitId: string; value: string } | null>(null);
 
-  useEffect(() => {
-    if (!benefit) return;
-    setDraftConditionalValue(benefit.conditionalValue ?? "");
-  }, [benefit]);
+  const draftConditionalValue =
+    draftEntry !== null && draftEntry.userBenefitId === benefit?.userBenefitId
+      ? draftEntry.value
+      : (benefit?.conditionalValue ?? "");
 
   useEffect(() => {
     if (!open) return;
@@ -141,7 +141,7 @@ export function BenefitDetailOverlay({
                     <p className="text-xs font-medium tracking-[0.18em] text-white/44 uppercase">Configuration</p>
                     <input
                       value={draftConditionalValue}
-                      onChange={(event) => setDraftConditionalValue(event.target.value)}
+                      onChange={(event) => setDraftEntry({ userBenefitId: benefit.userBenefitId, value: event.target.value })}
                       placeholder="Enter a tracked value"
                       className="w-full rounded-2xl border border-white/12 bg-[#0E1625]/90 px-4 py-3 text-sm text-white outline-none placeholder:text-white/35 focus:border-[#F7C948]/45"
                     />
