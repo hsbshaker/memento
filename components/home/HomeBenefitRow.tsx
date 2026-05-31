@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import type { HomeFeedItem } from "@/lib/types/server-data";
-import { HomeBenefitRowMenu } from "@/components/home/HomeBenefitRowMenu";
 import { cn } from "@/lib/cn";
 import {
   ROW_MICRO_TEXT_CLASS,
@@ -12,7 +11,7 @@ import {
 } from "@/components/ui/row-typography";
 
 type HomeBenefitRowVariant = "urgent" | "upcoming" | "used" | "not_tracked";
-type ExitAction = "used" | "not_tracked";
+type ExitAction = "used" | "not_tracked" | "mark-unused" | "start-tracking";
 
 type HomeBenefitRowProps = {
   item: HomeFeedItem;
@@ -46,12 +45,6 @@ function buildMarker(item: HomeFeedItem) {
   return { accentClassName: item.issuer === "American Express" ? "bg-white/48" : "bg-white/36" };
 }
 
-function toMenuVariant(variant: HomeBenefitRowVariant): "unused" | "used" | "not_tracked" {
-  if (variant === "used") return "used";
-  if (variant === "not_tracked") return "not_tracked";
-  return "unused";
-}
-
 export function HomeBenefitRow({
   item,
   variant = "urgent",
@@ -76,13 +69,15 @@ export function HomeBenefitRow({
   const valueOpacity = isUrgent ? "text-white/90" : isUsed ? "text-white/72" : "text-white/60";
   const metaOpacity = isUrgent ? "text-white/50" : isUsed ? "text-white/46" : "text-white/38";
 
-  // Accent bar during exit: flash green (used) or red (not_tracked)
+  // Accent bar during exit
   const accentBarClass =
-    exitAction === "used"
+    exitAction === "used" || exitAction === "start-tracking"
       ? "bg-[#86EFAC]"
       : exitAction === "not_tracked"
         ? "bg-red-400/80"
-        : marker.accentClassName;
+        : exitAction === "mark-unused"
+          ? "bg-white/40"
+          : marker.accentClassName;
 
   const triggerExit = (action: ExitAction, handler: () => void) => {
     if (actionsDisabled) return;
@@ -101,6 +96,14 @@ export function HomeBenefitRow({
 
   const handleDoNotTrack = () => {
     if (onDoNotTrack) triggerExit("not_tracked", () => onDoNotTrack(item));
+  };
+
+  const handleMarkNotUsed = () => {
+    if (onMarkNotUsed) triggerExit("mark-unused", () => onMarkNotUsed(item));
+  };
+
+  const handleStartTracking = () => {
+    if (onStartTracking) triggerExit("start-tracking", () => onStartTracking(item));
   };
 
   return (
@@ -208,15 +211,50 @@ export function HomeBenefitRow({
               </button>
             ) : null}
           </div>
-        ) : (onMarkNotUsed ?? onDoNotTrack ?? onStartTracking) ? (
-          <HomeBenefitRowMenu
-            item={item}
-            variant={toMenuVariant(variant)}
+        ) : isUsed && onMarkNotUsed ? (
+          /* Used row: filled check → click to unmark */
+          <button
+            type="button"
+            title="Mark as unused"
+            aria-label="Mark as unused"
             disabled={actionsDisabled}
-            onMarkNotUsed={onMarkNotUsed ?? (() => undefined)}
-            onDoNotTrack={onDoNotTrack ?? (() => undefined)}
-            onStartTracking={onStartTracking ?? (() => undefined)}
-          />
+            onClick={handleMarkNotUsed}
+            className={cn(
+              "flex h-6 w-6 shrink-0 items-center justify-center rounded-full border transition-all duration-150",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#BAF3D2]/40 focus-visible:ring-offset-2 focus-visible:ring-offset-black",
+              exitAction === "mark-unused"
+                ? "border-white/20 bg-white/10"
+                : actionsDisabled
+                  ? "cursor-not-allowed border-white/15 opacity-40"
+                  : "border-[#BAF3D2]/40 bg-[#BAF3D2]/15 hover:border-white/30 hover:bg-white/10",
+            )}
+          >
+            <svg viewBox="0 0 12 12" fill="none" className={cn("h-3 w-3 transition-colors duration-150", exitAction === "mark-unused" ? "text-white/30" : "text-[#BAF3D2]/70")} aria-hidden>
+              <path d="M2.5 6.5 5 9l4.5-5.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+        ) : variant === "not_tracked" && onStartTracking ? (
+          /* Not-tracked row: + circle → click to start tracking */
+          <button
+            type="button"
+            title="Start tracking"
+            aria-label="Start tracking"
+            disabled={actionsDisabled}
+            onClick={handleStartTracking}
+            className={cn(
+              "flex h-6 w-6 shrink-0 items-center justify-center rounded-full border transition-all duration-150",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7FB6FF]/40 focus-visible:ring-offset-2 focus-visible:ring-offset-black",
+              exitAction === "start-tracking"
+                ? "border-[#86EFAC] bg-[#86EFAC]/20"
+                : actionsDisabled
+                  ? "cursor-not-allowed border-white/15 opacity-40"
+                  : "border-white/20 hover:border-[#7FB6FF]/50 hover:bg-[#7FB6FF]/10",
+            )}
+          >
+            <svg viewBox="0 0 12 12" fill="none" className={cn("h-3 w-3 transition-colors duration-150", exitAction === "start-tracking" ? "text-[#86EFAC]" : "text-white/35")} aria-hidden>
+              <path d="M6 2.5v7M2.5 6h7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
+          </button>
         ) : null}
       </div>
     </div>
