@@ -1,37 +1,20 @@
 import "server-only";
 
 import {
-  DIGEST_SECTION_ORDER,
   resolveBenefitPeriod,
-  toUtcMonthKey,
   toUtcMonthStart,
   type BenefitCadence,
-  type DigestSection,
 } from "@/lib/benefits/periods";
 import { filterDigestEligibleBenefits as filterDigestEligibleBenefitsByUsedStatus } from "@/lib/reminders/digest-eligibility";
+import { DIGEST_SECTION_ORDER, type DigestEligibleBenefit } from "@/lib/reminders/monthly-digest-pure";
 import { getServiceRoleSupabaseClient } from "@/lib/supabase/service-role";
 
 export { DIGEST_SECTION_ORDER, getDigestSectionsForMonth, type DigestSection } from "@/lib/benefits/periods";
-
-export type DigestEligibleBenefit = {
-  userId: string;
-  benefitId: string;
-  benefitDisplayName: string;
-  cadence: BenefitCadence | string;
-  section: DigestSection;
-  periodKey: string;
-  valueCents: number | null;
-  notes: string | null;
-  cardId: string | null;
-  cardDisplayName: string;
-};
-
-export type MonthlyDigest = {
-  monthKey: string;
-  userId: string;
-  benefits: DigestEligibleBenefit[];
-  sections: Record<DigestSection, DigestEligibleBenefit[]>;
-};
+export {
+  buildMonthlyDigest,
+  type DigestEligibleBenefit,
+  type MonthlyDigest,
+} from "@/lib/reminders/monthly-digest-pure";
 
 type DigestBenefitRow = {
   id: string;
@@ -79,7 +62,6 @@ async function loadDigestCandidates({
     .from("user_benefits")
     .select(selectExpr)
     .eq("remind_me", true)
-    .eq("tracking_status", "tracked")
     .in("benefits.cadence", DIGEST_CADENCES)
     .returns<DigestCandidateRow[]>();
 
@@ -186,33 +168,3 @@ export async function getDigestEligibleBenefits({
   return filterDigestEligibleBenefits(candidates, usedStatusKeys);
 }
 
-export function buildMonthlyDigest(
-  benefits: DigestEligibleBenefit[],
-  monthStart: Date = new Date(),
-): Map<string, MonthlyDigest> {
-  const monthKey = toUtcMonthKey(toUtcMonthStart(monthStart));
-  const digestsByUser = new Map<string, MonthlyDigest>();
-
-  for (const benefit of benefits) {
-    const existingDigest = digestsByUser.get(benefit.userId);
-    if (existingDigest) {
-      existingDigest.benefits.push(benefit);
-      existingDigest.sections[benefit.section].push(benefit);
-      continue;
-    }
-
-    digestsByUser.set(benefit.userId, {
-      monthKey,
-      userId: benefit.userId,
-      benefits: [benefit],
-      sections: {
-        monthly: benefit.section === "monthly" ? [benefit] : [],
-        quarterly: benefit.section === "quarterly" ? [benefit] : [],
-        semiannual: benefit.section === "semiannual" ? [benefit] : [],
-        annual: benefit.section === "annual" ? [benefit] : [],
-      },
-    });
-  }
-
-  return digestsByUser;
-}

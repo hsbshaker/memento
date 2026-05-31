@@ -266,12 +266,29 @@ export async function GET(request: Request) {
   let dedupedCount = 0;
   let failedCount = 0;
   let attemptedCount = 0;
+  let skippedCount = 0;
   let missingResendKey = false;
   const attemptedSends: Array<{ userId: string; toEmailUsed: string | null; status: "sent" | "failed" }> = [];
+
+  // Count users considered but with no eligible benefits as skipped
+  const usersWithBenefits = new Set(digestsByUser.keys());
+  for (const consideredBenefit of consideredBenefits) {
+    if (!usersWithBenefits.has(consideredBenefit.userId)) {
+      skippedCount += 1;
+    }
+  }
+  // De-duplicate: each unique userId in consideredBenefits that is not in digestsByUser counts once
+  const skippedUserIds = new Set(
+    consideredBenefits
+      .map((b) => b.userId)
+      .filter((uid) => !usersWithBenefits.has(uid)),
+  );
+  skippedCount = skippedUserIds.size;
 
   for (const [userId, digest] of digestsByUser.entries()) {
     const populatedSections = DIGEST_SECTION_ORDER.filter((section) => digest.sections[section].length > 0);
     if (populatedSections.length === 0) {
+      skippedCount += 1;
       continue;
     }
 
@@ -412,7 +429,13 @@ export async function GET(request: Request) {
       failed: failedCount,
     },
     attemptedSends,
+    // Standardized summary fields
     usersConsidered,
+    usersSkipped: skippedCount + dedupedCount,
+    emailsAttempted: attemptedCount,
+    emailsSent: sentCount,
+    emailsFailed: failedCount,
+    // Legacy aliases kept for backwards compat
     usersEligible: digestsByUser.size,
     sentCount,
     dedupedCount,
