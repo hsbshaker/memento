@@ -59,6 +59,25 @@ Target experience:
 
 > “Wow, this was incredibly easy.”
 
+## UI Styling Rule
+
+All UI work must use **semantic theme tokens**. Do not use raw hex colors, Tailwind named colors (`slate-950`, `blue-500`), or white/black opacity hacks (`text-white/70`, `border-white/10`) in components or pages.
+
+Use the approved semantic utility classes instead:
+- `bg-background`, `bg-surface`, `bg-surface-raised` for backgrounds and surfaces
+- `text-foreground`, `text-muted-foreground`, `text-subtle-foreground` for text hierarchy
+- `border-border`, `border-border-strong` for borders
+- `bg-accent`, `text-accent` for brand accent (Memento gold)
+- `text-success`, `text-warning`, `text-destructive` for status states
+- `ring-focus` for keyboard focus rings
+
+Token definitions: `app/globals.css` (`@theme inline` block)  
+Full reference: `docs/design/theme-token-usage.md`  
+Visual direction: `docs/design/memento-visual-direction.md`
+
+Do not create `tailwind.config.ts` to add colors — extend `@theme inline` in `globals.css`.  
+Do not redesign pages before shared UI primitives are refactored (WO4).
+
 ## UX and Design Mandate
 
 Preserve Memento’s existing visual direction unless the task explicitly asks for a redesign.
