@@ -43,6 +43,9 @@ const safeErrorMessage = (error: unknown) => {
   if (error instanceof Error && error.message) {
     return error.message.slice(0, 300);
   }
+  if (typeof error === "object" && error !== null && "message" in error && typeof (error as Record<string, unknown>).message === "string") {
+    return ((error as Record<string, unknown>).message as string).slice(0, 300);
+  }
   return "unknown_error";
 };
 

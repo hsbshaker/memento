@@ -30,7 +30,7 @@ type DigestBenefitRow = {
 };
 
 type DigestCandidateRow = {
-  user_id: string;
+  user_cards: { user_id: string } | null;
   benefits: DigestBenefitRow | DigestBenefitRow[] | null;
 };
 
@@ -47,7 +47,7 @@ type GetDigestBenefitsParams = {
   optedInUserIds?: Set<string>;
 };
 
-const DIGEST_CADENCES: Array<BenefitCadence> = ["monthly", "quarterly", "semi_annual", "semiannual", "annual"];
+const DIGEST_CADENCES: Array<BenefitCadence> = ["monthly", "quarterly", "semiannual", "annual"];
 
 const toCompositeUsedKey = (userId: string, benefitId: string, periodKey: string) => `${userId}:${benefitId}:${periodKey}`;
 
@@ -58,12 +58,12 @@ async function loadDigestCandidates({
 }: GetDigestBenefitsParams = {}): Promise<DigestEligibleBenefit[]> {
   const normalizedMonthStart = toUtcMonthStart(monthStart);
   const selectExpr =
-    "user_id, benefits!inner(id,display_name,cadence,value_cents,notes,cards!benefits_card_id_fkey(id,issuer,card_name))";
+    "user_cards!inner(user_id), benefits!inner(id,display_name,cadence,value_cents,notes,cards!benefits_card_id_fkey(id,issuer,card_name))";
 
   const { data, error } = await supabase
     .from("user_benefits")
     .select(selectExpr)
-    .eq("remind_me", true)
+    .eq("is_active", true)
     .in("benefits.cadence", DIGEST_CADENCES)
     .returns<DigestCandidateRow[]>();
 
@@ -87,8 +87,12 @@ async function loadDigestCandidates({
       }
 
       const card = benefit.cards;
+      const userId = Array.isArray(row.user_cards) ? row.user_cards[0]?.user_id : row.user_cards?.user_id;
+      if (!userId) {
+        continue;
+      }
       candidates.push({
-        userId: row.user_id,
+        userId,
         benefitId: benefit.id,
         benefitDisplayName: benefit.display_name,
         cadence: benefit.cadence,
@@ -143,12 +147,12 @@ function sortDigestBenefits(a: DigestEligibleBenefit, b: DigestEligibleBenefit) 
     return sectionOrderDelta;
   }
 
-  const cardDelta = a.cardDisplayName.localeCompare(b.cardDisplayName);
+  const cardDelta = (a.cardDisplayName ?? "").localeCompare(b.cardDisplayName ?? "");
   if (cardDelta !== 0) {
     return cardDelta;
   }
 
-  return a.benefitDisplayName.localeCompare(b.benefitDisplayName);
+  return (a.benefitDisplayName ?? "").localeCompare(b.benefitDisplayName ?? "");
 }
 
 export function filterDigestEligibleBenefits(
