@@ -911,7 +911,7 @@ export function BenefitsOnboarding({ variant = "onboarding" }: BenefitsOnboardin
           <div className="mt-2 flex items-start gap-3">
             <span className="mt-1 h-8 w-1 rounded-full bg-accent" aria-hidden />
             <div>
-              <h1 className="text-3xl font-semibold tracking-tight text-white transition md:text-4xl motion-safe:duration-200 motion-safe:ease-out motion-safe:starting:translate-y-1 motion-safe:starting:opacity-0">
+              <h1 className="text-3xl font-semibold tracking-tight text-foreground transition md:text-4xl motion-safe:duration-200 motion-safe:ease-out motion-safe:starting:translate-y-1 motion-safe:starting:opacity-0">
                 {isDashboardVariant ? "Your Benefits" : "Fine-Tune Your Benefits"}
               </h1>
               <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground transition md:text-base motion-safe:duration-200 motion-safe:ease-out motion-safe:starting:translate-y-1 motion-safe:starting:opacity-0">
@@ -1001,7 +1001,7 @@ export function BenefitsOnboarding({ variant = "onboarding" }: BenefitsOnboardin
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-scrim px-4">
           <Surface className="w-full max-w-md space-y-4 p-5">
             <div ref={removeModalRef} className="space-y-2">
-              <h2 className="text-lg font-semibold text-white">Remove card from wallet?</h2>
+              <h2 className="text-lg font-semibold text-foreground">Remove card from wallet?</h2>
               <p className="text-sm text-muted-foreground">
                 This will remove this card and its benefits from your wallet. You can add it again later.
               </p>

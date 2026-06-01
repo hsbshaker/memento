@@ -1,8 +1,7 @@
 /**
  * Shared card and issuer formatting utilities.
  *
- * Centralizes display-name logic that was previously duplicated across
- * wallet-builder, card-results-list, and benefits-onboarding.
+ * Centralizes display-name logic shared across the app's card surfaces.
  */
 
 const ISSUER_FULL_NAME: Record<string, string> = {

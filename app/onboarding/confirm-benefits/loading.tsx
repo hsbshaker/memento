@@ -90,7 +90,7 @@ export default function ConfirmBenefitsLoading() {
                   className="absolute inset-y-0 w-20"
                   style={{
                     background:
-                      "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.12) 35%, rgba(255,255,255,0.6) 50%, rgba(255,255,255,0.12) 65%, transparent 100%)",
+                      "linear-gradient(90deg, transparent 0%, var(--active) 35%, var(--border-strong) 50%, var(--active) 65%, transparent 100%)",
                     animation: "magneticScan 1.8s cubic-bezier(0.4, 0, 0.6, 1) infinite",
                   }}
                 />

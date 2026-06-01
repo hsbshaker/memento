@@ -31,7 +31,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${inter.variable} text-white antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${inter.variable} text-foreground antialiased`}
       >
         <AppChrome>{children}</AppChrome>
       </body>
