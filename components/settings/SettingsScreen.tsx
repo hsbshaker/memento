@@ -2,6 +2,7 @@ import { AppShell } from "@/components/ui/AppShell";
 import { MobilePageContainer } from "@/components/ui/MobilePageContainer";
 import { AccountSection } from "@/components/settings/AccountSection";
 import { NotificationsSection } from "@/components/settings/NotificationsSection";
+import { ThemeSection } from "@/components/settings/ThemeSection";
 
 type SettingsScreenProps = {
   email: string | null;
@@ -14,6 +15,8 @@ export function SettingsScreen({ email, emailRemindersEnabled }: SettingsScreenP
       <MobilePageContainer className="pb-20">
         <div className="space-y-6 pt-6">
           <p className="text-xs font-medium tracking-[0.24em] text-accent uppercase">Settings</p>
+
+          <ThemeSection />
 
           <NotificationsSection emailRemindersEnabled={emailRemindersEnabled} />
 

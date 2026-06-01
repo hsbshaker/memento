@@ -5,7 +5,7 @@ html {
 }
 
 /* ─── Semantic Token Foundation ────────────────────────────────────────────
-   Light mode values (default). Dark mode overrides follow via media query.
+   Light mode values (default). Dark mode overrides follow system or data-theme.
    All components should reference these tokens — never hardcode raw colors.
    ────────────────────────────────────────────────────────────────────────── */
 
@@ -68,7 +68,7 @@ html {
    ────────────────────────────────────────────────────────────────────────── */
 
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     /* Core */
     --background: #0d0d11;
     --foreground: #ededed;
@@ -121,6 +121,60 @@ html {
     --scrim:        rgba(0, 0, 0, 0.62);
     --shadow-color: rgba(0, 0, 0, 0.28);
   }
+}
+
+:root[data-theme="dark"] {
+  /* Core */
+  --background: #0d0d11;
+  --foreground: #ededed;
+
+  /* Surfaces */
+  --surface:        #13131a;
+  --surface-raised: #1a1a24;
+  --surface-muted:  #0f0f14;
+  --surface-subtle: #0b0b0f;
+
+  /* Borders */
+  --border:        rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.15);
+  --border-muted:  rgba(255, 255, 255, 0.04);
+
+  /* Text hierarchy */
+  --muted-foreground:   rgba(237, 237, 237, 0.52);
+  --subtle-foreground:  rgba(237, 237, 237, 0.34);
+  --inverse-foreground: #0d0d11;
+
+  /* Brand accent — brighter on dark for contrast */
+  --accent:            #f0b429;
+  --accent-foreground: #0d0d11;
+  --accent-muted:      rgba(240, 180, 41, 0.12);
+  --accent-border:     rgba(240, 180, 41, 0.28);
+
+  /* Status: success */
+  --success:            #4ade80;
+  --success-foreground: #0d0d11;
+  --success-muted:      rgba(74, 222, 128, 0.12);
+
+  /* Status: warning */
+  --warning:            #fb923c;
+  --warning-foreground: #0d0d11;
+  --warning-muted:      rgba(251, 146, 60, 0.12);
+
+  /* Status: destructive */
+  --destructive:            #f87171;
+  --destructive-foreground: #0d0d11;
+  --destructive-muted:      rgba(248, 113, 113, 0.12);
+
+  /* Interaction */
+  --focus:       #7bb4ff;
+  --focus-muted: rgba(123, 180, 255, 0.18);
+  --hover:       rgba(255, 255, 255, 0.04);
+  --active:      rgba(255, 255, 255, 0.07);
+
+  /* Overlays */
+  --overlay:      rgba(0, 0, 0, 0.50);
+  --scrim:        rgba(0, 0, 0, 0.62);
+  --shadow-color: rgba(0, 0, 0, 0.28);
 }
 
 /* ─── Tailwind v4 Theme Mapping ─────────────────────────────────────────────

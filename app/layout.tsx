@@ -23,16 +23,38 @@ export const metadata: Metadata = {
   description: "Build and manage your card benefits lineup",
 };
 
+const themeInitScript = `
+(function() {
+  try {
+    var preference = window.localStorage.getItem("memento-theme");
+    var root = document.documentElement;
+
+    if (preference === "light" || preference === "dark") {
+      root.dataset.theme = preference;
+      return;
+    }
+
+    root.removeAttribute("data-theme");
+  } catch {
+    document.documentElement.removeAttribute("data-theme");
+  }
+})();
+`;
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${inter.variable} text-foreground antialiased`}
       >
+        <script
+          id="memento-theme-init"
+          dangerouslySetInnerHTML={{ __html: themeInitScript }}
+        />
         <AppChrome>{children}</AppChrome>
       </body>
     </html>
