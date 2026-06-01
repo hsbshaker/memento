@@ -183,7 +183,14 @@ export function BenefitsScreen({ initialFeed }: BenefitsScreenProps) {
   // Background refetch when filters change (except optimistic mutations handle counts locally)
   const lastFetchParamsRef = useRef<string | null>(null);
 
-  const fetchFiltered = useCallback(async (tab: BenefitTab, s: string, issuer: string, cadence: string, cardId: string | null) => {
+  const fetchFiltered = useCallback(async (
+    tab: BenefitTab,
+    s: string,
+    issuer: string,
+    cadence: string,
+    cardId: string | null,
+    force = false,
+  ) => {
     const params = new URLSearchParams();
     const status = tabToStatus(tab);
     if (status) params.set("status", status);
@@ -193,13 +200,14 @@ export function BenefitsScreen({ initialFeed }: BenefitsScreenProps) {
     if (cardId) params.set("userCardId", cardId);
 
     const key = params.toString();
-    if (lastFetchParamsRef.current === key) return;
+    if (!force && lastFetchParamsRef.current === key) return;
     lastFetchParamsRef.current = key;
 
     try {
       const response = await fetch(`/api/benefits/feed?${key}`, {
         method: "GET",
         credentials: "include",
+        cache: "no-store",
       });
       const payload = (await response.json()) as FeedResponse;
       if (!response.ok) return;
@@ -214,9 +222,10 @@ export function BenefitsScreen({ initialFeed }: BenefitsScreenProps) {
     }
   }, []);
 
-  // Re-fetch when tab or filters change (search is debounced)
+  // Re-fetch when tab or filters change (search is debounced), forcing a fresh
+  // read so cross-page updates do not reuse stale list/count state.
   useEffect(() => {
-    void fetchFiltered(activeTab, debouncedSearch, issuerFilter, cadenceFilter, cardFilterId);
+    void fetchFiltered(activeTab, debouncedSearch, issuerFilter, cadenceFilter, cardFilterId, true);
   }, [activeTab, debouncedSearch, issuerFilter, cadenceFilter, cardFilterId, fetchFiltered]);
 
   // Visible items after client-side filter + sort

@@ -1,5 +1,4 @@
 import type { BenefitsInventoryItem } from "@/lib/types/server-data";
-import { BenefitsInventoryRowMenu } from "@/components/benefits/BenefitsInventoryRowMenu";
 import { cn } from "@/lib/cn";
 import {
   ROW_MICRO_TEXT_CLASS,
@@ -20,6 +19,8 @@ type BenefitsInventoryRowProps = {
 // Resting marker bar is a single restrained neutral, consistent with Home.
 // A structured per-card color palette is a deferred follow-up (see WO6 notes).
 const REST_MARKER_CLASS = "bg-border-strong";
+const ROW_ACTION_BUTTON_CLASS =
+  "flex h-6 w-6 shrink-0 items-center justify-center rounded-full border transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-40";
 
 function formatCadence(cadence: string): string {
   if (cadence === "semiannual") return "Semiannual";
@@ -54,7 +55,7 @@ export function BenefitsInventoryRow({
   onDoNotTrack,
   onStartTracking,
 }: BenefitsInventoryRowProps) {
-  const menuDisabled = pendingUsage || pendingTracking;
+  const actionsDisabled = pendingUsage || pendingTracking;
   const pill = STATUS_PILL[item.inventoryStatus];
 
   const isUsed = item.inventoryStatus === "used";
@@ -63,13 +64,6 @@ export function BenefitsInventoryRow({
   // Status-driven dimming via semantic text tiers (unused reads brightest).
   const nameClass = isNotTracked ? "text-subtle-foreground" : isUsed ? "text-muted-foreground" : "";
   const secondaryClass = isNotTracked || isUsed ? "text-subtle-foreground" : "";
-
-  const menuVariant =
-    item.inventoryStatus === "used"
-      ? "used"
-      : item.inventoryStatus === "not_tracked"
-        ? "not_tracked"
-        : "unused";
 
   const valueDisplay = item.value ?? (item.valueCents > 0 ? `$${Math.round(item.valueCents / 100)}` : null) ?? "—";
 
@@ -125,18 +119,88 @@ export function BenefitsInventoryRow({
         </div>
       </div>
 
-      {/* Action menu */}
-      {(onMarkUsed ?? onMarkNotUsed ?? onDoNotTrack ?? onStartTracking) ? (
-        <BenefitsInventoryRowMenu
-          item={item}
-          variant={menuVariant}
-          disabled={menuDisabled}
-          onMarkUsed={onMarkUsed ?? (() => undefined)}
-          onMarkNotUsed={onMarkNotUsed ?? (() => undefined)}
-          onDoNotTrack={onDoNotTrack ?? (() => undefined)}
-          onStartTracking={onStartTracking ?? (() => undefined)}
-        />
-      ) : null}
+      {/* Visible row actions, aligned with the Home/Dashboard interaction pattern. */}
+      <div className="flex shrink-0 items-center gap-1.5">
+        {!isUsed && !isNotTracked && onMarkUsed ? (
+          <button
+            type="button"
+            title="Mark as used"
+            aria-label="Mark as used"
+            disabled={actionsDisabled}
+            onClick={() => onMarkUsed(item)}
+            className={cn(
+              ROW_ACTION_BUTTON_CLASS,
+              actionsDisabled
+                ? "border-border"
+                : "border-border-strong hover:border-success/60 hover:bg-success-muted",
+            )}
+          >
+            <svg viewBox="0 0 12 12" fill="none" className="h-3 w-3 text-muted-foreground transition-colors duration-150" aria-hidden>
+              <path d="M2.5 6.5 5 9l4.5-5.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+        ) : null}
+
+        {isUsed && onMarkNotUsed ? (
+          <button
+            type="button"
+            title="Mark as unused"
+            aria-label="Mark as unused"
+            disabled={actionsDisabled}
+            onClick={() => onMarkNotUsed(item)}
+            className={cn(
+              ROW_ACTION_BUTTON_CLASS,
+              actionsDisabled
+                ? "border-border"
+                : "border-success/40 bg-success-muted hover:border-border-strong hover:bg-surface-muted",
+            )}
+          >
+            <svg viewBox="0 0 12 12" fill="none" className="h-3 w-3 text-success transition-colors duration-150" aria-hidden>
+              <path d="M2.5 6.5 5 9l4.5-5.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+        ) : null}
+
+        {isNotTracked && onStartTracking ? (
+          <button
+            type="button"
+            title="Start tracking"
+            aria-label="Start tracking"
+            disabled={actionsDisabled}
+            onClick={() => onStartTracking(item)}
+            className={cn(
+              ROW_ACTION_BUTTON_CLASS,
+              actionsDisabled
+                ? "border-border"
+                : "border-border-strong hover:border-success/55 hover:bg-success-muted",
+            )}
+          >
+            <svg viewBox="0 0 12 12" fill="none" className="h-3 w-3 text-muted-foreground transition-colors duration-150" aria-hidden>
+              <path d="M6 2.5v7M2.5 6h7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
+          </button>
+        ) : null}
+
+        {!isNotTracked && onDoNotTrack ? (
+          <button
+            type="button"
+            title="Do not track"
+            aria-label="Do not track"
+            disabled={actionsDisabled}
+            onClick={() => onDoNotTrack(item)}
+            className={cn(
+              ROW_ACTION_BUTTON_CLASS,
+              actionsDisabled
+                ? "border-border"
+                : "border-border-strong hover:border-destructive/55 hover:bg-destructive-muted",
+            )}
+          >
+            <svg viewBox="0 0 12 12" fill="none" className="h-3 w-3 text-muted-foreground transition-colors duration-150" aria-hidden>
+              <path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
+          </button>
+        ) : null}
+      </div>
     </div>
   );
 }

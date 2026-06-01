@@ -65,6 +65,7 @@ export function HomeScreen({ initialFeed }: HomeScreenProps) {
       const response = await fetch(`/api/home/feed?timeframe=${timeframe}`, {
         method: "GET",
         credentials: "include",
+        cache: "no-store",
       });
       const payload = (await response.json()) as FeedResponse;
 
@@ -107,6 +108,39 @@ export function HomeScreen({ initialFeed }: HomeScreenProps) {
   };
 
   useEffect(() => {
+    let cancelled = false;
+    const timeframe = initialFeed.timeframe.key;
+
+    latestRequestedTimeframeRef.current = timeframe;
+
+    void (async () => {
+      try {
+        const response = await fetch(`/api/home/feed?timeframe=${timeframe}`, {
+          method: "GET",
+          credentials: "include",
+          cache: "no-store",
+        });
+        const payload = (await response.json()) as FeedResponse;
+
+        if (!response.ok || cancelled || latestRequestedTimeframeRef.current !== timeframe) {
+          return;
+        }
+
+        feedCacheRef.current.set(timeframe, payload);
+        startTransition(() => {
+          setFeed(payload);
+        });
+      } catch {
+        // Keep the server-rendered feed if this background freshness check fails.
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [initialFeed.timeframe.key]);
+
+  useEffect(() => {
     for (const option of HOME_TIMEFRAME_OPTIONS) {
       if (option.key === selectedTimeframe) continue;
       if (feedCacheRef.current.has(option.key)) continue;
@@ -114,17 +148,18 @@ export function HomeScreen({ initialFeed }: HomeScreenProps) {
     }
   }, [selectedTimeframe]);
 
-  // Mark as Used / Mark as Unused — optimistic with undo toast.
+  // Mark as Used / Mark as Unused — commit immediately; toast undo sends the reverse mutation.
   const runUsageMutation = (item: HomeFeedItem, nextUsed: boolean) => {
     const previousFeed = feed;
     const toastId = crypto.randomUUID();
     const toastMessage = nextUsed ? "Marked as used" : "Marked as unused";
+    let undoRequested = false;
 
     setErrorMessage(null);
     setFeed(applyUrgentBenefitUsageMutation(feed, item, nextUsed));
 
-    const fireApi = async () => {
-      const action = nextUsed ? "mark-used" : "mark-not-used";
+    const fireApi = async (used: boolean, rollbackFeed?: HomeFeedResult) => {
+      const action = used ? "mark-used" : "mark-not-used";
       setPendingById((current) => ({ ...current, [item.userBenefitId]: action }));
       try {
         const response = await fetch("/api/home/mark-used", {
@@ -133,83 +168,117 @@ export function HomeScreen({ initialFeed }: HomeScreenProps) {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             userBenefitId: item.userBenefitId,
-            isUsedThisPeriod: nextUsed,
+            isUsedThisPeriod: used,
           }),
         });
         const payload = (await response.json()) as { error?: string };
         if (!response.ok) throw new Error(payload.error ?? "Failed to save.");
-        invalidateFeedCache();
-        latestRequestedTimeframeRef.current = selectedTimeframe;
-        void refreshFeed(selectedTimeframe, true);
+        if (!(undoRequested && used === nextUsed)) {
+          invalidateFeedCache();
+          latestRequestedTimeframeRef.current = selectedTimeframe;
+          void refreshFeed(selectedTimeframe, true);
+        }
       } catch {
         setErrorMessage(MUTATION_ERROR);
-        setFeed(previousFeed);
+        if (rollbackFeed) {
+          setFeed(rollbackFeed);
+        }
         invalidateFeedCache();
         latestRequestedTimeframeRef.current = selectedTimeframe;
         void refreshFeed(selectedTimeframe, true);
+        throw new Error(MUTATION_ERROR);
       } finally {
         setPendingById((current) => ({ ...current, [item.userBenefitId]: null }));
       }
     };
 
+    const commitPromise = fireApi(nextUsed, previousFeed);
+    void commitPromise.catch(() => {
+      dismissToast(toastId);
+    });
+
     addToast({
       id: toastId,
       message: toastMessage,
       onUndo: () => {
+        undoRequested = true;
         setFeed(previousFeed);
         setErrorMessage(null);
+        void commitPromise
+          .then(() => {
+            void fireApi(!nextUsed).catch(() => undefined);
+          })
+          .catch(() => undefined);
       },
-      onExpire: () => { void fireApi(); },
+      onExpire: () => undefined,
     });
   };
 
-  // Do Not Track / Start Tracking — optimistic with undo toast.
+  // Do Not Track / Start Tracking — commit immediately; toast undo sends the reverse mutation.
   const runTrackingMutation = (item: HomeFeedItem, nextStatus: "tracked" | "not_tracked") => {
     const previousFeed = feed;
     const now = new Date();
     const timeframeEnd = getHomeTimeframeEndDate(now, selectedTimeframe);
     const toastId = crypto.randomUUID();
     const toastMessage = nextStatus === "not_tracked" ? "Removed from tracking" : "Added to tracking";
+    let undoRequested = false;
 
     setErrorMessage(null);
     setFeed(applyTrackingStatusMutation(feed, item, nextStatus, timeframeEnd, now));
 
-    const fireApi = async () => {
+    const fireApi = async (trackingStatus: "tracked" | "not_tracked", rollbackFeed?: HomeFeedResult) => {
       setPendingTrackingById((current) => ({ ...current, [item.userBenefitId]: true }));
       try {
         const response = await fetch("/api/home/tracking-status", {
           method: "POST",
           credentials: "include",
           headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userBenefitId: item.userBenefitId,
-          trackingStatus: nextStatus,
-        }),
-      });
-      const payload = (await response.json()) as { error?: string };
+          body: JSON.stringify({
+            userBenefitId: item.userBenefitId,
+            trackingStatus,
+          }),
+        });
+        const payload = (await response.json()) as { error?: string };
         if (!response.ok) throw new Error(payload.error ?? "Failed to save.");
-        invalidateFeedCache();
-        latestRequestedTimeframeRef.current = selectedTimeframe;
-        void refreshFeed(selectedTimeframe, true);
+        if (!(undoRequested && trackingStatus === nextStatus)) {
+          invalidateFeedCache();
+          latestRequestedTimeframeRef.current = selectedTimeframe;
+          void refreshFeed(selectedTimeframe, true);
+        }
       } catch {
         setErrorMessage(MUTATION_ERROR);
-        setFeed(previousFeed);
+        if (rollbackFeed) {
+          setFeed(rollbackFeed);
+        }
         invalidateFeedCache();
         latestRequestedTimeframeRef.current = selectedTimeframe;
         void refreshFeed(selectedTimeframe, true);
+        throw new Error(MUTATION_ERROR);
       } finally {
         setPendingTrackingById((current) => ({ ...current, [item.userBenefitId]: false }));
       }
     };
 
+    const commitPromise = fireApi(nextStatus, previousFeed);
+    void commitPromise.catch(() => {
+      dismissToast(toastId);
+    });
+
     addToast({
       id: toastId,
       message: toastMessage,
       onUndo: () => {
+        undoRequested = true;
         setFeed(previousFeed);
         setErrorMessage(null);
+        const previousStatus = nextStatus === "not_tracked" ? "tracked" : "not_tracked";
+        void commitPromise
+          .then(() => {
+            void fireApi(previousStatus).catch(() => undefined);
+          })
+          .catch(() => undefined);
       },
-      onExpire: () => { void fireApi(); },
+      onExpire: () => undefined,
     });
   };
 
