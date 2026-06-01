@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Button } from "@/components/ui/Button";
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
 
 export function LandingNavigation() {
   return (
@@ -13,17 +13,19 @@ export function LandingNavigation() {
           Memento
         </Link>
 
-        <nav aria-label="Landing navigation" className="flex items-center gap-6">
-          <Link
+        <nav aria-label="Landing navigation" className="flex items-center gap-4">
+          <ThemeToggle />
+          <a
             href="/home"
             className="relative top-px text-sm text-muted-foreground transition-colors duration-200 hover:text-foreground"
           >
             Dashboard
-          </Link>
-          <a href="/auth/login">
-            <Button variant="secondary" size="sm">
-              Sign In
-            </Button>
+          </a>
+          <a
+            href="/auth/login"
+            className="text-sm font-medium text-foreground transition-colors duration-200 hover:text-accent"
+          >
+            Sign in
           </a>
         </nav>
       </div>

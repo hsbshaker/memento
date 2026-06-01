@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { OnboardingNav } from "@/components/onboarding/OnboardingNav";
 import { AppShell } from "@/components/ui/AppShell";
 import { Surface } from "@/components/ui/Surface";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -73,10 +74,12 @@ export default async function OnboardingSuccessPage() {
   const firstName = resolveFirstName(user);
 
   return (
-    <AppShell
-      className="min-h-[calc(100dvh-4rem)] overflow-hidden"
-      containerClassName="flex min-h-[calc(100dvh-4rem)] items-center justify-center px-4 py-6 sm:px-6 sm:py-8"
-    >
+    <>
+      <OnboardingNav />
+      <AppShell
+        className="min-h-[calc(100dvh-4rem)] overflow-hidden"
+        containerClassName="flex min-h-[calc(100dvh-4rem)] items-center justify-center px-4 py-6 sm:px-6 sm:py-8"
+      >
       <div className="relative w-full max-w-[680px]">
         <div className="relative flex flex-col items-center text-center motion-safe:transition-all motion-safe:duration-[220ms] motion-safe:ease-out motion-safe:starting:translate-y-1.5 motion-safe:starting:opacity-0 motion-reduce:transition-none">
           <section className="w-full space-y-5">
@@ -131,5 +134,6 @@ export default async function OnboardingSuccessPage() {
         </div>
       </div>
     </AppShell>
+    </>
   );
 }

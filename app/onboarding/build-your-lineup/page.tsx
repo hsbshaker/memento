@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { OnboardingNav } from "@/components/onboarding/OnboardingNav";
 import { LineupCardSearch } from "./components/lineup-card-search";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -17,12 +18,7 @@ export default async function BuildYourLineupPage() {
   return (
     <div className="relative min-h-[100dvh] overflow-x-hidden bg-background text-foreground">
       <div className="relative z-10 min-h-[100dvh] px-6 py-6">
-        <nav className="mx-auto flex w-full max-w-2xl items-center justify-center px-6 py-6">
-          <div className="flex items-center gap-2 text-xl font-bold tracking-tight text-foreground">
-            <div className="h-6 w-6 rounded-full bg-accent" />
-            Memento
-          </div>
-        </nav>
+        <OnboardingNav />
 
         <div className="mb-10 text-center">
           <h1 className="mb-3 text-3xl font-bold tracking-tight text-foreground">Build Your Lineup</h1>

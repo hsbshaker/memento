@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { OnboardingNav } from "@/components/onboarding/OnboardingNav";
 
 type ConfirmBenefitsShellProps = {
   eyebrow?: string;
@@ -18,12 +19,7 @@ export function ConfirmBenefitsShell({
   return (
     <div className="relative min-h-[100dvh] overflow-x-hidden bg-background text-foreground">
       <div className="relative z-10 min-h-[100dvh] px-6 py-6">
-        <nav className="mx-auto flex w-full max-w-2xl items-center justify-center px-6 py-6">
-          <div className="flex items-center gap-2 text-xl font-bold tracking-tight text-foreground">
-            <div className="h-6 w-6 rounded-full bg-accent" />
-            Memento
-          </div>
-        </nav>
+        <OnboardingNav />
         <div className="mx-auto max-w-[52rem]">
           <header className="mb-6 text-center sm:mb-7">
             {eyebrow ? (
