@@ -132,11 +132,11 @@ export function HomeBenefitRow({
                 <div className="mt-1 flex items-center gap-2">
                   <p className={cn(ROW_SECONDARY_TEXT_CLASS, secondaryClass)}>{item.cardName}</p>
                   {isUrgent && item.urgencyTier === "high" ? (
-                    <span className="shrink-0 rounded-full bg-warning-muted px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-warning">
+                    <span className="shrink-0 rounded-full bg-warning-muted px-2 py-0.5 font-mono text-xs font-medium uppercase tracking-wide text-warning">
                       {item.daysRemaining <= 0 ? "Due today" : "Due soon"}
                     </span>
                   ) : isUrgent && item.urgencyTier === "soon" ? (
-                    <span className="shrink-0 rounded-full bg-surface-muted px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-subtle-foreground">
+                    <span className="shrink-0 rounded-full bg-surface-muted px-2 py-0.5 font-mono text-xs font-medium uppercase tracking-wide text-subtle-foreground">
                       Due soon
                     </span>
                   ) : null}

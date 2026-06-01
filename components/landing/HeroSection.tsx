@@ -26,13 +26,13 @@ export function HeroSection() {
           </div>
 
           <div className="space-y-4 pt-6">
-            <h1 className="max-w-[16ch] text-5xl leading-[0.99] font-bold tracking-tight text-foreground md:text-6xl lg:text-[4.1rem] xl:text-[4.72rem]">
+            <h1 className="max-w-[16ch] text-5xl leading-[0.99] font-bold tracking-tight text-foreground md:text-6xl lg:text-7xl">
               <span className="block whitespace-nowrap">Know what your</span>
               <span className="block whitespace-nowrap">
                 <span className="text-accent">cards</span> owe you.
               </span>
             </h1>
-            <p className="max-w-[400px] text-base leading-[1.7] text-muted-foreground md:text-[17px]">
+            <p className="max-w-[400px] text-base leading-[1.7] text-muted-foreground md:text-lg">
               The Platinum Card comes with over $1,500 in annual value. Most of it goes unused. Memento tracks every
               credit, reset, and perk so you actually capture what you’re paying for.
             </p>
@@ -62,7 +62,7 @@ export function HeroSection() {
               {cardPills.map((pill) => (
                 <div
                   key={pill}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface px-2.5 py-[0.22rem] text-[11px] font-medium text-muted-foreground transition-all duration-200 ease-in-out hover:-translate-y-px hover:border-border-strong hover:bg-surface-raised"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface px-2.5 py-[0.22rem] text-xs font-medium text-muted-foreground transition-all duration-200 ease-in-out hover:-translate-y-px hover:border-border-strong hover:bg-surface-raised"
                 >
                   {pill !== "+ more" ? (
                     <svg viewBox="0 0 16 16" aria-hidden className="h-3 w-3 text-subtle-foreground">
@@ -86,31 +86,31 @@ export function HeroSection() {
                   <span className="h-2.5 w-2.5 rounded-full bg-surface-muted" />
                   <span className="h-2.5 w-2.5 rounded-full bg-surface-muted" />
                 </div>
-                <p className="text-[10px] font-medium tracking-wider text-subtle-foreground">Memento — Dashboard</p>
+                <p className="font-mono text-xs font-medium tracking-wider text-subtle-foreground">Memento — Dashboard</p>
                 <div className="w-14" aria-hidden />
               </div>
 
               <div className="relative space-y-4 p-5">
                 <div className="flex gap-3">
                   <div className="flex-1 rounded-xl border border-border bg-surface-muted p-4">
-                    <p className="mb-1.5 text-[9px] font-semibold uppercase tracking-widest text-subtle-foreground">Value Remaining</p>
+                    <p className="mb-1.5 font-mono text-xs font-semibold uppercase tracking-widest text-subtle-foreground">Value Remaining</p>
                     <p className="text-2xl font-bold tracking-tight text-foreground">
                       $2,419
                     </p>
                     <div className="mt-2.5 h-1 overflow-hidden rounded-full bg-surface">
                       <div className="h-full w-[88%] rounded-full bg-accent" />
                     </div>
-                    <p className="mt-1.5 text-[9px] text-subtle-foreground">of $2,738 tracked this year</p>
+                    <p className="mt-1.5 text-xs text-subtle-foreground">of $2,738 tracked this year</p>
                   </div>
 
                   <div className="flex w-28 flex-col justify-between rounded-xl border border-border bg-surface-muted p-3">
-                    <p className="mb-2 text-[9px] font-semibold uppercase tracking-widest text-subtle-foreground">Your Cards</p>
+                    <p className="mb-2 font-mono text-xs font-semibold uppercase tracking-widest text-subtle-foreground">Your Cards</p>
                     <div className="space-y-1.5">
                       <div className="flex h-5 items-center rounded-md bg-accent px-2">
-                        <span className="truncate text-[7px] font-semibold text-accent-foreground">Platinum</span>
+                        <span className="truncate text-xs font-semibold text-accent-foreground">Platinum</span>
                       </div>
                       <div className="flex h-5 items-center rounded-md bg-accent px-2">
-                        <span className="truncate text-[7px] font-semibold text-accent-foreground">Gold</span>
+                        <span className="truncate text-xs font-semibold text-accent-foreground">Gold</span>
                       </div>
                     </div>
                   </div>
@@ -125,7 +125,7 @@ export function HeroSection() {
                       />
                       <path d="M6.6 10.5a1.4 1.4 0 0 0 2.8 0" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
                     </svg>
-                    <span className="text-[9px] font-semibold text-warning">3 benefits need attention</span>
+                    <span className="text-xs font-semibold text-warning">3 benefits need attention</span>
                   </div>
                 </div>
 
@@ -156,14 +156,14 @@ export function HeroSection() {
                           ) : (
                             <span className="h-2 w-2 shrink-0 rounded-full bg-accent" />
                           )}
-                          <span className="truncate text-[11px] font-medium text-foreground">{benefit.name}</span>
+                          <span className="truncate text-xs font-medium text-foreground">{benefit.name}</span>
                         </div>
 
                         <div className="flex shrink-0 items-center gap-2">
-                          <span className={`rounded-full px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider ${tagClass}`}>
+                          <span className={`rounded-full px-1.5 py-0.5 font-mono text-xs font-semibold uppercase tracking-wider ${tagClass}`}>
                             {benefit.cadence}
                           </span>
-                          <span className="text-[11px] font-semibold text-foreground">{benefit.value}</span>
+                          <span className="text-xs font-semibold text-foreground">{benefit.value}</span>
                         </div>
                       </div>
                     );

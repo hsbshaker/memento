@@ -362,7 +362,7 @@ export function BenefitsScreen({ initialFeed }: BenefitsScreenProps) {
                   aria-selected={tab.id === activeTab}
                   onClick={() => setActiveTab(tab.id)}
                   className={cn(
-                    "rounded-md px-2.5 py-1 text-[13px] font-medium transition-colors",
+                    "rounded-md px-2.5 py-1 text-sm font-medium transition-colors",
                     tab.id === activeTab
                       ? "bg-surface-raised text-foreground"
                       : "text-muted-foreground hover:text-foreground",
@@ -372,7 +372,7 @@ export function BenefitsScreen({ initialFeed }: BenefitsScreenProps) {
                   {tab.count > 0 ? (
                     <span
                       className={cn(
-                        "ml-1.5 rounded-full px-1.5 py-0.5 text-[11px] font-medium leading-none tabular-nums",
+                        "ml-1.5 rounded-full px-1.5 py-0.5 font-mono text-xs font-medium leading-none tabular-nums",
                         tab.id === activeTab
                           ? "bg-surface-muted text-foreground"
                           : "bg-surface-muted text-subtle-foreground",

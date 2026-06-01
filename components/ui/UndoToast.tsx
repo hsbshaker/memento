@@ -49,12 +49,12 @@ function UndoToast({ toast, onDismiss }: { toast: UndoToastItem; onDismiss: (id:
         visible ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0",
       )}
     >
-      <p className="text-[13px] text-muted-foreground">{toast.message}</p>
+      <p className="text-sm text-muted-foreground">{toast.message}</p>
       <span className="text-subtle-foreground" aria-hidden>·</span>
       <button
         type="button"
         onClick={handleUndo}
-        className="text-[13px] font-medium text-accent transition-opacity hover:opacity-75 focus-visible:outline-none"
+        className="text-sm font-medium text-accent transition-opacity hover:opacity-75 focus-visible:outline-none"
       >
         Undo
       </button>

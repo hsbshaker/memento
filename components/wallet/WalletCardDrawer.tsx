@@ -210,7 +210,7 @@ function WalletCardModalPanel({
           <div className="flex min-w-0 items-center gap-3">
             <div className="flex h-10 w-10 shrink-0 flex-col items-center justify-center rounded-lg border border-border bg-surface-muted text-muted-foreground">
               <CreditCard className="h-4 w-4" />
-              <span className="mt-0.5 text-[9px] font-semibold tracking-[0.16em]">{getCardTileLabel(card.cardName)}</span>
+              <span className="mt-0.5 font-mono text-xs font-semibold tracking-[0.16em]">{getCardTileLabel(card.cardName)}</span>
             </div>
             <div className="min-w-0">
               <h2 className="truncate text-lg font-semibold tracking-tight text-foreground">{card.cardName}</h2>

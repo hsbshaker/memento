@@ -66,7 +66,7 @@ function CardArtPreview({ card }: { card: CardSearchResult }) {
 
   return (
     <div className="flex h-11 w-[70px] items-end overflow-hidden rounded-lg border border-border bg-surface-muted px-2 py-1.5">
-      <span className="text-[9px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+      <span className="font-mono text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
         {getIssuerShortLabel(card.issuer)}
       </span>
     </div>
@@ -434,7 +434,7 @@ export function LineupCardSearch() {
                             <div className={cn("mt-1 flex items-center gap-2 text-xs", ROW_SECONDARY_TEXT_CLASS, "text-xs")}>
                               <span>{issuerLabel}</span>
                               {card.cardStatus === "no_trackable_benefits" ? (
-                                <span className="rounded-full border border-border bg-surface-muted px-2 py-0.5 text-[10px] font-medium tracking-[0.06em] text-subtle-foreground">
+                                <span className="rounded-full border border-border bg-surface-muted px-2 py-0.5 font-mono text-xs font-medium tracking-[0.06em] text-subtle-foreground">
                                   No trackable benefits yet
                                 </span>
                               ) : null}
@@ -472,7 +472,7 @@ export function LineupCardSearch() {
       <section className="mx-auto mt-auto w-full max-w-[40rem] pt-2">
         <div className="mb-3 flex items-center justify-between gap-4">
           <h2 className={ROW_MICRO_TEXT_CLASS}>YOUR WALLET</h2>
-          <span className="rounded-md border border-border bg-surface-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+          <span className="rounded-md border border-border bg-surface-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
             {formatCardCount(selectedCards.length)}
           </span>
         </div>
@@ -501,7 +501,7 @@ export function LineupCardSearch() {
                   >
                     <div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden pr-4">
                       <p className={cn("truncate leading-none", ROW_PRIMARY_TEXT_CLASS)}>{cardLabel}</p>
-                      <span aria-hidden className="shrink-0 text-[10px] leading-none text-subtle-foreground">
+                      <span aria-hidden className="shrink-0 text-xs leading-none text-subtle-foreground">
                         •
                       </span>
                       <p className={cn("truncate text-xs leading-none text-subtle-foreground", ROW_SECONDARY_TEXT_CLASS, "text-xs leading-none")}>{issuerLabel}</p>

@@ -906,7 +906,7 @@ export function BenefitsOnboarding({ variant = "onboarding" }: BenefitsOnboardin
         <div className="w-full min-w-0">
         <div className="mb-6 min-w-0">
           {!isDashboardVariant ? (
-            <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">Step 2 of 2 · Benefits Setup</p>
+            <p className="font-mono text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">Step 2 of 2 · Benefits Setup</p>
           ) : null}
           <div className="mt-2 flex items-start gap-3">
             <span className="mt-1 h-8 w-1 rounded-full bg-accent" aria-hidden />

@@ -21,8 +21,8 @@ export function HowItWorksSection() {
     <section className="relative border-t border-border pb-10 pt-10 sm:pb-12 sm:pt-12 lg:pb-14 lg:pt-14">
       <div className="relative flex flex-col gap-0">
         <div className="mb-10 max-w-[30rem]">
-          <div className="mb-5 text-[10px] font-bold uppercase tracking-[0.2em] text-accent">How it works</div>
-          <h2 className="max-w-sm text-3xl leading-tight font-bold tracking-tight text-foreground md:text-[2.5rem]">
+          <div className="mb-5 font-mono text-xs font-bold uppercase tracking-[0.2em] text-accent">How it works</div>
+          <h2 className="max-w-sm text-3xl leading-tight font-bold tracking-tight text-foreground md:text-4xl">
             Set up in minutes.
             <br />
             <span className="whitespace-nowrap">Value tracked forever.</span>
@@ -40,15 +40,15 @@ export function HowItWorksSection() {
                   className="absolute left-10 right-10 top-0 h-[1.5px] rounded-full bg-accent-border"
                 />
 
-                <p className="text-[3.5rem] font-bold leading-none tracking-[-0.05em] text-accent/30">
+                <p className="text-5xl font-bold leading-none text-accent/30">
                   {step.number}
                 </p>
 
                 <div>
-                  <h3 className="mb-3 text-[17px] font-semibold text-foreground">
+                  <h3 className="mb-3 text-lg font-semibold text-foreground">
                     {step.title}
                   </h3>
-                  <p className="max-w-[16rem] text-[13.5px] leading-[1.75] text-muted-foreground">
+                  <p className="max-w-[16rem] text-sm leading-7 text-muted-foreground">
                     {step.description}
                   </p>
                 </div>

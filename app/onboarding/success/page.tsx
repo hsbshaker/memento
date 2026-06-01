@@ -97,7 +97,7 @@ export default async function OnboardingSuccessPage() {
                 What Happens Next
               </h2>
 
-              <ul className="space-y-3 text-sm text-muted-foreground sm:text-[15px]">
+              <ul className="space-y-3 text-sm text-muted-foreground sm:text-base">
                 <li className="flex items-start gap-2.5">
                   <SmallCheckIcon />
                   <span>Monthly digest emails when you have benefits to use</span>

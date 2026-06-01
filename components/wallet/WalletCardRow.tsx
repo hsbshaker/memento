@@ -62,7 +62,7 @@ export function WalletCardRow({ card, isSelected, onSelect }: WalletCardRowProps
         />
         <div className="flex h-10 w-10 shrink-0 flex-col items-center justify-center rounded-lg border border-border bg-surface-muted text-muted-foreground">
           <CreditCard className="h-3.5 w-3.5" />
-          <span className="mt-0.5 text-[9px] font-semibold tracking-[0.16em]">{getCardTileLabel(card.cardName)}</span>
+          <span className="mt-0.5 font-mono text-xs font-semibold tracking-[0.16em]">{getCardTileLabel(card.cardName)}</span>
         </div>
 
         <div className="min-w-0 flex-1">

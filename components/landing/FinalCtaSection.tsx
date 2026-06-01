@@ -6,13 +6,13 @@ export function FinalCtaSection() {
       <div className="relative w-full">
         <div className="relative rounded-2xl border border-border bg-surface px-12 py-16 text-center">
           <div className="mx-auto flex max-w-[44rem] flex-col items-center">
-            <div className="mb-5 text-[10px] font-bold uppercase tracking-[0.2em] text-accent">Get started</div>
-            <h2 className="mb-4 text-3xl leading-tight font-bold tracking-tight text-foreground md:text-[2.75rem]">
+            <div className="mb-5 font-mono text-xs font-bold uppercase tracking-[0.2em] text-accent">Get started</div>
+            <h2 className="mb-4 text-3xl leading-tight font-bold tracking-tight text-foreground md:text-5xl">
               <span className="whitespace-nowrap">Your cards are already paying for this.</span>
               <br />
               <span className="text-muted-foreground">Are you claiming it?</span>
             </h2>
-            <p className="mx-auto mb-10 max-w-md text-[13.5px] leading-relaxed text-muted-foreground">
+            <p className="mx-auto mb-10 max-w-md text-sm leading-relaxed text-muted-foreground">
               Two minutes to set up. No bank login. No card numbers.
             </p>
             <a href="/auth/login" className="group inline-flex">

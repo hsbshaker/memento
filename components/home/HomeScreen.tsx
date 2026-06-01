@@ -369,8 +369,8 @@ export function HomeScreen({ initialFeed }: HomeScreenProps) {
                         onClick={() => void changeTimeframe(option.key)}
                         className={
                           isActive
-                            ? "relative z-10 rounded-md px-2 py-1.5 text-[12px] font-semibold tracking-[0.14em] text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
-                            : "relative z-10 rounded-md px-2 py-1.5 text-[12px] font-semibold tracking-[0.14em] text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+                            ? "relative z-10 rounded-md px-2 py-1.5 font-mono text-xs font-semibold tracking-[0.14em] text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+                            : "relative z-10 rounded-md px-2 py-1.5 font-mono text-xs font-semibold tracking-[0.14em] text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
                         }
                       >
                         {option.compactLabel}
@@ -395,15 +395,15 @@ export function HomeScreen({ initialFeed }: HomeScreenProps) {
                       onClick={() => setActiveBenefitTab(tab.id)}
                       className={
                         tab.id === activeBenefitTab
-                          ? "rounded-md bg-surface-raised px-2.5 py-1 text-[13px] font-medium text-foreground transition-colors"
-                          : "rounded-md px-2.5 py-1 text-[13px] font-medium text-muted-foreground transition-colors hover:text-foreground"
+                          ? "rounded-md bg-surface-raised px-2.5 py-1 text-sm font-medium text-foreground transition-colors"
+                          : "rounded-md px-2.5 py-1 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
                       }
                     >
                       {tab.label}
                       {tab.count > 0 ? (
                         <span
                           className={cn(
-                            "ml-1.5 rounded-full px-1.5 py-0.5 text-[11px] font-medium leading-none tabular-nums",
+                            "ml-1.5 rounded-full px-1.5 py-0.5 font-mono text-xs font-medium leading-none tabular-nums",
                             tab.id === activeBenefitTab
                               ? "bg-surface-muted text-foreground"
                               : "bg-surface-muted text-subtle-foreground",

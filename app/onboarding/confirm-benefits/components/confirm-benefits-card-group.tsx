@@ -95,7 +95,7 @@ export function ConfirmBenefitsCardGroup({
           ) : null}
 
           {needsAnniversaryDate ? (
-            <div className="inline-flex w-fit shrink-0 items-center rounded-md border border-warning/30 bg-warning-muted px-2 py-1 text-[10px] font-medium tracking-[0.12em] text-warning uppercase">
+            <div className="inline-flex w-fit shrink-0 items-center rounded-md border border-warning/30 bg-warning-muted px-2 py-1 font-mono text-xs font-medium tracking-[0.12em] text-warning uppercase">
               Anniversary date needed
             </div>
           ) : null}

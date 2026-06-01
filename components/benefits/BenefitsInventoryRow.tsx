@@ -90,7 +90,7 @@ export function BenefitsInventoryRow({
               <h3 className={cn(ROW_PRIMARY_TEXT_CLASS, nameClass, "truncate")}>{item.benefitName}</h3>
               <span
                 className={cn(
-                  "shrink-0 rounded-full px-1.5 py-0.5 text-[11px] font-medium leading-none",
+                  "shrink-0 rounded-full px-1.5 py-0.5 font-mono text-xs font-medium leading-none",
                   pill.className,
                 )}
               >
