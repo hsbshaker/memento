@@ -11,30 +11,30 @@ html {
 
 :root {
   /* Core */
-  --background:   #f8f7f5;
+  --background:   #f1eee8;
   --foreground:   #171717;
 
   /* Surfaces — three elevation levels above background */
-  --surface:        #ffffff;
-  --surface-raised: #f2f1ef;
-  --surface-muted:  #eeece9;
-  --surface-subtle: #f5f4f2;
+  --surface:        #fffefa;
+  --surface-raised: #f5f2ec;
+  --surface-muted:  #e7e1d6;
+  --surface-subtle: #f8f5ef;
 
   /* Borders */
-  --border:       rgba(0, 0, 0, 0.08);
-  --border-strong: rgba(0, 0, 0, 0.16);
-  --border-muted:  rgba(0, 0, 0, 0.05);
+  --border:       rgba(0, 0, 0, 0.13);
+  --border-strong: rgba(0, 0, 0, 0.23);
+  --border-muted:  rgba(0, 0, 0, 0.085);
 
   /* Text hierarchy */
-  --muted-foreground:  rgba(23, 23, 23, 0.55);
-  --subtle-foreground: rgba(23, 23, 23, 0.36);
+  --muted-foreground:  rgba(23, 23, 23, 0.70);
+  --subtle-foreground: rgba(23, 23, 23, 0.54);
   --inverse-foreground: #f8f7f5;
 
   /* Brand accent — Memento gold, canonical value */
   --accent:            #c9920a;
   --accent-foreground: #ffffff;
-  --accent-muted:      rgba(201, 146, 10, 0.10);
-  --accent-border:     rgba(201, 146, 10, 0.28);
+  --accent-muted:      rgba(201, 146, 10, 0.12);
+  --accent-border:     rgba(201, 146, 10, 0.34);
 
   /* Status: success */
   --success:            #16a34a;

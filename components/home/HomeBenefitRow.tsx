@@ -105,7 +105,7 @@ export function HomeBenefitRow({
   return (
     <div
       className={cn(
-        "px-3.5 py-3 sm:px-4 transition-opacity duration-[280ms] ease-out",
+        "px-3.5 py-3 transition-colors duration-150 ease-out hover:bg-surface-subtle sm:px-4",
         fading ? "opacity-0" : "opacity-100",
         isUrgent ? "text-foreground" : "text-muted-foreground",
       )}

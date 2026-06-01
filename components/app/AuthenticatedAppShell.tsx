@@ -32,11 +32,11 @@ function AppSidebarNavigation({ activeItem, onNavigate }: NavigationProps) {
             className={cn(
               "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 focus-visible:ring-offset-background",
               isActive
-                ? "bg-accent-muted font-medium text-accent"
+                ? "bg-accent-muted font-semibold text-foreground"
                 : "text-muted-foreground hover:bg-hover hover:text-foreground",
             )}
           >
-            <Icon className="h-4 w-4 shrink-0" />
+            <Icon className={cn("h-4 w-4 shrink-0", isActive ? "text-accent" : undefined)} />
             <span>{item.label}</span>
           </Link>
         );

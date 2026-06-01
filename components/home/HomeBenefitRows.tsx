@@ -58,10 +58,8 @@ export function HomeBenefitRows({
         </div>
 
         {toolbar ? <div className="mt-4">{toolbar}</div> : null}
-        <div className="mt-4 border-b border-border" />
-
         {items.length > 0 ? (
-          <div className="mt-0 overflow-hidden rounded-xl border border-border bg-surface">
+          <div className="mt-4 overflow-hidden rounded-xl border border-border bg-surface">
             <div
               className={cn(
                 items.length > 6
