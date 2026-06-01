@@ -21,8 +21,7 @@ export default async function BuildYourLineupPage() {
         <OnboardingNav />
 
         <div className="mb-10 text-center">
-          <h1 className="mb-3 text-3xl font-bold tracking-tight text-foreground">Build Your Lineup</h1>
-          <p className="text-muted-foreground">Select the cards in your wallet to begin tracking.</p>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">Build Your Lineup</h1>
         </div>
 
         <LineupCardSearch />

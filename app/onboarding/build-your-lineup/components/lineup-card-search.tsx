@@ -2,10 +2,9 @@
 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { ChevronRight, Search, Trash2 } from "lucide-react";
+import { ChevronRight, Search } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  ROW_ACTION_TEXT_CLASS,
   ROW_MICRO_TEXT_CLASS,
   ROW_PRIMARY_TEXT_CLASS,
   ROW_SECONDARY_TEXT_CLASS,
@@ -15,11 +14,6 @@ import { cn } from "@/lib/cn";
 import { getCleanCardName, getIssuerShortLabel } from "@/lib/format-card";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import type { CardSearchResult } from "@/lib/types/server-data";
-
-type ToastState = {
-  id: string;
-  message: string;
-};
 
 type SelectedOnboardingCard = CardSearchResult;
 type PersistedUserCardRow = {
@@ -73,10 +67,6 @@ function CardArtPreview({ card }: { card: CardSearchResult }) {
   );
 }
 
-function formatCardCount(count: number) {
-  return `${count} ${count === 1 ? "Card" : "Cards"}`;
-}
-
 export function LineupCardSearch() {
   const router = useRouter();
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
@@ -89,9 +79,8 @@ export function LineupCardSearch() {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [isContinuing, setIsContinuing] = useState(false);
   const [isWalletLoading, setIsWalletLoading] = useState(true);
-  const [toast, setToast] = useState<ToastState | null>(null);
+  const [pendingConfirmCard, setPendingConfirmCard] = useState<CardSearchResult | null>(null);
   const abortRef = useRef<AbortController | null>(null);
-  const toastTimerRef = useRef<number | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   const selectedCardIds = useMemo(() => new Set(selectedCards.map((card) => card.cardId)), [selectedCards]);
@@ -187,7 +176,7 @@ export function LineupCardSearch() {
       if (!isMounted) return;
 
       if (walletError) {
-        setSaveError("We couldn’t load your saved cards. Please refresh and try again.");
+        setSaveError("We couldn't load your saved cards. Please refresh and try again.");
         setIsWalletLoading(false);
         return;
       }
@@ -228,28 +217,10 @@ export function LineupCardSearch() {
   useEffect(() => {
     return () => {
       abortRef.current?.abort();
-      if (toastTimerRef.current) {
-        window.clearTimeout(toastTimerRef.current);
-      }
     };
   }, []);
 
-  const showToast = (message: string) => {
-    const id = `${Date.now()}-${message}`;
-    setToast({ id, message });
-
-    if (toastTimerRef.current) {
-      window.clearTimeout(toastTimerRef.current);
-    }
-
-    toastTimerRef.current = window.setTimeout(() => {
-      setToast((current) => (current?.id === id ? null : current));
-    }, 3200);
-  };
-
-  const handleSelectCard = (card: CardSearchResult) => {
-    if (selectedCardIds.has(card.cardId)) return;
-
+  const doAddCard = (card: CardSearchResult) => {
     setSelectedCards((current) => [...current, card]);
     setSaveError(null);
     setQuery("");
@@ -259,21 +230,37 @@ export function LineupCardSearch() {
     window.requestAnimationFrame(() => {
       inputRef.current?.focus();
     });
+  };
+
+  const handleSelectCard = (card: CardSearchResult) => {
+    if (selectedCardIds.has(card.cardId)) return;
 
     if (card.cardStatus === "no_trackable_benefits") {
-      showToast(
-        "This card will still be added to your wallet, but it does not currently have any trackable benefits in Memento.",
-      );
+      setPendingConfirmCard(card);
+      setQuery("");
+      setResults([]);
+      setError(null);
+      abortRef.current?.abort();
+      return;
     }
+
+    doAddCard(card);
+  };
+
+  const handleConfirmAdd = () => {
+    if (!pendingConfirmCard) return;
+    doAddCard(pendingConfirmCard);
+    setPendingConfirmCard(null);
+  };
+
+  const handleCancelAdd = () => {
+    setPendingConfirmCard(null);
+    window.requestAnimationFrame(() => {
+      inputRef.current?.focus();
+    });
   };
 
   const handleRemoveCard = async (cardId: string) => {
-    const card = selectedCards.find((selectedCard) => selectedCard.cardId === cardId);
-    const cardLabel = card ? getCleanCardName(card.displayName, card.cardName) : "this card";
-    const confirmed = window.confirm(`Remove ${cardLabel} from your wallet?`);
-
-    if (!confirmed) return;
-
     if (persistedCardIds.has(cardId)) {
       const {
         data: { user },
@@ -281,7 +268,7 @@ export function LineupCardSearch() {
       } = await supabase.auth.getUser();
 
       if (authError || !user) {
-        setSaveError("We couldn’t update your lineup. Please try again.");
+        setSaveError("We couldn't update your lineup. Please try again.");
         return;
       }
 
@@ -292,7 +279,7 @@ export function LineupCardSearch() {
         .eq("card_id", cardId);
 
       if (deleteError) {
-        setSaveError("We couldn’t update your lineup. Please try again.");
+        setSaveError("We couldn't update your lineup. Please try again.");
         return;
       }
     }
@@ -371,7 +358,7 @@ export function LineupCardSearch() {
       setSaveError(
         continueError instanceof Error
           ? continueError.message
-          : "We couldn’t save your selected cards. Please try again.",
+          : "We couldn't save your selected cards. Please try again.",
       );
     } finally {
       setIsContinuing(false);
@@ -389,7 +376,10 @@ export function LineupCardSearch() {
           ref={inputRef}
           type="text"
           value={query}
-          onChange={(event) => setQuery(event.target.value)}
+          onChange={(event) => {
+            setPendingConfirmCard(null);
+            setQuery(event.target.value);
+          }}
           onKeyDown={(event) => {
             if (event.key !== "Escape") return;
             event.preventDefault();
@@ -397,6 +387,7 @@ export function LineupCardSearch() {
             setQuery("");
             setResults([]);
             setError(null);
+            setPendingConfirmCard(null);
           }}
           placeholder="Search cards (e.g. Platinum, Sapphire...)"
           className="h-11 w-full rounded-lg border border-border bg-surface pl-10 pr-4 text-sm text-foreground outline-none transition-all placeholder:text-muted-foreground focus:border-border-strong focus:ring-2 focus:ring-focus"
@@ -440,14 +431,6 @@ export function LineupCardSearch() {
                               ) : null}
                             </div>
                           </div>
-
-                          <div className="shrink-0">
-                            {isSelected ? (
-                              <span className="text-xs text-subtle-foreground">Added</span>
-                            ) : (
-                              <span className={cn("text-accent", ROW_ACTION_TEXT_CLASS)}>Add</span>
-                            )}
-                          </div>
                         </button>
                       </li>
                     );
@@ -458,23 +441,35 @@ export function LineupCardSearch() {
               )
             ) : null}
           </Surface>
+        ) : pendingConfirmCard ? (
+          <Surface className="absolute left-0 right-0 top-[calc(100%+0.6rem)] z-20 overflow-hidden p-4">
+            <p className="text-sm font-medium text-foreground">
+              {getCleanCardName(pendingConfirmCard.displayName, pendingConfirmCard.cardName)} doesn&apos;t have trackable benefits in Memento yet.
+            </p>
+            <p className="mt-1 text-sm text-muted-foreground">Add it to your wallet anyway?</p>
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={handleCancelAdd}
+                className="rounded-lg border border-border bg-surface-muted px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-surface-raised focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmAdd}
+                className="rounded-lg bg-accent px-3 py-1.5 text-sm font-medium text-accent-foreground transition-colors hover:brightness-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              >
+                Add anyway
+              </button>
+            </div>
+          </Surface>
         ) : null}
       </div>
 
-      {toast ? (
-        <div className="pointer-events-none fixed bottom-6 left-1/2 z-30 w-[min(calc(100vw-2rem),32rem)] -translate-x-1/2">
-          <div className="rounded-xl border border-accent-border bg-surface-raised px-4 py-3 text-sm leading-relaxed text-foreground shadow-lg backdrop-blur-md">
-            {toast.message}
-          </div>
-        </div>
-      ) : null}
-
       <section className="mx-auto mt-auto w-full max-w-[40rem] pt-2">
-        <div className="mb-3 flex items-center justify-between gap-4">
-          <h2 className={ROW_MICRO_TEXT_CLASS}>YOUR WALLET</h2>
-          <span className="rounded-md border border-border bg-surface-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
-            {formatCardCount(selectedCards.length)}
-          </span>
+        <div className="mb-3">
+          <h2 className={ROW_MICRO_TEXT_CLASS}>YOUR WALLET ({selectedCards.length})</h2>
         </div>
 
         <div className="overflow-hidden rounded-xl border border-border bg-surface">
@@ -510,10 +505,12 @@ export function LineupCardSearch() {
                     <button
                       type="button"
                       onClick={() => void handleRemoveCard(card.cardId)}
-                      className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+                      className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-border-strong transition-all duration-150 hover:border-destructive/55 hover:bg-destructive-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                       aria-label={`Remove ${cardLabel}`}
                     >
-                      <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                      <svg viewBox="0 0 12 12" fill="none" className="h-3 w-3 text-muted-foreground transition-colors duration-150" aria-hidden="true">
+                        <path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                      </svg>
                     </button>
                   </div>
                 );
@@ -531,7 +528,7 @@ export function LineupCardSearch() {
             onClick={() => void handleContinue()}
             className="inline-flex min-w-[240px] items-center justify-center gap-2 rounded-xl bg-accent px-6 py-3 text-sm font-medium text-accent-foreground transition-colors hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {isContinuing ? "Saving..." : "Continue to reminders"}
+            {isContinuing ? "Saving..." : "Continue"}
             <ChevronRight className="h-4 w-4" aria-hidden="true" />
           </button>
         </div>
