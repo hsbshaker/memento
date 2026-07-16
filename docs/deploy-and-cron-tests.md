@@ -1,5 +1,12 @@
 # Deploy and Cron Tests (Vercel Hobby)
 
+> Note (2026-07): Vercel Hobby currently supports up to 100 cron jobs per
+> project, each limited to once per day. The repo now registers THREE crons in
+> `vercel.json`: `run-reminders` (13:00 UTC daily), `send-digest` (09:00 UTC on
+> the 1st), and `monitor-sources` (11:00 UTC daily — benefit freshness; see
+> `docs/engineering/freshness-operations.md`). Any older claim of a two-cron
+> Hobby limit is stale.
+
 ## A) Vercel env vars checklist
 
 Set these in **Vercel Project Settings -> Environment Variables** for **Production**:
@@ -8,13 +15,29 @@ Set these in **Vercel Project Settings -> Environment Variables** for **Producti
 - `SUPABASE_SERVICE_ROLE_KEY`
 - `CRON_SECRET`
 
+For the freshness cron, additionally (see `docs/engineering/freshness-operations.md`):
+
+- `ADMIN_EMAILS`, `ANTHROPIC_API_KEY`, `FRESHNESS_MODEL`,
+  `FRESHNESS_MODEL_ESCALATION`, `RESEND_API_KEY`, `EMAIL_FROM`
+
 ## B) Deploy assertions
 
-1. Deploy with the daily cron schedule (`0 13 * * *`) in `vercel.json`.
+1. Deploy with the cron schedules in `vercel.json`.
 2. Confirm deployment succeeds on Hobby (no cron frequency validation error).
 3. In Vercel Project Settings, open **Cron Jobs** and confirm:
-   - Path: `/api/cron/run-reminders`
-   - Schedule: `0 13 * * *`
+   - Path: `/api/cron/run-reminders` — Schedule: `0 13 * * *`
+   - Path: `/api/cron/send-digest` — Schedule: `0 9 1 * *`
+   - Path: `/api/cron/monitor-sources` — Schedule: `0 11 * * *`
+
+## B2) Freshness cron auth assertions (curl)
+
+```bash
+# 401 without auth
+curl -i "https://<YOUR_DOMAIN>/api/cron/monitor-sources"
+# 200 JSON run summary with auth (no-op while all sources are disabled)
+curl -i "https://<YOUR_DOMAIN>/api/cron/monitor-sources" \
+  -H "Authorization: Bearer <CRON_SECRET>"
+```
 
 ## C) Endpoint auth assertions (curl)
 

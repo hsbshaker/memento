@@ -27,3 +27,17 @@ export type CanonicalCardStatus = (typeof CANONICAL_CARD_STATUSES)[number];
 
 export const TRACK_IN_MEMENTO_VALUES = ["yes", "later", "no"] as const;
 export type TrackInMemento = (typeof TRACK_IN_MEMENTO_VALUES)[number];
+
+export const BENEFIT_STATUSES = ["active", "retired"] as const;
+export type BenefitStatus = (typeof BENEFIT_STATUSES)[number];
+
+export const BENEFIT_CADENCES = [
+  "monthly",
+  "quarterly",
+  "semiannual",
+  "annual",
+  "multi_year",
+  "one_time",
+  "per_booking",
+] as const;
+export type BenefitCadence = (typeof BENEFIT_CADENCES)[number];

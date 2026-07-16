@@ -1,0 +1,37 @@
+# Local Supabase stack configuration (used by `supabase start` / `supabase test db`).
+# The hosted project is managed separately; never `supabase db push` without
+# explicit owner approval (see docs/engineering/freshness-operations.md).
+
+project_id = "card-benefits-tracker"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+shadow_port = 54320
+major_version = 17
+
+[studio]
+enabled = false
+
+[auth]
+enabled = true
+site_url = "http://localhost:3000"
+
+[storage]
+enabled = true
+file_size_limit = "50MiB"
+
+[realtime]
+enabled = false
+
+[inbucket]
+enabled = false
+
+[analytics]
+enabled = false

@@ -668,6 +668,28 @@ Some benefits use `card_anniversary_date` instead of calendar year for period bo
 
 ---
 
+## Benefit Freshness Pipeline Map
+
+Added 2026-07: automated benefit-change monitoring, evidence-backed proposals, admin review, and transactional publishing. Full docs: `docs/engineering/freshness-pipeline.md` (developer), `docs/engineering/freshness-operations.md` (operator), `docs/engineering/adr-benefit-freshness.md` (decisions).
+
+| Area | Location | Notes |
+|---|---|---|
+| Orchestrator | `lib/freshness/run-monitor.ts` | Fully dependency-injected; production wiring in `lib/freshness/production-deps.ts`. |
+| Pure pipeline modules | `lib/freshness/*` | allowlist, html-content (cheerio), content-validation (soft-block), chunking, extraction-schema/prompt/provider, removal-gate, reconcile, dedupe-key, evidence-strength, mass-change-guard, staleness, scheduling, leases, cost, validators — all with colocated tests. |
+| Field contracts | `lib/benefits/benefit-fields.ts`, `lib/benefits/benefit-hash.ts` | Canonical/versioned field sets shared by extraction, diffing, history, publish, rollback; the importer now imports the shared hash. |
+| Stores | `lib/freshness/store.ts` (Supabase), `lib/freshness/in-memory-store.ts` (tests) | `FreshnessStore` is the orchestrator's persistence boundary. |
+| Cron | `app/api/cron/monitor-sources/route.ts` | Daily 11:00 UTC via `vercel.json`; Bearer `CRON_SECRET`; overlap/rerun-safe. |
+| Admin UI | `app/admin/**`, `components/admin/**` | Gated by `ADMIN_EMAILS` allowlist (`lib/auth/require-admin.ts`); empty allowlist ⇒ 404. |
+| Admin API | `app/api/admin/**` | Sources CRUD/test-fetch/run/retry/recheck, proposal review/publish/rollback, coverage links, publish-due sweep, model-config validation, signed artifact URLs. |
+| Schema | `supabase/migrations/20260716120000_*.sql`, `20260716130000_*.sql` | 8 new service-role-only tables, benefits versioning trigger, private `source-artifacts` bucket, publish/rollback/scheduled-sweep RPCs. |
+| SQL tests | `supabase/tests/*.sql` | pgTAP via `npm run test:db` (local stack; Docker + Supabase CLI). |
+| Eval harness | `lib/freshness/eval-harness.ts`, `scripts/freshness_eval_extraction.ts`, corpus in `lib/freshness/__fixtures__/eval/` | Live run is the hard gate before enabling sources; reports persist to `data/evals/`. |
+| Backfill | `scripts/memento_backfill_benefit_sources.ts` | Seeds `benefit_sources` (disabled) + `benefit_source_links` from existing provenance; dry-run default. |
+
+New API routes: `/api/cron/monitor-sources` (GET, CRON_SECRET) and the `/api/admin/*` family (admin allowlist; reviewer identity from session).
+
+---
+
 ## Maintenance Notes
 
 Update this document when:

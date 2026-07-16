@@ -1,0 +1,94 @@
+{
+  "name": "value-modification",
+  "document": "case-02.html",
+  "source_url": "https://www.americanexpress.com/us/credit-cards/card/test-platinum/case-02/",
+  "card": {
+    "id": "card-eval",
+    "displayName": "Test Platinum Card",
+    "cardCode": "amex_test"
+  },
+  "benefits": [
+    {
+      "id": "b-air",
+      "card_id": "card-eval",
+      "benefit_code": "amex_test_airline",
+      "benefit_name": "Airline Fee Credit",
+      "benefit_value": "Up to $200 annually",
+      "cadence": "annual",
+      "reset_timing": "calendar year",
+      "enrollment_required": true,
+      "requires_setup": false,
+      "display_description": null,
+      "benefit_status": "active",
+      "retired_at": null,
+      "source_url": "https://www.americanexpress.com/us/credit-cards/card/test-platinum/",
+      "track_in_memento": "yes",
+      "benefit_hash": "hash-air",
+      "content_version": 1
+    },
+    {
+      "id": "b-hotel",
+      "card_id": "card-eval",
+      "benefit_code": "amex_test_hotel",
+      "benefit_name": "Hotel Credit",
+      "benefit_value": "Up to $300 semiannually",
+      "cadence": "semiannual",
+      "reset_timing": "Jan-Jun / Jul-Dec",
+      "enrollment_required": false,
+      "requires_setup": false,
+      "display_description": null,
+      "benefit_status": "active",
+      "retired_at": null,
+      "source_url": "https://www.americanexpress.com/us/credit-cards/card/test-platinum/",
+      "track_in_memento": "yes",
+      "benefit_hash": "hash-hotel",
+      "content_version": 1
+    }
+  ],
+  "fake_candidates": [
+    {
+      "matched_benefit_code": "amex_test_airline",
+      "benefit_name": "Airline Fee Credit",
+      "benefit_value": "Up to $250 annually",
+      "cadence": "annual",
+      "reset_timing": null,
+      "enrollment_required": null,
+      "requires_setup": null,
+      "display_description": null,
+      "removal_claim": false,
+      "effective_date": null,
+      "evidence_excerpt": "Receive up to $250 in airline fee credits each calendar year",
+      "explanation": "eval candidate",
+      "confidence": 0.9
+    },
+    {
+      "matched_benefit_code": "amex_test_hotel",
+      "benefit_name": "Hotel Credit",
+      "benefit_value": "Up to $300 semiannually",
+      "cadence": "semiannual",
+      "reset_timing": null,
+      "enrollment_required": null,
+      "requires_setup": null,
+      "display_description": null,
+      "removal_claim": false,
+      "effective_date": null,
+      "evidence_excerpt": "Enjoy up to $300 in hotel credits semiannually",
+      "explanation": "eval candidate",
+      "confidence": 0.9
+    }
+  ],
+  "expected": {
+    "proposals": [
+      {
+        "operation": "modify",
+        "benefit_code": "amex_test_airline",
+        "fields": {
+          "benefit_value": "Up to $250 annually"
+        }
+      }
+    ],
+    "verified_benefit_codes": [
+      "amex_test_hotel"
+    ]
+  }
+}
