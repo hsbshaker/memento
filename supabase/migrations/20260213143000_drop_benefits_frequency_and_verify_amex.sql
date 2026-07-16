@@ -1,10 +1,23 @@
 -- Backfill cadence from legacy frequency if needed, then remove legacy frequency.
 begin;
 
-update public.benefits
-set cadence = frequency
-where cadence is null
-  and frequency is not null;
+-- Fresh databases never had the legacy frequency column, so the backfill must
+-- be guarded on its existence (matches the guarded drop below).
+do $$
+begin
+  if exists (
+    select 1
+    from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'benefits'
+      and column_name = 'frequency'
+  ) then
+    update public.benefits
+    set cadence = frequency
+    where cadence is null
+      and frequency is not null;
+  end if;
+end $$;
 
 alter table public.benefits
   drop column if exists frequency;

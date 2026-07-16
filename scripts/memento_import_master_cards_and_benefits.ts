@@ -1,10 +1,10 @@
-import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import fsSync from "node:fs";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { Client } from "pg";
 import { createClient as createSupabaseClient, type SupabaseClient } from "@supabase/supabase-js";
+import { computeBenefitHash } from "../lib/benefits/benefit-hash";
 
 type ParsedCsv = {
   headers: string[];
@@ -328,8 +328,6 @@ const slugify = (value: string) =>
     .replace(/[^a-z0-9]+/g, "_")
     .replace(/_+/g, "_")
     .replace(/^_+|_+$/g, "");
-const sha256 = (value: string) =>
-  crypto.createHash("sha256").update(value).digest("hex");
 const getCliArgValue = (flag: string) => {
   const index = process.argv.indexOf(flag);
   if (index === -1) return null;
@@ -567,17 +565,15 @@ const buildBenefitHash = ({
   requiresSetup: boolean;
   trackInMemento: TrackInMemento;
 }) =>
-  sha256(
-    [
-      benefitCode,
-      benefitValue,
-      cadence,
-      resetTiming,
-      String(enrollmentRequired),
-      String(requiresSetup),
-      trackInMemento,
-    ].join("|"),
-  );
+  computeBenefitHash({
+    benefitCode,
+    benefitValue,
+    cadence,
+    resetTiming,
+    enrollmentRequired,
+    requiresSetup,
+    trackInMemento,
+  });
 
 const valuesEqual = (left: string | null, right: string | null) => (left ?? null) === (right ?? null);
 const isRecognizedLegacyCardCodeAlias = (existingCode: string | null, incomingCode: string) =>

@@ -219,14 +219,9 @@ update public.benefits
 set enrollment_required = requires_enrollment
 where enrollment_required is null;
 
-update public.benefits
-set cadence = 'semiannual'
-where cadence::text in ('semi_annual', 'semiannual');
-
-alter table public.benefits
-  alter column cadence drop default,
-  alter column cadence drop not null;
-
+-- Drop the legacy text cadence check BEFORE normalizing values: on fresh
+-- databases the MVP seed contains 'semi_annual', which the old constraint
+-- allows but the normalized 'semiannual' spelling does not.
 do $$
 begin
   if exists (
@@ -239,6 +234,14 @@ begin
       drop constraint benefits_cadence_check;
   end if;
 end $$;
+
+update public.benefits
+set cadence = 'semiannual'
+where cadence::text in ('semi_annual', 'semiannual');
+
+alter table public.benefits
+  alter column cadence drop default,
+  alter column cadence drop not null;
 
 do $$
 begin

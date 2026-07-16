@@ -431,7 +431,9 @@ select
   seeded_benefits.display_name,
   seeded_benefits.category,
   seeded_benefits.cadence,
-  seeded_benefits.value_cents,
+  -- All seeded rows carry NULL here, so the VALUES column resolves to text;
+  -- cast explicitly so the insert matches benefits.value_cents (integer).
+  seeded_benefits.value_cents::integer,
   seeded_benefits.requires_enrollment,
   seeded_benefits.requires_selection,
   seeded_benefits.selection_type,
